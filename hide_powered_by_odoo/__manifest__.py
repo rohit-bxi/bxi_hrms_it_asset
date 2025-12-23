@@ -13,11 +13,11 @@
         Hide Odoo, Disable Powered By Odoo in Login Page, Disable Odoo Powered By Login, Web Odoo Login Page Odoo Page Login,
     """,
     'description': "Hide Powered By Odoo in login screen.",
-    'author': 'Innoway Solutions',
-    'maintainer': 'Innoway Solutions',
+    'author': 'BXI Tech',
+    'maintainer': 'BXI Tech',
     'price': '0.0',
     'currency': 'USD',
-    'website': 'https://innoway-solutions.com',
+    'website': '',
     'license': 'LGPL-3',
     'images': [
         'static/description/wallpaper.png'     

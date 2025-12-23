@@ -6,8 +6,8 @@
         Streamline your asset lifecycle management with our comprehensive Odoo module. Track assets, automate depreciation, manage maintenance, and handle transfers effortlessly. Generate detailed reports, monitor warranties, and optimize asset utilization. User-friendly interface ensures easy adoption. Suitable for businesses of all sizes, this module empowers you to make informed decisions and maximize the value of your assets.
     """,
     'category': 'Operations',
-    'author': 'WebbyCrown Solutions',
-    'website': 'https://www.webbycrown.com',
+    'author': 'BXI Tech',
+    'website': '',
     'depends': ['base', 'product', 'hr', 'account'],
     'data': [
         'security/security.xml',
