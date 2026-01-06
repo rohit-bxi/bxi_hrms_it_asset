@@ -13,6 +13,8 @@ with predefined IT-related categories.
         'security/ir.model.access.csv',
         'views/helpdesk_ticket_views.xml',
     ],
+    'license': 'LGPL-3',
     'installable': True,
+    'auto_install': False,
     'application': False,
 }
