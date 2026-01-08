@@ -27,17 +27,9 @@ class HrEmployee(models.Model):
     )
     onsite_offshore = fields.Selection(
         [
-            ('yes', 'Yes'),
-            ('no', 'No'),
+            ('onsite', 'Onsite'),
+            ('offshore', 'Offshore'),
         ],
-        string="Onsite/Offshore",
-        default='no'
+        string="Onsite/Offshore"
     )
-    company_code = fields.Selection(
-        [
-            ('yes', 'Yes'),
-            ('no', 'No'),
-        ],
-        string="Company Code",
-        default='no'
-    )
+    company_code = fields.Char(string="Company Code")
