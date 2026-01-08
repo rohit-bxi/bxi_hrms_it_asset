@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
 {
-    'name': 'BXI Helpdesk Ticket',
+    'name': 'BXI HR Employee',
     'category': 'Human Resources',
     'version': '19.0.1.0.0',
     'sequence': 1,
     'author': 'BXI',
     'summary': 'Employee form customization',
-    'description': 'Helpdesk Tickets Customizations',
-    'depends': ['helpdesk'],
+    'description': 'Employee View Modification',
+    'depends': ['hr'],
     'data': [
-        'security/ir.model.access.csv',
-        'views/helpdesk_ticket_views.xml',
+        'views/hr_employee_view.xml',
     ],
     'installable': True,
     'application': False,
