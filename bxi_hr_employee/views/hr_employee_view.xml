@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_employee_form_inherit_employee_code" model="ir.ui.view">
+        <field name="name">hr.employee.form.inherit.employee.code</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='parent_id']" position="after">
+                <field name="employee_code"/>
+                <field name="pa_name"/>
+                <field name="psa"/>
+                <field name="role_band"/>
+                <field name="disp"/>
+                <field name="aadhar_card"/>
+                <field name="probation_period"/>
+                <field name="trainee_category"/>
+                <field name="onsite_offshore"/>
+                <field name="company_code"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
