@@ -11,6 +11,9 @@
     'data': [
         'security/ir.model.access.csv',
         'views/helpdesk_ticket_views.xml',
+        'views/helpdesk_category_views.xml',
+        'views/helpdesk_sub_category_views.xml',
+        'views/escalation_level_views.xml'
     ],
     'installable': True,
     'application': False,

@@ -15,7 +15,19 @@
                 <field name="probation_period"/>
                 <field name="trainee_category"/>
                 <field name="onsite_offshore"/>
-                <field name="company_code"/>
+                <field name="emp_category"/>
+                <field name="emp_skill_category"/>
+                
+            </xpath>
+            <xpath expr="//field[@name='resource_calendar_id']" position="after">
+                <label for="nps_contribution"/>
+                <div class="o_row">
+                    <field name="nps_contribution" class="oe_inline"/>
+                    <span class="text-muted">/ month</span>
+                </div>
+            </xpath>
+            <xpath expr="//field[@name='parent_id']" position="before">
+                <field name="manager_emp_code"/>
             </xpath>
         </field>
     </record>
