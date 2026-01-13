@@ -29,6 +29,9 @@
             <xpath expr="//field[@name='parent_id']" position="before">
                 <field name="manager_emp_code"/>
             </xpath>
+            <xpath expr="//field[@name='bank_account_ids']" position="after">
+                <field name="medical_insurance_no"/>
+            </xpath>
         </field>
     </record>
 </odoo>

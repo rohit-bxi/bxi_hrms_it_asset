@@ -12,6 +12,7 @@ class HrEmployee(models.Model):
     emp_category = fields.Char(string="EMP Category")
     emp_skill_category = fields.Char(string="EMP Skill Category")
     manager_emp_code = fields.Char(string="Manager EMP Code")
+    medical_insurance_no = fields.Char(string="Medical Insurance No.")
     nps_contribution = fields.Monetary(
         string="NPS Contribution",
         help="Employee NPS contribution amount",
