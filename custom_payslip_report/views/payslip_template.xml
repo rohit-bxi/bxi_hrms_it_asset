@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="payslip_custom_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <div class="page" style="font-size:11px;">
+
+                    <!-- HEADER -->
+                    <table style="width:100%; border-collapse:collapse; border:1px solid #000;">
+                        <tr style="background:#2f5597; color:white;">
+                            <td colspan="8" style="padding:8px; text-align:center; font-weight:bold;">
+                                Salary Payslips for the Month of Nov 2025 Pay Period 01.11.2025 to 30.11.2025<br/>
+                                Tahira Tidiwala
+                            </td>
+                            <td colspan="2" style="background:#d9d9d9; text-align:center;">
+                                <b>BXI Tech</b><br/>
+                                Technology Brilliance<br/>Service First Mindset
+                            </td>
+                        </tr>
+                    </table>
+
+                    <!-- EMPLOYEE DETAILS -->
+                    <table style="width:100%; border-collapse:collapse; border:1px solid #000;">
+                        <tr>
+                            <td style="border:1px solid #000;"><b> Employee No </b></td>
+                            <td style="border:1px solid #000;"><t t-esc="o.employee_id.name"/></td>
+                            <td style="border:1px solid #000;"><b> Bank Name and Account No </b></td>
+                            <td style="border:1px solid #000;">
+                              <t t-foreach="o.employee_id.bank_account_ids" t-as="bank">
+                                  <t t-esc="bank.bank_id.name"/> /
+                                  <t t-esc="bank.acc_number"/>
+                                  <t t-if="not loop.last">, </t>
+                              </t>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="border:1px solid #000;"><b>Designation</b></td>
+                            <td style="border:1px solid #000;"><t t-esc="o.employee_id.job_title"/></td>
+                            <td style="border:1px solid #000;"><b>Location</b></td>
+                            <td style="border:1px solid #000;"><t t-esc="o.employee_id.psa"/></td>
+                        </tr>
+                        <tr>
+                            <td style="border:1px solid #000;"><b>DOJ / Gender</b></td>
+                            <td style="border:1px solid #000;"><t t-esc="o.employee_id.contract_date_start"/>, <t t-esc="o.employee_id.sex"/></td>
+                            <td style="border:1px solid #000;"><b>Department</b></td>
+                            <td style="border:1px solid #000;"></td>
+                        </tr>
+                        <tr>
+                            <td style="border:1px solid #000;"><b>PAN Number</b></td>
+                            <td style="border:1px solid #000;"><t t-esc="o.employee_id.l10n_in_pan"/></td>
+                            <td style="border:1px solid #000;"><b>Band</b></td>
+                            <td style="border:1px solid #000;"><t t-esc="o.employee_id.role_band"/></td>
+                        </tr>
+                        <tr>
+                            <td style="border:1px solid #000;"><b>Medical Insurance No</b></td>
+                            <td style="border:1px solid #000;"></td>
+                            <td style="border:1px solid #000;"><b>Day Worked in Months</b></td>
+                            <td style="border:1px solid #000;"></td>
+                        </tr>
+                        <tr>
+                            <td style="border:1px solid #000;"><b>PF / Pension No</b></td>
+                            <td style="border:1px solid #000;"></td>
+                            <td style="border:1px solid #000;"><b>LWP Current / Previous</td>
+                            <td style="border:1px solid #000;"></td>
+                        </tr>
+                        <tr>
+                            <td style="border:1px solid #000;"><b>UAN No</b></td>
+                            <td style="border:1px solid #000;"></td>
+                            <td style="border:1px solid #000;"><b>Sabbatical Leave</b></td>
+                            <td style="border:1px solid #000;"></td>
+                        </tr>
+                    </table>
+
+                    <!-- EARNINGS / DEDUCTIONS -->
+                    <table style="width:100%; border-collapse:collapse; border:1px solid #000;">
+                        <tr>
+                            <th style="border:1px solid #000;"><b>Standard Monthly Salary</b></th>
+                            <th style="border:1px solid #000;"><b>INR</b></th>
+                            <th style="border:1px solid #000;"><b>Earnings</b></th>
+                            <th style="border:1px solid #000;"><b>INR</b></th>
+                            <th style="border:1px solid #000;"><b>Deductions</b></th>
+                            <th style="border:1px solid #000;"><b>INR</b></th>
+                        </tr>
+                        <tr>
+                            <td style="border:1px solid #000;"><b>Basic Salary</b></td>
+                            <td style="border:1px solid #000;"></td>
+                            <td style="border:1px solid #000;"><b>Basic Salary</b></td>
+                            <td style="border:1px solid #000;"></td>
+                            <td style="border:1px solid #000;"><b>Medical Premium</b></td>
+                            <td style="border:1px solid #000;"></td>
+                        </tr>
+                        <tr>
+                            <td style="border:1px solid #000;"><b>HRA</b></td>
+                            <td style="border:1px solid #000;"></td>
+                            <td style="border:1px solid #000;"><b>HRA</b></td>
+                            <td style="border:1px solid #000;"></td>
+                            <td style="border:1px solid #000;"><b>EE PF Monthly</b></td>
+                            <td style="border:1px solid #000;"></td>
+                        </tr>
+                        <tr>
+                            <td style="border:1px solid #000;"><b>Flexible Allowance</b></td>
+                            <td style="border:1px solid #000;"></td>
+                            <td style="border:1px solid #000;"><b>Flexible Allowance</b></td>
+                            <td style="border:1px solid #000;"></td>
+                            <td style="border:1px solid #000;"><b>Income Tax</b></td>
+                            <td style="border:1px solid #000;"></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="border:1px solid #000;"><b>Total Standard Salary</b></td>
+                            <td colspan="2" style="border:1px solid #000;"><b>Gross Earning</b></td>
+                            <td colspan="2" style="border:1px solid #000;"><b>Gross Deduction</b></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="border:1px solid #000;"></td>
+                            <td colspan="2" style="border:1px solid #000;"></td>
+                            <td colspan="2" style="border:1px solid #000;"></td>
+                        </tr>
+                        <tr>
+                            <td colspan="4"></td>
+                            <td style="border:1px solid #000;"><b>Net Pay</b></td>
+                            <td style="border:1px solid #000;"><b></b></td>
+                        </tr>
+                    </table>
+
+                    <!-- INCOME TAX COMPUTATION -->
+                    <table style="width:100%; border-collapse:collapse; border:1px solid #000;">
+                        <tr>
+                            <th colspan="4" style="border:1px solid #000;">Income Tax Computation</th>
+                        </tr>
+                        <tr>
+                            <td style="border:1px solid #000;">Exception U/S 10</td>
+                            <td style="border:1px solid #000;">Project / Actual Taxable Salary</td>
+                            <td style="border:1px solid #000;">Contribution under Chapter VI A</td>
+                            <td style="border:1px solid #000;">Monthly Tax Deduction</td>
+                        </tr>
+                        <tr style="height:180px;">
+                            <td style="border:1px solid #000; vertical-align:top;"></td>
+                            <td style="border:1px solid #000; vertical-align:top;"></td>
+                            <td style="border:1px solid #000; vertical-align:top;"></td>
+                            <td style="border:1px solid #000; vertical-align:top;"></td>
+                        </tr>
+                    </table>
+
+                    <!-- FOOTER -->
+                    <p style="font-size:9px;">
+                        *This is a computer-generated payslip and does not require a signature or company seal.<br/>
+                        *One-time payments are subject to applicable tax slab.<br/>
+                        *Refer EPF portal for Pension details.
+                    </p>
+
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>
+
