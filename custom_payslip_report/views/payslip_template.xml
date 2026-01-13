@@ -26,11 +26,11 @@
                             <td style="border:1px solid #000;"><t t-esc="o.employee_id.name"/></td>
                             <td style="border:1px solid #000;"><b> Bank Name and Account No </b></td>
                             <td style="border:1px solid #000;">
-                              <t t-foreach="o.employee_id.bank_account_ids" t-as="bank">
+                              <!-- <t t-foreach="o.employee_id.bank_account_ids" t-as="bank">
                                   <t t-esc="bank.bank_id.name"/> /
                                   <t t-esc="bank.acc_number"/>
                                   <t t-if="not loop.last">, </t>
-                              </t>
+                              </t> -->
                             </td>
                         </tr>
                         <tr>
@@ -60,7 +60,7 @@
                         <tr>
                             <td style="border:1px solid #000;"><b>PF / Pension No</b></td>
                             <td style="border:1px solid #000;"></td>
-                            <td style="border:1px solid #000;"><b>LWP Current / Previous</td>
+                            <td style="border:1px solid #000;"><b>LWP Current / Previous</b></td>
                             <td style="border:1px solid #000;"></td>
                         </tr>
                         <tr>
