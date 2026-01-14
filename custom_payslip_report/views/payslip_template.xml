@@ -9,8 +9,13 @@
                     <table style="width:100%; border-collapse:collapse; border:1px solid #000;">
                         <tr style="background:#2f5597; color:white;">
                             <td colspan="8" style="padding:8px; text-align:center; font-weight:bold;">
-                                Salary Payslips for the Month of Nov 2025 Pay Period 01.11.2025 to 30.11.2025<br/>
-                                Tahira Tidiwala
+                                Salary Payslip for the Month of
+                                <t t-esc="o.date_to.strftime('%B %Y')"/><br/>
+                                Pay Period
+                                <t t-esc="o.date_from.strftime('%d.%m.%Y')"/>
+                                to
+                                <t t-esc="o.date_to.strftime('%d.%m.%Y')"/><br/>
+                                <t t-esc="o.employee_id.name"/>
                             </td>
                             <td colspan="2" style="background:#d9d9d9; text-align:center;">
                                 <b>BXI Tech</b><br/>
@@ -25,12 +30,8 @@
                             <td style="border:1px solid #000;"><b> Employee No </b></td>
                             <td style="border:1px solid #000;"><t t-esc="o.employee_id.name"/></td>
                             <td style="border:1px solid #000;"><b> Bank Name and Account No </b></td>
-                            <td style="border:1px solid #000;">
-                              <!-- <t t-foreach="o.employee_id.bank_account_ids" t-as="bank">
-                                  <t t-esc="bank.bank_id.name"/> /
-                                  <t t-esc="bank.acc_number"/>
-                                  <t t-if="not loop.last">, </t>
-                              </t> -->
+                            <td style="border:1px solid #000;" t-foreach="o.employee_id.bank_account_ids" t-as="l">
+                               <span t-field="l.acc_number"/>, <span t-field="l.bank_id.name"/>
                             </td>
                         </tr>
                         <tr>
@@ -61,7 +62,9 @@
                             <td style="border:1px solid #000;"><b>PF / Pension No</b></td>
                             <td style="border:1px solid #000;"></td>
                             <td style="border:1px solid #000;"><b>LWP Current / Previous</b></td>
-                            <td style="border:1px solid #000;"></td>
+                            <td style="border:1px solid #000;">
+                              <t t-esc="sum(o.input_line_ids.filtered(lambda l: l.code == 'LWP').mapped('amount')) or 0"/>
+                            </td>
                         </tr>
                         <tr>
                             <td style="border:1px solid #000;"><b>UAN No</b></td>
@@ -84,7 +87,7 @@
                         <tr>
                             <td style="border:1px solid #000;"><b>Basic Salary</b></td>
                             <td style="border:1px solid #000;">
-                              <t t-esc="sum(o.line_ids.filtered(lambda l: l.code == 'BASIC').mapped('total')) or 0"/>
+                              <t t-esc="o.employee_id.l10n_in_basic_salary_amount"/>
                             </td>
                             <td style="border:1px solid #000;"><b>Basic Salary</b></td>
                             <td style="border:1px solid #000;">
@@ -98,7 +101,7 @@
                         <tr>
                             <td style="border:1px solid #000;"><b>HRA</b></td>
                             <td style="border:1px solid #000;">
-                              <t t-esc="sum(o.line_ids.filtered(lambda l: l.code == 'HRA').mapped('total')) or 0"/>
+                              <t t-esc="o.employee_id.l10n_in_hra"/>
                             </td>
                             <td style="border:1px solid #000;"><b>HRA</b></td>
                             <td style="border:1px solid #000;">
@@ -112,7 +115,7 @@
                         <tr>
                             <td style="border:1px solid #000;"><b>Flexible Allowance</b></td>
                             <td style="border:1px solid #000;">
-                              <t t-esc="sum(o.line_ids.filtered(lambda l: l.code == 'SPL').mapped('total')) or 0"/>
+                              <t t-esc="o.employee_id.l10n_in_fixed_allowance"/>
                             </td>
                             <td style="border:1px solid #000;"><b>Flexible Allowance</b></td>
                             <td style="border:1px solid #000;">
@@ -124,25 +127,25 @@
                             </td>
                         </tr>
                         <tr>
-                            <td colspan="2" style="border:1px solid #000;"><b>Total Standard Salary</b></td>
-                            <td colspan="2" style="border:1px solid #000;"><b>Gross Earning</b></td>
-                            <td colspan="2" style="border:1px solid #000;"><b>Gross Deduction</b></td>
-                        </tr>
-                        <tr>
-                            <td colspan="2" style="border:1px solid #000;"></td>
-                            <td colspan="2" style="border:1px solid #000;">
-                              <t t-set="gross_earning" t-value="sum(o.line_ids.filtered(lambda l: l.category_id.code == 'GROSS').mapped('total')) or 0"/>
+                            <td style="border:1px solid #000;"><b>Total Standard Salary</b></td>
+                            <td style="border:1px solid #000;">
+                              <t t-esc="(o.employee_id.l10n_in_basic_salary_amount or 0) + (o.employee_id.l10n_in_fixed_allowance or 0)"/>
                             </td>
-                            <td colspan="2" style="border:1px solid #000;">
-                              <t t-set="gross_deduction" t-value="sum(o.line_ids.filtered(lambda l: l.category_id.code == 'DED').mapped('total')) or 0"/>
+                            <td style="border:1px solid #000;"><b>Gross Earning</b></td>
+                            <td style="border:1px solid #000;">
+                              <t t-esc="sum(o.line_ids.filtered(lambda l: l.category_id.code == 'GROSS').mapped('total')) or 0"/>
+                            </td>
+                            <td style="border:1px solid #000;"><b>Gross Deduction</b></td>
+                            <td style="border:1px solid #000;">
+                              <t t-esc="sum(o.line_ids.filtered(lambda l: l.category_id.code == 'DED').mapped('total')) or 0"/>
                             </td>
                         </tr>
                         <tr>
                             <td colspan="4"></td>
                             <td style="border:1px solid #000;"><b>Net Pay</b></td>
                             <td style="border:1px solid #000;"><b>
-                              <t t-set="net_pay" t-value="o.net_wage or 0"/>
-                            </b></td>
+                              <t t-esc="sum(o.line_ids.filtered(lambda l: l.code == 'NET').mapped('total')) or 0"/>
+                              </b></td>
                         </tr>
                     </table>
 
@@ -151,6 +154,7 @@
                         <tr>
                             <th colspan="4" style="border:1px solid #000;">Income Tax Computation</th>
                         </tr>
+
                         <tr>
                             <td style="border:1px solid #000;">Exception U/S 10</td>
                             <td style="border:1px solid #000;">Project / Actual Taxable Salary</td>
@@ -158,12 +162,19 @@
                             <td style="border:1px solid #000;">Monthly Tax Deduction</td>
                         </tr>
                         <tr style="height:180px;">
-                            <td style="border:1px solid #000; vertical-align:top;"></td>
+                            <td style="border:1px solid #000; vertical-align:top;">
+                                <b>ER PF Monthly :</b>
+                                <t t-esc="sum(o.line_ids.filtered(lambda l: l.code == 'PF').mapped('total')) or 0"/>
+                                <br/><br/>
+                                <b>ER NPS Monthly :</b>
+                                <t t-esc="sum(o.line_ids.filtered(lambda l: l.code == 'EE_NPS').mapped('total')) or 0"/>
+                            </td>
                             <td style="border:1px solid #000; vertical-align:top;"></td>
                             <td style="border:1px solid #000; vertical-align:top;"></td>
                             <td style="border:1px solid #000; vertical-align:top;"></td>
                         </tr>
                     </table>
+
 
                     <!-- FOOTER -->
                     <p style="font-size:9px;">
