@@ -52,11 +52,13 @@
                             <td style="border:1px solid #000;"><b>Band</b></td>
                             <td style="border:1px solid #000;"><t t-esc="o.employee_id.role_band"/></td>
                         </tr>
-                        <tr>
+                        <tr>fd
                             <td style="border:1px solid #000;"><b>Medical Insurance No</b></td>
                             <td style="border:1px solid #000;"><t t-esc="o.employee_id.medical_insurance_no"/></td>
                             <td style="border:1px solid #000;"><b>Day Worked in Months</b></td>
-                            <td style="border:1px solid #000;"></td>
+                            <td style="border:1px solid #000;">
+                                <t t-esc="(o.date_to - o.date_from).days + 1"/>
+                            </td>
                         </tr>
                         <tr>
                             <td style="border:1px solid #000;"><b>PF / Pension No</b></td>
@@ -167,7 +169,7 @@
                                 <t t-esc="sum(o.line_ids.filtered(lambda l: l.code == 'PF').mapped('total')) or 0"/>
                                 <br/><br/>
                                 <b>ER NPS Monthly :</b>
-                                <t t-esc="sum(o.line_ids.filtered(lambda l: l.code == 'EE_NPS').mapped('total')) or 0"/>
+                                <t t-esc="o.employee_id.nps_contribution"/>
                             </td>
                             <td style="border:1px solid #000; vertical-align:top;"></td>
                             <td style="border:1px solid #000; vertical-align:top;"></td>
