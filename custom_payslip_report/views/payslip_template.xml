@@ -176,8 +176,7 @@
                         <tr style="height:180px;">
                             <td style="border:1px solid #000; vertical-align:top;">
                                 <b>ER PF Monthly :</b>
-                                <!-- <t t-esc="sum(o.line_ids.filtered(lambda l: l.code == 'PF').mapped('total')) or 0"/> -->
-                                <t t-esc="abs(sum(o.line_ids.filtered(lambda l: l.code == 'PF').mapped('total'))) or 0"/>
+                                <t t-esc="o.employee_id.l10n_in_pf_employer_amount"/>
                                 <br/><br/>
                                 <b>ER NPS Monthly :</b>
                                 <t t-esc="o.employee_id.nps_contribution"/>
