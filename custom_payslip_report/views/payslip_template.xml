@@ -138,6 +138,45 @@
                               <t t-esc="abs(sum(o.line_ids.filtered(lambda l: l.code == 'TDS').mapped('total'))) or 0"/>
                             </td>
                         </tr>
+                        <!-- Arrear / Deduction Row (Conditional) -->
+                        <t t-if="
+                                o.line_ids.filtered(
+                                    lambda l: l.code in ('ARA', 'DEDUCTION')
+                                )
+                            ">
+                            <tr>
+                                <!-- Arrear Allowance -->
+                                <td style="border:1px solid #000;"><b>Arrear Allowance</b></td>
+                                <td style="border:1px solid #000;">
+                                    <t t-esc="
+                                        abs(
+                                            sum(
+                                                o.line_ids.filtered(lambda l: l.code == 'ARA')
+                                                .mapped('total')
+                                            )
+                                        )
+                                    "/>
+                                </td>
+
+                                <!-- Empty columns to keep layout -->
+                                <td style="border:1px solid #000;"></td>
+                                <td style="border:1px solid #000;"></td>
+
+                                <!-- Deduction -->
+                                <td style="border:1px solid #000;"><b>Deduction</b></td>
+                                <td style="border:1px solid #000;">
+                                    <t t-esc="
+                                        abs(
+                                            sum(
+                                                o.line_ids.filtered(lambda l: l.code == 'DEDUCTION')
+                                                .mapped('total')
+                                            )
+                                        )
+                                    "/>
+                                </td>
+                            </tr>
+                        </t>
+
                         <tr>
                             <td style="border:1px solid #000;"><b>Total Standard Salary</b></td>
                             <td style="border:1px solid #000;">
@@ -168,22 +207,141 @@
                         </tr>
 
                         <tr>
-                            <td style="border:1px solid #000;">Exception U/S 10</td>
-                            <td style="border:1px solid #000;">Project / Actual Taxable Salary</td>
-                            <td style="border:1px solid #000;">Contribution under Chapter VI A</td>
-                            <td style="border:1px solid #000;">Monthly Tax Deduction</td>
+                            <td style="border:1px solid #000;"><b>Exception U/S 10</b></td>
+                            <td style="border:1px solid #000;"><b>Project / Actual Taxable Salary</b></td>
+                            <td style="border:1px solid #000;"><b>Contribution under Chapter VI A</b></td>
+                            <td style="border:1px solid #000;"><b>Monthly Tax Deduction</b></td>
                         </tr>
                         <tr style="height:180px;">
                             <td style="border:1px solid #000; vertical-align:top;">
                                 <b>ER PF Monthly :</b>
                                 <t t-esc="o.employee_id.l10n_in_pf_employer_amount"/>
                                 <br/><br/>
-                                <b>ER NPS Monthly :</b>
-                                <t t-esc="o.employee_id.nps_contribution"/>
+
+                                <!-- Determine Financial Year Start -->
+                                <t t-set="fy_start_year"
+                                   t-value="o.date_from.year if o.date_from.month &gt;= 4 else o.date_from.year - 1"/>
+
+                                <!-- All payslips of employee -->
+                                <t t-set="all_slips" t-value="o.employee_id.slip_ids"/>
+
+                                <!-- Financial year payslips up to current month -->
+                                <t t-set="fy_slips"
+                                   t-value="all_slips.filtered(
+                                       lambda s:
+                                           (
+                                               (s.date_from.year == fy_start_year and s.date_from.month &gt;= 4)
+                                               or
+                                               (s.date_from.year == fy_start_year + 1 and s.date_from.month &lt;= 3)
+                                           )
+                                           and s.date_from &lt;= o.date_from
+                                   )"/>
+
+                                <!-- Sum ER NPS from salary computation -->
+                                <t t-set="annual_er_nps"
+                                   t-value="
+                                       abs(
+                                           sum(
+                                               fy_slips.mapped('line_ids')
+                                               .filtered(lambda l: l.code == 'NPS_EMPLOYER')
+                                               .mapped('total')
+                                           )
+                                       ) or 0
+                                   "/>
+
+                                <b>ER NPS Annually :</b>
+                                <t t-esc="('%.2f' % annual_er_nps)"/>
+
                             </td>
-                            <td style="border:1px solid #000; vertical-align:top;"></td>
-                            <td style="border:1px solid #000; vertical-align:top;"></td>
-                            <td style="border:1px solid #000; vertical-align:top;"></td>
+
+                            <td style="border:1px solid #000; vertical-align:top;">
+                                Taxable Income till Prv. Month<br/>
+                                Income Mth Taxable Income<br/>
+                                Projected Standard Salary<br/>
+                                Taxable Ann Perk<br/>
+                                NPS ER Contribution<br/>
+                                Gross Salary<br/>
+                                Standard Deduction<br/>
+                                Exemption U/S 10<br/>
+                                Tax on Employment (Prof Tax)<br/>
+                                Income under Head Salary<br/>
+                                Int. on House Property / Other Income<br/>
+                                Gross Total Income<br/>
+                                Agg. of Chapter VI<br/>
+                                Tax on Total Income<br/>
+                                Tax Credit<br/>
+                                Health and Education cess<br/>
+                                Tax Payable<br/>
+                                Tax Deducted so far<br/>
+                                Balance Tax
+                            </td>
+                            <td style="border:1px solid #000; vertical-align:top;">
+                                Provident Fund<br/>
+                                Voluntary Fund<br/>
+                                Employer NPS<br/>
+                                Employee NPS
+                            </td>
+                            <td style="border:1px solid #000; vertical-align:top; padding:6px;">
+
+                                <!-- Determine Financial Year Start -->
+                                <t t-set="fy_start_year"
+                                   t-value="o.date_from.year if o.date_from.month &gt;= 4 else o.date_from.year - 1"/>
+
+                                <!-- Helper: employee slips -->
+                                <t t-set="all_slips" t-value="o.employee_id.slip_ids"/>
+
+                                <!-- April to December -->
+                                <t t-foreach="[4,5,6,7,8,9,10,11,12]" t-as="m">
+                                    <t t-set="month_date" t-value="datetime.date(fy_start_year, m, 1)"/>
+
+                                    <!-- Find payslip for this month -->
+                                    <t t-set="month_slip"
+                                       t-value="all_slips.filtered(
+                                           lambda s: s.date_from.month == m
+                                           and s.date_from.year == fy_start_year
+                                       )"/>
+
+                                    <!-- Extract TDS -->
+                                    <t t-set="month_tax"
+                                       t-value="abs(sum(month_slip.mapped('line_ids')
+                                           .filtered(lambda l: l.code == 'TDS')
+                                           .mapped('total'))) or 0"/>
+
+                                    <span>
+                                        <t t-esc="month_date.strftime('%B')"/>'
+                                        <t t-esc="str(month_date.year)[-2:]"/> :
+                                        <t t-esc="('%.2f' % month_tax)"/>
+                                    </span>
+                                    <br/>
+                                </t>
+
+                                <!-- January to March -->
+                                <t t-foreach="[1,2,3]" t-as="m">
+                                    <t t-set="month_date" t-value="datetime.date(fy_start_year + 1, m, 1)"/>
+
+                                    <!-- Find payslip for this month -->
+                                    <t t-set="month_slip"
+                                       t-value="all_slips.filtered(
+                                           lambda s: s.date_from.month == m
+                                           and s.date_from.year == fy_start_year + 1
+                                       )"/>
+
+                                    <!-- Extract TDS -->
+                                    <t t-set="month_tax"
+                                       t-value="abs(sum(month_slip.mapped('line_ids')
+                                           .filtered(lambda l: l.code == 'TDS')
+                                           .mapped('total'))) or 0"/>
+
+                                    <span>
+                                        <t t-esc="month_date.strftime('%B')"/>'
+                                        <t t-esc="str(month_date.year)[-2:]"/> :
+                                        <t t-esc="('%.2f' % month_tax)"/>
+                                    </span>
+                                    <br/>
+                                </t>
+
+                            </td>
+
                         </tr>
                     </table>
 

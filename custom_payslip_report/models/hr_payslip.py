@@ -1,7 +1,8 @@
-from odoo import models
+from odoo import models, fields, api, _
 
 class HrPayslip(models.Model):
     _inherit = 'hr.payslip'
+
 
     def action_print_custom_payslip(self):
         self.ensure_one()
