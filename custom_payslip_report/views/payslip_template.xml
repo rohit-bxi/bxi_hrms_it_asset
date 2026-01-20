@@ -145,6 +145,10 @@
                                 )
                             ">
                             <tr>
+                                <!-- Empty columns to keep layout -->
+                                <td style="border:1px solid #000;"></td>
+                                <td style="border:1px solid #000;"></td>
+
                                 <!-- Arrear Allowance -->
                                 <td style="border:1px solid #000;"><b>Arrear Allowance</b></td>
                                 <td style="border:1px solid #000;">
@@ -158,9 +162,6 @@
                                     "/>
                                 </td>
 
-                                <!-- Empty columns to keep layout -->
-                                <td style="border:1px solid #000;"></td>
-                                <td style="border:1px solid #000;"></td>
 
                                 <!-- Deduction -->
                                 <td style="border:1px solid #000;"><b>Deduction</b></td>
@@ -217,41 +218,9 @@
                                 <b>ER PF Monthly :</b>
                                 <t t-esc="o.employee_id.l10n_in_pf_employer_amount"/>
                                 <br/><br/>
-
-                                <!-- Determine Financial Year Start -->
-                                <t t-set="fy_start_year"
-                                   t-value="o.date_from.year if o.date_from.month &gt;= 4 else o.date_from.year - 1"/>
-
-                                <!-- All payslips of employee -->
-                                <t t-set="all_slips" t-value="o.employee_id.slip_ids"/>
-
-                                <!-- Financial year payslips up to current month -->
-                                <t t-set="fy_slips"
-                                   t-value="all_slips.filtered(
-                                       lambda s:
-                                           (
-                                               (s.date_from.year == fy_start_year and s.date_from.month &gt;= 4)
-                                               or
-                                               (s.date_from.year == fy_start_year + 1 and s.date_from.month &lt;= 3)
-                                           )
-                                           and s.date_from &lt;= o.date_from
-                                   )"/>
-
-                                <!-- Sum ER NPS from salary computation -->
-                                <t t-set="annual_er_nps"
-                                   t-value="
-                                       abs(
-                                           sum(
-                                               fy_slips.mapped('line_ids')
-                                               .filtered(lambda l: l.code == 'NPS_EMPLOYER')
-                                               .mapped('total')
-                                           )
-                                       ) or 0
-                                   "/>
-
-                                <b>ER NPS Annually :</b>
-                                <t t-esc="('%.2f' % annual_er_nps)"/>
-
+                                <b>ER NPS Monthly :</b>
+                                <t t-esc="o.employee_id.nps_contribution"/>
+                                <br/><br/>
                             </td>
 
                             <td style="border:1px solid #000; vertical-align:top;">

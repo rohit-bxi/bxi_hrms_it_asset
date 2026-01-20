@@ -1,0 +1,33 @@
+<odoo>
+    <template id="portal_my_employee_profile_link"
+              inherit_id="portal.portal_my_home">
+
+        <!-- Append your card at the end of the portal home -->
+        <xpath expr="." position="inside">
+            <div class="row mt-4">
+                <div class="col-12 col-md-6 col-lg-4 mb-3">
+                    <a href="/my/employee-profile"
+                       class="o_portal_card d-flex align-items-center p-3">
+                        
+                        <!-- Icon -->
+                        <div class="me-3">
+                            <span class="o_portal_icon bg-info">
+                                <i class="fa fa-id-badge text-white"/>
+                            </span>
+                        </div>
+
+                        <!-- Text -->
+                        <div>
+                            <h5 class="mb-1">My Employee Profile</h5>
+                            <p class="mb-0 text-muted">
+                                View and update your employee details
+                            </p>
+                        </div>
+
+                    </a>
+                </div>
+            </div>
+        </xpath>
+
+    </template>
+</odoo>

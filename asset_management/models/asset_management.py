@@ -76,6 +76,7 @@ class Asset(models.Model):
     remaining_warranty = fields.Char(string="Remaining Warranty",
                                      compute="_compute_months_left", store=True)
     warranty_status = fields.Char(string='Warranty Status')
+    asset_configuration = fields.Text(string='Asset Configuration(If Any)')
     
     @api.depends('transfer_ids', 'transfer_ids.status', 'transfer_ids.stock_qty')
     def _compute_active_transfers(self):
