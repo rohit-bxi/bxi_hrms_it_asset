@@ -15,6 +15,7 @@
     'data': [
         'views/portal_menu.xml',
         'views/portal_templates.xml',
+        'views/portal_my_payslips.xml',
     ],
     "assets": {
         "web.assets_frontend": [
