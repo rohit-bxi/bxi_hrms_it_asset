@@ -252,64 +252,75 @@
                             </td>
                             <td style="border:1px solid #000; vertical-align:top; padding:6px;">
 
-                                <!-- Determine Financial Year Start -->
+                                <!-- Financial Year Start -->
                                 <t t-set="fy_start_year"
                                    t-value="o.date_from.year if o.date_from.month &gt;= 4 else o.date_from.year - 1"/>
 
-                                <!-- Helper: employee slips -->
+                                <!-- All employee slips -->
                                 <t t-set="all_slips" t-value="o.employee_id.slip_ids"/>
 
                                 <!-- April to December -->
                                 <t t-foreach="[4,5,6,7,8,9,10,11,12]" t-as="m">
                                     <t t-set="month_date" t-value="datetime.date(fy_start_year, m, 1)"/>
 
-                                    <!-- Find payslip for this month -->
-                                    <t t-set="month_slip"
-                                       t-value="all_slips.filtered(
-                                           lambda s: s.date_from.month == m
-                                           and s.date_from.year == fy_start_year
-                                       )"/>
+                                    <!-- Skip future months -->
+                                    <t t-if="month_date &lt;= o.date_from">
 
-                                    <!-- Extract TDS -->
-                                    <t t-set="month_tax"
-                                       t-value="abs(sum(month_slip.mapped('line_ids')
-                                           .filtered(lambda l: l.code == 'TDS')
-                                           .mapped('total'))) or 0"/>
+                                        <t t-set="month_slip"
+                                           t-value="all_slips.filtered(
+                                               lambda s:
+                                                   s.date_from.month == m
+                                                   and s.date_from.year == fy_start_year
+                                                   and s.date_from &lt;= o.date_from
+                                           )"/>
 
-                                    <span>
-                                        <t t-esc="month_date.strftime('%B')"/>'
-                                        <t t-esc="str(month_date.year)[-2:]"/> :
-                                        <t t-esc="('%.2f' % month_tax)"/>
-                                    </span>
-                                    <br/>
+                                        <t t-set="month_tax"
+                                           t-value="abs(sum(
+                                               month_slip.mapped('line_ids')
+                                               .filtered(lambda l: l.code == 'TDS')
+                                               .mapped('total')
+                                           )) or 0"/>
+
+                                        <span>
+                                            <t t-esc="month_date.strftime('%B')"/>'<t t-esc="str(month_date.year)[-2:]"/> :
+                                            <t t-esc="'%.2f' % month_tax"/>
+                                        </span>
+                                        <br/>
+                                    </t>
                                 </t>
 
                                 <!-- January to March -->
                                 <t t-foreach="[1,2,3]" t-as="m">
                                     <t t-set="month_date" t-value="datetime.date(fy_start_year + 1, m, 1)"/>
 
-                                    <!-- Find payslip for this month -->
-                                    <t t-set="month_slip"
-                                       t-value="all_slips.filtered(
-                                           lambda s: s.date_from.month == m
-                                           and s.date_from.year == fy_start_year + 1
-                                       )"/>
+                                    <!-- Skip future months -->
+                                    <t t-if="month_date &lt;= o.date_from">
 
-                                    <!-- Extract TDS -->
-                                    <t t-set="month_tax"
-                                       t-value="abs(sum(month_slip.mapped('line_ids')
-                                           .filtered(lambda l: l.code == 'TDS')
-                                           .mapped('total'))) or 0"/>
+                                        <t t-set="month_slip"
+                                           t-value="all_slips.filtered(
+                                               lambda s:
+                                                   s.date_from.month == m
+                                                   and s.date_from.year == fy_start_year + 1
+                                                   and s.date_from &lt;= o.date_from
+                                           )"/>
 
-                                    <span>
-                                        <t t-esc="month_date.strftime('%B')"/>'
-                                        <t t-esc="str(month_date.year)[-2:]"/> :
-                                        <t t-esc="('%.2f' % month_tax)"/>
-                                    </span>
-                                    <br/>
+                                        <t t-set="month_tax"
+                                           t-value="abs(sum(
+                                               month_slip.mapped('line_ids')
+                                               .filtered(lambda l: l.code == 'TDS')
+                                               .mapped('total')
+                                           )) or 0"/>
+
+                                        <span>
+                                            <t t-esc="month_date.strftime('%B')"/>'<t t-esc="str(month_date.year)[-2:]"/> :
+                                            <t t-esc="'%.2f' % month_tax"/>
+                                        </span>
+                                        <br/>
+                                    </t>
                                 </t>
 
                             </td>
+
 
                         </tr>
                     </table>
