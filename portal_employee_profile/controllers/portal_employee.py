@@ -28,6 +28,8 @@ class EmployeePortal(http.Controller):
         # ===== PRIVATE CONTACT =====
         if post.get('private_email'):
             vals['private_email'] = post.get('private_email')
+        if post.get('work_email'):
+            vals['work_email'] = post.get('work_email')
         if post.get('phone'):
             vals['phone'] = post.get('phone')
         if post.get('medical_insurance_no'):
@@ -36,6 +38,9 @@ class EmployeePortal(http.Controller):
         # ===== PERSONAL INFORMATION =====
         if post.get('name'):
             vals['name'] = post.get('name')
+            vals['legal_name'] = post.get('legal_name')
+        if post.get('aadhar_card'):
+            vals['aadhar_card'] = post.get('aadhar_card')
         if post.get('birthday'):
             vals['birthday'] = post.get('birthday')
 
@@ -64,8 +69,10 @@ class EmployeePortal(http.Controller):
             vals['disabled'] = False
 
         # ===== LOCATION / ADDRESS =====
-        if post.get('street'):
-            vals['private_street'] = post.get('street')
+        if post.get('private_street'):
+            vals['private_street'] = post.get('private_street')
+        if post.get('private_street2'):
+            vals['private_street2'] = post.get('private_street2')
         if post.get('city'):
             vals['private_city'] = post.get('city')
         if post.get('zip'):
