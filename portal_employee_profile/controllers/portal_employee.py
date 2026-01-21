@@ -30,15 +30,16 @@ class EmployeePortal(http.Controller):
             vals['private_email'] = post.get('private_email')
         if post.get('work_email'):
             vals['work_email'] = post.get('work_email')
-        if post.get('phone'):
-            vals['phone'] = post.get('phone')
+        if post.get('private_phone'):
+            vals['private_phone'] = post.get('private_phone')
+            vals['work_phone'] = post.get('private_phone')
         if post.get('medical_insurance_no'):
             vals['medical_insurance_no'] = post.get('medical_insurance_no')
 
         # ===== PERSONAL INFORMATION =====
         if post.get('name'):
             vals['name'] = post.get('name')
-            vals['legal_name'] = post.get('legal_name')
+            vals['legal_name'] = post.get('name')
         if post.get('aadhar_card'):
             vals['aadhar_card'] = post.get('aadhar_card')
         if post.get('birthday'):
