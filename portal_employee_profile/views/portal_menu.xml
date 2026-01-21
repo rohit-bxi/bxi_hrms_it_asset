@@ -12,13 +12,13 @@
                 <t t-set="config_card" t-value="True"/>
             </t>
 
-            <t t-call="portal.portal_docs_entry">
+            <!-- <t t-call="portal.portal_docs_entry">
                 <t t-set="icon" t-value="'/portal_employee_profile/static/src/img/payslip.svg'"/>
                 <t t-set="title">My Payslips</t>
                 <t t-set="text">View and download your salary slips</t>
                 <t t-set="url" t-value="'/my/payslips'"/>
                 <t t-set="config_card" t-value="True"/>
-            </t>
+            </t> -->
         </xpath>
 
     </template>
