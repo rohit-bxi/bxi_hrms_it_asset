@@ -137,7 +137,7 @@ class EmployeePortal(http.Controller):
                 ('Content-Type', 'application/pdf'),
                 (
                     'Content-Disposition',
-                    f'attachment; filename="Payslip-{payslip.number or payslip.id}.pdf"'
+                    f'attachment; filename="Payslip-{payslip.name or payslip.id}.pdf"'
                 ),
             ]
         )
