@@ -24,9 +24,27 @@
 <h5 class="section-title">Private Contact</h5>
 <div class="row g-3">
     <div class="col-md-6">
-        <label>Email</label>
+        <label>Employee Name</label>
+        <input name="name" class="form-control"
+               t-att-value="employee.name"/>
+    </div>
+
+    <div class="col-md-6">
+        <label>Employee Code</label>
+        <input name="employee_code" class="form-control"
+               t-att-value="employee.employee_code" readonly="1"/>
+    </div>
+
+    <div class="col-md-6">
+        <label>Personal Email</label>
         <input name="private_email" class="form-control"
                t-att-value="employee.private_email"/>
+    </div>
+
+    <div class="col-md-6">
+        <label>Work Email</label>
+        <input name="work_email" class="form-control"
+               t-att-value="employee.work_email"/>
     </div>
 
     <div class="col-md-6">
@@ -47,6 +65,11 @@
                t-att-value="', '.join(employee.bank_account_ids.mapped('acc_number'))"
                readonly="1"/>
     </div>
+    <div class="col-md-6">
+        <label>Aadhar Number</label>
+        <input name="aadhar_card" class="form-control"
+               t-att-value="employee.aadhar_card"/>
+    </div>
 </div>
 
 <!-- ========================================================= -->
@@ -54,11 +77,6 @@
 <!-- ========================================================= -->
 <h5 class="section-title mt-4">Personal Information</h5>
 <div class="row g-3">
-    <div class="col-md-6">
-        <label>Legal Name</label>
-        <input name="name" class="form-control"
-               t-att-value="employee.name"/>
-    </div>
 
     <div class="col-md-6">
         <label>Birthday</label>
@@ -67,7 +85,7 @@
     </div>
 
     <div class="col-md-6">
-        <label>Payslip Language</label>
+        <label>Language</label>
         <input class="form-control"
                t-att-value="employee.lang"
                readonly="1"/>
@@ -158,10 +176,16 @@
 <!-- ========================================================= -->
 <h5 class="section-title mt-4">Private Address</h5>
 <div class="row g-3">
-    <div class="col-md-6">
+    <div class="col-md-3">
         <label>Street</label>
-        <input name="street" class="form-control"
+        <input name="private_street" class="form-control"
                t-att-value="employee.private_street"/>
+    </div>
+
+    <div class="col-md-3">
+        <label>Street 2</label>
+        <input name="private_street2" class="form-control"
+               t-att-value="employee.private_street2"/>
     </div>
 
     <div class="col-md-3">
