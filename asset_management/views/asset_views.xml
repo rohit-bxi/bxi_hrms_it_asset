@@ -56,6 +56,7 @@
                         <!-- Vendor And Warranty group -->
                         <group string="Vendor And Warranty">
                             <field name="expired_warranty_date"/>
+                            <field name="warranty_date"/>
                             <field name="vendor_id"/>
                         </group>
                         <!-- Documentation group -->

@@ -32,6 +32,7 @@ class Asset(models.Model):
     
     # Vendor and Purchase Information
     expired_warranty_date = fields.Date(string="Expired Warranty Date")
+    warranty_date = fields.Date(string="Warranty Date")
     vendor_id = fields.Many2one('asset.vendor', string="Associated Vendor", help="Select the vendor or supplier of this asset")
     invoice_date = fields.Date(string="Invoice Date", help="Date when the asset was purchased or acquired")
     amount = fields.Float(string="Purchase Price", help="Initial cost of acquiring the asset")
