@@ -93,7 +93,6 @@ class EmployeePortal(http.Controller):
         return request.redirect('/?profile_updated=1')
 
 
-
     @http.route(['/my/payslips'], type='http', auth='user', website=True)
     def portal_my_payslips(self, **kw):
         employee = self._get_employee()

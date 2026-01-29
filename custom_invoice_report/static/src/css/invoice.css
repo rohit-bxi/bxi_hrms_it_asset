@@ -1,0 +1,97 @@
+.spark-invoice {
+    font-family: "Calibri", Arial, sans-serif !important;
+    font-size: 11px;
+    color: black;
+}
+
+/* TOP BAR */
+.top-table td {
+    border: 1px solid black;
+    padding: 3px;
+}
+
+.title-box {
+    text-align: center;
+    font-weight: bold;
+    background: #0b2e59;
+    color: white;
+}
+
+.company-name {
+    font-size: 14px;
+}
+
+.company-address {
+    text-align: center;
+    font-size: 11px;
+    border-bottom: 1px solid black;
+    padding: 3px;
+}
+
+/* HEADER BOXES */
+.header-table td {
+    border: 1px solid black;
+    padding: 5px;
+    vertical-align: top;
+}
+
+/* ITEMS TABLE */
+.items-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.items-table th,
+.items-table td {
+    border: 1px solid black;
+    padding: 3px;
+}
+
+.items-header {
+    background: #0b2e59;
+    color: white;
+    font-weight: bold;
+}
+
+/* TOTALS */
+.totals-table td {
+    border: 1px solid black;
+    padding: 4px;
+}
+
+.right {
+    text-align: right;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.total-tax-row {
+    background: #f0f0f0;
+}
+
+.invoice-total-row {
+    background: #0b2e59;
+    color: white;
+    font-size: 13px;
+}
+
+/* WORDS */
+.amount-words {
+    border: 1px solid black;
+    padding: 4px;
+    font-weight: bold;
+}
+
+/* FOOTER */
+.footer-table td {
+    border: 1px solid black;
+    padding: 6px;
+    vertical-align: top;
+}
+
+.sign-box {
+    margin-top: 40px;
+    font-weight: bold;
+}
