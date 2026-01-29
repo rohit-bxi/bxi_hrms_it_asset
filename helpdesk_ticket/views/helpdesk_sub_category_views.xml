@@ -6,8 +6,8 @@
         <field name="arch" type="xml">
             <list>
                 <field name="name"/>
-                <field name="category_id"/>
                 <field name="team_id"/>
+                <field name="category_id"/>
                 <field name="active"/>
             </list>
         </field>
@@ -21,8 +21,8 @@
                 <sheet>
                     <group>
                         <field name="name"/>
+                        <field name="team_id"/>
                         <field name="category_id"/>
-                        <field name="team_id" readonly="1"/>
                         <field name="active"/>
                     </group>
                 </sheet>
