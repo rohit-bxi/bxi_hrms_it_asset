@@ -45,42 +45,42 @@ class HelpdeskTicket(models.Model):
             }
         }
 
-    @api.model
-    def message_new(self, msg_dict, custom_values=None):
-        subject = msg_dict.get("subject", "") or ""
-        body = msg_dict.get("body", "") or ""
-        content = subject + " " + body
+    # @api.model
+    # def message_new(self, msg_dict, custom_values=None):
+    #     subject = msg_dict.get("subject", "") or ""
+    #     body = msg_dict.get("body", "") or ""
+    #     content = subject + " " + body
 
-        ticket_pattern = r"""
-        (?i)
-        (
-            TKT[-\s]*\d+ |
-            TICKET\s*(NO\.?|NUMBER)?\s*[:\-]?\s*\d+ |
-            TICKET\s+\d+ |
-            \b\d{3,7}\b
-        )
-        """
+    #     ticket_pattern = r"""
+    #     (?i)
+    #     (
+    #         TKT[-\s]*\d+ |
+    #         TICKET\s*(NO\.?|NUMBER)?\s*[:\-]?\s*\d+ |
+    #         TICKET\s+\d+ |
+    #         \b\d{3,7}\b
+    #     )
+    #     """
 
-        match = re.search(ticket_pattern, content, re.VERBOSE)
+    #     match = re.search(ticket_pattern, content, re.VERBOSE)
 
-        if match:
-            raw_ref = match.group(0)
+    #     if match:
+    #         raw_ref = match.group(0)
 
-            number = re.findall(r"\d+", raw_ref)[0]
-            ticket = self.search([
-                ("name", "ilike", number)
-            ], limit=1)
+    #         number = re.findall(r"\d+", raw_ref)[0]
+    #         ticket = self.search([
+    #             ("name", "ilike", number)
+    #         ], limit=1)
 
-            if ticket:
-                ticket.message_post(
-                    body=body,
-                    subject=subject,
-                    message_type="email",
-                    subtype_xmlid="mail.mt_comment",
-                )
-                return ticket
+    #         if ticket:
+    #             ticket.message_post(
+    #                 body=body,
+    #                 subject=subject,
+    #                 message_type="email",
+    #                 subtype_xmlid="mail.mt_comment",
+    #             )
+    #             return ticket
 
-        return super().message_new(msg_dict, custom_values)
+    #     return super().message_new(msg_dict, custom_values)
 
 
 
