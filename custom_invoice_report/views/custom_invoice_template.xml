@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+<template id="custom_invoice_template">
+<t t-call="web.html_container">
+<t t-foreach="docs" t-as="o">
+
+<div class="page spark-invoice">
+
+<!-- TOP GST + TITLE -->
+<table width="100%" class="top-table">
+<tr>
+<td width="30%" class="gst-box">
+GSTIN: <span t-field="o.company_id.vat"/>
+</td>
+<td width="40%" class="title-box">
+TAX INVOICE<br/>
+<span class="company-name" t-field="o.company_id.name"/>
+</td>
+<td width="30%"></td>
+</tr>
+</table>
+
+<!-- COMPANY ADDRESS -->
+<div class="company-address">
+<span t-field="o.company_id.partner_id.contact_address"/>
+</div>
+
+<!-- BILL / SHIP / INVOICE META -->
+<table width="100%" class="header-table">
+<tr>
+<td width="50%" class="box">
+<b>BILL TO</b><br/>
+<span t-field="o.partner_id.name"/><br/>
+GSTIN: <span t-field="o.partner_id.vat"/><br/>
+<span t-field="o.partner_id.contact_address"/>
+</td>
+
+<td width="25%" class="box">
+<b>DATE</b><br/>
+<span t-field="o.invoice_date"/><br/><br/>
+<b>INVOICE NO.</b><br/>
+<span t-field="o.name"/>
+</td>
+
+<td width="25%" class="box">
+<b>SHIP TO</b><br/>
+<span t-field="o.partner_id.name"/><br/>
+GSTIN: <span t-field="o.partner_id.vat"/><br/>
+<span t-field="o.partner_id.contact_address"/>
+</td>
+</tr>
+</table>
+
+<!-- ITEMS TABLE -->
+<table width="100%" class="items-table">
+<thead>
+<tr class="items-header">
+<th>S.No</th>
+<th>DESCRIPTION</th>
+<th>SAC CODE</th>
+<th>MONTH/YEAR</th>
+<th>QTY</th>
+<th>UNIT PRICE</th>
+<th>TOTAL</th>
+</tr>
+</thead>
+
+<tbody>
+<t t-set="i" t-value="1"/>
+<t t-foreach="o.invoice_line_ids" t-as="l">
+<tr>
+<td><t t-esc="i"/></td>
+<td><span t-field="l.name"/></td>
+<td><span t-field="l.product_id.l10n_in_hsn_code"/></td>
+<td></td>
+<td><span t-field="l.quantity"/></td>
+<td class="right">
+<span t-field="l.price_unit" t-options="{'widget':'monetary','display_currency':o.currency_id}"/>
+</td>
+<td class="right">
+<span t-field="l.price_subtotal" t-options="{'widget':'monetary','display_currency':o.currency_id}"/>
+</td>
+</tr>
+<t t-set="i" t-value="i+1"/>
+</t>
+</tbody>
+</table>
+
+<!-- TOTALS SECTION -->
+<table width="100%" class="totals-table">
+<tr>
+<td width="60%"></td>
+<td width="20%" class="right bold">SUBTOTAL</td>
+<td width="20%" class="right bold">
+<span t-field="o.amount_untaxed" t-options="{'widget':'monetary','display_currency':o.currency_id}"/>
+</td>
+</tr>
+
+<tr>
+<td></td>
+<td class="right bold">IGST</td>
+<td class="right bold">
+<span t-field="o.amount_tax" t-options="{'widget':'monetary','display_currency':o.currency_id}"/>
+</td>
+</tr>
+
+<tr class="total-tax-row">
+<td></td>
+<td class="right bold">TOTAL TAX</td>
+<td class="right bold">
+<span t-field="o.amount_tax" t-options="{'widget':'monetary','display_currency':o.currency_id}"/>
+</td>
+</tr>
+
+<tr class="invoice-total-row">
+<td></td>
+<td class="right bold">INVOICE VALUE</td>
+<td class="right bold">
+<span t-field="o.amount_total" t-options="{'widget':'monetary','display_currency':o.currency_id}"/>
+</td>
+</tr>
+</table>
+
+<!-- AMOUNT WORDS -->
+<div class="amount-words">
+Invoice Value in Words:
+<span t-esc="o.amount_total_in_words"/>
+</div>
+
+<!-- FOOTER BANK + SIGN -->
+<table width="100%" class="footer-table">
+<tr>
+<td width="50%" class="box">
+Certified that the particulars given above are true and correct.<br/><br/>
+<b>For <span t-field="o.company_id.name"/></b><br/><br/>
+<div class="sign-box">Authorised Signatory</div>
+</td>
+
+<td width="50%" class="box">
+<b>Bank Details</b><br/>
+<t t-set="bank" t-value="o.company_id.partner_id.bank_ids[:1]"/>
+<t t-foreach="bank" t-as="b">
+Bank A/c No: <span t-field="b.acc_number"/><br/>
+Bank IFSC: <span t-field="b.bank_bic"/><br/>
+Bank Name: <span t-field="b.bank_name"/>
+</t>
+</td>
+</tr>
+</table>
+
+</div>
+</t>
+</t>
+</template>
+
+</odoo>
