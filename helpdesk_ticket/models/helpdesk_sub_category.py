@@ -8,12 +8,12 @@ class HelpdeskSubCategory(models.Model):
     category_id = fields.Many2one(
         'helpdesk.category',
         string='Category',
+        domain="[('team_id', '=', team_id)]",
         required=True,
         ondelete='cascade'
     )
     team_id = fields.Many2one(
-        related='category_id.team_id',
-        store=True,
-        readonly=True
+        'helpdesk.team',
+        string='Helpdesk Team'
     )
     active = fields.Boolean(default=True)
