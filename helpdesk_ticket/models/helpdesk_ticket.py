@@ -25,6 +25,14 @@ class HelpdeskTicket(models.Model):
         string="Escalation Assignees"
     )
 
+    child_ticket_ids = fields.Many2many(
+        'helpdesk.ticket',
+        'helpdesk_ticket_child_rel', 
+        'parent_id',
+        'child_id',
+        string='Child Ticket'
+    )
+
 
     # @api.onchange('team_id')
     # def _onchange_team_id_category(self):
