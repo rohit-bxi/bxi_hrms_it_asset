@@ -80,15 +80,15 @@ def _prepare_data(env, docids, data):
     except Exception:
         qr_svg_map = {}
 
-return {
-        'quantity': quantity_by_asset,
-        'page_numbers': (total - 1) // (rows * columns) + 1 if (rows * columns) > 0 else 1,
-        'price_included': data.get('price_included'),
-        'columns': columns,
-        'rows': rows,
-        'red_band_color': red_band_color,
-        'qr_svg_map': qr_svg_map,
-    }
+    return {
+            'quantity': quantity_by_asset,
+            'page_numbers': (total - 1) // (rows * columns) + 1 if (rows * columns) > 0 else 1,
+            'price_included': data.get('price_included'),
+            'columns': columns,
+            'rows': rows,
+            'red_band_color': red_band_color,
+            'qr_svg_map': qr_svg_map,
+        }
 
 
 class ReportAssetTemplateLabel2x7(models.AbstractModel):
