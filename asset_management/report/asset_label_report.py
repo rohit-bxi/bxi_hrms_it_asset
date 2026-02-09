@@ -68,15 +68,26 @@ def _prepare_data(env, docids, data):
     
     # Get red band color from data, default to #dc3545
     red_band_color = data.get('red_band_color', '#dc3545')
-    
-    return {
+
+    # Precompute QR SVGs for all barcodes so QWeb doesn't need to call Python functions
+    qr_svg_map = {}
+    try:
+        for _asset, _items in quantity_by_asset.items():
+            for _bc, _q in _items:
+                _bc = (_bc or "").strip()
+                if _bc and _bc not in qr_svg_map:
+                    qr_svg_map[_bc] = _qr_svg(_bc)
+    except Exception:
+        qr_svg_map = {}
+
+return {
         'quantity': quantity_by_asset,
         'page_numbers': (total - 1) // (rows * columns) + 1 if (rows * columns) > 0 else 1,
         'price_included': data.get('price_included'),
         'columns': columns,
         'rows': rows,
         'red_band_color': red_band_color,
-        'qr_svg': _qr_svg,
+        'qr_svg_map': qr_svg_map,
     }
 
 
