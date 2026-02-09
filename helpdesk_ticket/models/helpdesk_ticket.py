@@ -34,24 +34,49 @@ class HelpdeskTicket(models.Model):
     )
 
 
-    # @api.onchange('team_id')
-    # def _onchange_team_id_category(self):
-    #     self.category_id = False
-    #     self.sub_category_id = False
-    #     return {
-    #         'domain': {
-    #             'category_id': [('team_id', '=', self.team_id.id)]
-    #         }
-    #     }
+    def _get_team_alias_email(self):
+        self.ensure_one()
+        alias = self.team_id.alias_id
+        if alias and alias.alias_name and alias.alias_domain:
+            return f"{alias.alias_name}@{alias.alias_domain}"
+        return False
 
-    # @api.onchange('category_id')
-    # def _onchange_category_id_subcategory(self):
-    #     self.sub_category_id = False
-    #     return {
-    #         'domain': {
-    #             'sub_category_id': [('category_id', '=', self.category_id.id)]
-    #         }
-    #     }
+    def message_post(self, **kwargs):
+
+        if len(self) != 1:
+            results = []
+            for rec in self:
+                results.append(super(HelpdeskTicket, rec).message_post(**kwargs))
+            return results[-1] if results else False
+
+        message_type = kwargs.get("message_type", "comment")
+        subtype_xmlid = kwargs.get("subtype_xmlid")
+        partner_ids = kwargs.get("partner_ids") or []
+
+        # "Send message" in chatter -> usually comment + not mail.mt_note + has recipients
+        is_send_message = (
+            message_type == "comment"
+            and subtype_xmlid != "mail.mt_note"
+            and bool(partner_ids)
+        )
+
+        if is_send_message:
+            alias_email = self._get_team_alias_email()
+            if alias_email:
+                # Set From as team alias (optionally with team name)
+                kwargs = dict(kwargs)
+                kwargs["email_from"] = f"{self.team_id.name} <{alias_email}>"
+
+        return super().message_post(**kwargs)
+
+    def _notify_get_reply_to(self, default=None):
+
+        res = super()._notify_get_reply_to(default=default)
+        for ticket in self:
+            alias_email = ticket._get_team_alias_email()
+            if alias_email:
+                res[ticket.id] = alias_email
+        return res
 
     # @api.model
     # def message_new(self, msg_dict, custom_values=None):
