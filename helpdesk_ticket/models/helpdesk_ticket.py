@@ -1,9 +1,9 @@
 from odoo import models, fields, api, _
 import re
 
+
 class HelpdeskTicket(models.Model):
     _inherit = 'helpdesk.ticket'
-
 
     category_id = fields.Many2one(
         'helpdesk.category',
@@ -27,12 +27,11 @@ class HelpdeskTicket(models.Model):
 
     child_ticket_ids = fields.Many2many(
         'helpdesk.ticket',
-        'helpdesk_ticket_child_rel', 
+        'helpdesk_ticket_child_rel',
         'parent_id',
         'child_id',
         string='Child Ticket'
     )
-
 
     def _get_team_alias_email(self):
         self.ensure_one()
@@ -42,7 +41,13 @@ class HelpdeskTicket(models.Model):
         return False
 
     def message_post(self, **kwargs):
+        """
+        Requirement:
+        - Outgoing email should be sent FROM the helpdesk team's alias email
+        - Chatter author/name should remain the logged-in user
+        """
 
+        # Keep multi-record safety
         if len(self) != 1:
             results = []
             for rec in self:
@@ -53,7 +58,7 @@ class HelpdeskTicket(models.Model):
         subtype_xmlid = kwargs.get("subtype_xmlid")
         partner_ids = kwargs.get("partner_ids") or []
 
-        # "Send message" in chatter -> usually comment + not mail.mt_note + has recipients
+        # "Send message" in chatter -> comment + not internal note + has recipients
         is_send_message = (
             message_type == "comment"
             and subtype_xmlid != "mail.mt_note"
@@ -61,17 +66,22 @@ class HelpdeskTicket(models.Model):
         )
 
         if is_send_message:
+            kwargs = dict(kwargs)  # make a mutable copy
+
+            # ✅ Keep chatter author as actual user
+            kwargs["author_id"] = self.env.user.partner_id.id
+
+            # ✅ Force outgoing From email as team alias
             alias_email = self._get_team_alias_email()
             if alias_email:
-                # Set From as team alias (optionally with team name)
-                kwargs = dict(kwargs)
                 kwargs["email_from"] = f"{self.team_id.name} <{alias_email}>"
 
         return super().message_post(**kwargs)
 
     def _notify_get_reply_to(self, default=None, author_id=None, **kwargs):
         """
-        Odoo 19 passes author_id. Keep signature compatible using **kwargs too.
+        Make replies go to the team's alias email.
+        Odoo 19 passes author_id; keep signature compatible using **kwargs.
         """
         res = super()._notify_get_reply_to(default=default, author_id=author_id, **kwargs)
         for ticket in self:
@@ -85,7 +95,7 @@ class HelpdeskTicket(models.Model):
     #     subject = msg_dict.get("subject", "") or ""
     #     body = msg_dict.get("body", "") or ""
     #     content = subject + " " + body
-
+    #
     #     ticket_pattern = r"""
     #     (?i)
     #     (
@@ -95,17 +105,17 @@ class HelpdeskTicket(models.Model):
     #         \b\d{3,7}\b
     #     )
     #     """
-
+    #
     #     match = re.search(ticket_pattern, content, re.VERBOSE)
-
+    #
     #     if match:
     #         raw_ref = match.group(0)
-
+    #
     #         number = re.findall(r"\d+", raw_ref)[0]
     #         ticket = self.search([
     #             ("name", "ilike", number)
     #         ], limit=1)
-
+    #
     #         if ticket:
     #             ticket.message_post(
     #                 body=body,
@@ -114,8 +124,5 @@ class HelpdeskTicket(models.Model):
     #                 subtype_xmlid="mail.mt_comment",
     #             )
     #             return ticket
-
+    #
     #     return super().message_new(msg_dict, custom_values)
-
-
-
