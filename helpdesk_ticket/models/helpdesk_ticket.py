@@ -69,9 +69,11 @@ class HelpdeskTicket(models.Model):
 
         return super().message_post(**kwargs)
 
-    def _notify_get_reply_to(self, default=None):
-
-        res = super()._notify_get_reply_to(default=default)
+    def _notify_get_reply_to(self, default=None, author_id=None, **kwargs):
+        """
+        Odoo 19 passes author_id. Keep signature compatible using **kwargs too.
+        """
+        res = super()._notify_get_reply_to(default=default, author_id=author_id, **kwargs)
         for ticket in self:
             alias_email = ticket._get_team_alias_email()
             if alias_email:
