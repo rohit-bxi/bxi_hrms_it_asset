@@ -8,12 +8,12 @@
     'category': 'Operations',
     'author': 'BXI Tech',
     'website': '',
-    'depends': ['base', 'product', 'hr', 'account'],
+    'depends': ['base', 'product', 'hr', 'account', 'purchase'],
     'data': [
         'security/security.xml',
         'security/ir.model.access.csv',
         'data/sequence.xml',
-        'data/demo_data.xml',
+        # 'data/demo_data.xml',
         'wizard/asset_label_wizard_view.xml',
         'report/asset_label_report.xml',
         'report/asset_label_templates.xml',
@@ -21,7 +21,8 @@
         'views/asset_views.xml',
         'views/asset_vendor_views.xml',
         'views/asset_report.xml',
-        'views/stock_movement_report_views.xml'
+        'views/stock_movement_report_views.xml',
+        'views/purchase_order_line_view.xml',
     ],
     'assets': {
         'web.report_assets_common': [

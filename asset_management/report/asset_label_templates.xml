@@ -20,7 +20,7 @@
                             </div>
                         </t>
                         <div class="text-center o_label_barcode_container">
-                            <div t-out="barcode" t-options="{'widget': 'barcode', 'symbology': 'auto', 'img_style': barcode_size}"/>
+                            <div class="o_label_qr_container" t-att-style="barcode_size"><t t-raw="qr_svg(barcode)"/></div>
                             <div class="o_label_asset_code" t-out="barcode"/>
                         </div>
                     </div>
@@ -41,7 +41,7 @@
                     <!-- White bottom section with barcode, asset code, and price -->
                     <div class="o_label_white_section">
                         <div class="text-center o_label_barcode_container">
-                            <div t-out="barcode" style="padding:0" t-options="{'widget': 'barcode', 'symbology': 'auto', 'img_style': barcode_size}"/>
+                            <div class="o_label_qr_container" t-att-style="barcode_size"><t t-raw="qr_svg(barcode)"/></div>
                             <div class="o_label_asset_code" t-out="barcode"/>
                         </div>
                         <t t-if="price_included">
@@ -68,7 +68,7 @@
                     <!-- White bottom section with barcode, asset code, and price -->
                     <div class="o_label_white_section">
                         <div class="text-center o_label_barcode_container">
-                            <div t-out="barcode" style="padding:0" t-options="{'widget': 'barcode', 'symbology': 'auto', 'img_style': barcode_size}"/>
+                            <div class="o_label_qr_container" t-att-style="barcode_size"><t t-raw="qr_svg(barcode)"/></div>
                             <div class="o_label_asset_code" t-out="barcode"/>
                         </div>
                         <t t-if="price_included">
@@ -95,7 +95,7 @@
                     <!-- White bottom section with barcode and asset code (no price) -->
                     <div class="o_label_white_section">
                         <div class="text-center o_label_barcode_container">
-                            <div t-out="barcode" style="padding:0" t-options="{'widget': 'barcode', 'symbology': 'auto', 'img_style': barcode_size}"/>
+                            <div class="o_label_qr_container" t-att-style="barcode_size"><t t-raw="qr_svg(barcode)"/></div>
                             <div class="o_label_asset_code" t-out="barcode"/>
                         </div>
                     </div>
@@ -116,7 +116,7 @@
                     <!-- White bottom section with barcode and asset code (no price for custom) -->
                     <div class="o_label_white_section">
                         <div class="text-center o_label_barcode_container">
-                            <div t-out="barcode" style="padding:0" t-options="{'widget': 'barcode', 'symbology': 'auto', 'img_style': barcode_size}"/>
+                            <div class="o_label_qr_container" t-att-style="barcode_size"><t t-raw="qr_svg(barcode)"/></div>
                             <div class="o_label_asset_code" t-out="barcode"/>
                         </div>
                     </div>
@@ -135,7 +135,7 @@
                     <!-- White bottom section with barcode, asset code, and price -->
                     <div class="o_label_white_section">
                         <div class="text-center o_label_barcode_container">
-                            <div t-out="barcode" style="padding:0" t-options="{'widget': 'barcode', 'quiet': 0, 'symbology': 'auto', 'img_style': barcode_size}"/>
+                            <div class="o_label_qr_container" t-att-style="barcode_size"><t t-raw="qr_svg(barcode)"/></div>
                             <div class="o_label_asset_code" t-out="barcode"/>
                         </div>
                         <div class="o_label_price_container">

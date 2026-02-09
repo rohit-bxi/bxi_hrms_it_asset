@@ -1,6 +1,40 @@
 # -*- coding: utf-8 -*-
 from collections import defaultdict
+from functools import lru_cache
+import re
+
 from odoo import models
+
+try:
+    import qrcode
+    import qrcode.image.svg
+except Exception:  # pragma: no cover
+    qrcode = None
+
+
+@lru_cache(maxsize=2048)
+def _qr_svg(value: str) -> str:
+    """Return an inline SVG (string) for a QR code.
+
+    Vector SVG is embedded directly into the report HTML so it does not require
+    ReportLab renderPM (PNG backend).
+    """
+    value = (value or "").strip()
+    if not value or qrcode is None:
+        return ""
+
+    factory = qrcode.image.svg.SvgImage
+    img = qrcode.make(value, image_factory=factory, border=1)
+    svg = img.to_string().decode("utf-8", errors="ignore")
+
+    # Remove XML header if present
+    svg = svg.replace("<?xml version='1.0' encoding='UTF-8'?>", "")
+    svg = svg.replace('<?xml version="1.0" encoding="UTF-8"?>', "")
+
+    # Make it responsive inside the container (outer div controls final size)
+    svg = re.sub(r'\swidth="[^"]+"', ' width="100%"', svg)
+    svg = re.sub(r'\sheight="[^"]+"', ' height="100%"', svg)
+    return svg
 
 
 def _prepare_data(env, docids, data):
@@ -42,6 +76,7 @@ def _prepare_data(env, docids, data):
         'columns': columns,
         'rows': rows,
         'red_band_color': red_band_color,
+        'qr_svg': _qr_svg,
     }
 
 
