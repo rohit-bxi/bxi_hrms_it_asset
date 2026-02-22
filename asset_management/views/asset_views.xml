@@ -8,9 +8,16 @@
                 <header>
                     <!-- Status bar at the top of the form -->
                     <field name="status" widget="statusbar" options="{'clickable': '1'}"/>
-                    <button string="Print Label" name="action_open_label_layout"
+                    <!-- <button string="Print Label" name="action_open_label_layout"
                             type="object" class="oe_highlight" icon="fa-print"
-                            groups="asset_management.assets_user_group,asset_management.assets_admin_group,base.group_system"/>
+                            groups="asset_management.assets_user_group,asset_management.assets_admin_group,base.group_system"/> -->
+                    <button name="action_generate_qr"
+                                type="object"
+                                string="Generate QR"
+                                class="btn-primary"
+                                icon="fa-qrcode"
+                                groups="asset_management.assets_user_group,asset_management.assets_admin_group,base.group_system"
+                                />
                 </header>
                 <sheet>
                     <!-- Title section with asset name -->
@@ -20,6 +27,12 @@
                         </h1>
                     </div>
                     <!-- Main content organized in groups -->
+                    <group string="QR" invisible='1'>
+                        <field name="qr_payload" readonly="1"/>
+                        <field name="qr_image" widget="image" class="oe_avatar"
+                               options="{'preview_image': 'qr_image'}"/>
+                        <field name="qr_generated_on" readonly="1"/>
+                    </group>
                     <group>
                         <!-- Basic Information group -->
                         <group string="Basic Information">
