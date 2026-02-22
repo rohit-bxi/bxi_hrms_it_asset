@@ -105,17 +105,30 @@ class Asset(models.Model):
             raise UserError(_("Please set Associated Product before generating QR."))
 
         tags = ",".join(self.tag_ids.mapped("name")) or ""
-        serial = (self.product_id.default_code or "").strip()  # Internal Reference
+
+        # Serial number = Internal Reference from product
+        serial = (self.product_id.default_code or "").strip()
         if not serial:
             raise UserError(_("Product Internal Reference is empty. Please set it on the product."))
 
         asset_name = (self.product_id.display_name or self.name or "").strip()
         return f"BXI/Tech/{tags}/{serial}/{asset_name}"
 
+    def _measure_text(self, draw, text, font):
+        """
+        Pillow version safe text measurement.
+        New Pillow: draw.textbbox()
+        Old Pillow: draw.textsize()
+        """
+        if hasattr(draw, "textbbox"):
+            left, top, right, bottom = draw.textbbox((0, 0), text, font=font)
+            return right - left, bottom - top
+        return draw.textsize(text, font=font)
+
     def _load_font(self, size, bold=False):
         """
         Cross-platform font loader (Windows local + Ubuntu production).
-        Tries OS font paths first, then DejaVu names, then falls back to default.
+        Tries OS font paths first, then DejaVu names, then falls back.
         """
         candidates = []
 
@@ -133,7 +146,7 @@ class Asset(models.Model):
                 r"C:\Windows\Fonts\verdana.ttf",
             ]
 
-        # Ubuntu/Linux common fonts
+        # Ubuntu/Linux fonts
         if bold:
             candidates += [
                 "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
@@ -149,14 +162,13 @@ class Asset(models.Model):
                 "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
             ]
 
-        # Pillow bundled names (may work depending on environment)
+        # Pillow bundled names
         candidates += [
             "DejaVuSans-Bold.ttf" if bold else "DejaVuSans.ttf",
         ]
 
         for p in candidates:
             try:
-                # For absolute paths, skip if missing
                 if os.path.isabs(p) and not os.path.exists(p):
                     continue
                 return ImageFont.truetype(p, size)
@@ -167,14 +179,14 @@ class Asset(models.Model):
 
 
     def _text_width(self, draw, text, font):
-        w, h = draw.textsize(text, font=font)
+        w, _ = self._measure_text(draw, text, font)
         return w
 
 
     def _wrap_text_to_width(self, draw, text, font, max_width):
         """
         Wrap long payload to multiple lines so it doesn't cut.
-        We wrap by '/' boundaries first (most readable for your payload).
+        Wrap by '/' boundaries first, then character wrap if needed.
         """
         parts = text.split("/")
         lines = []
@@ -192,15 +204,16 @@ class Asset(models.Model):
         if current:
             lines.append(current)
 
-        # if still too long in any line, force wrap that line by characters
+        # Still too long? force char wrap
         final_lines = []
         for ln in lines:
             if self._text_width(draw, ln, font) <= max_width:
                 final_lines.append(ln)
             else:
-                # rough char wrap
-                # (textwrap works on chars; good enough fallback)
-                for chunk in textwrap.wrap(ln, width=max(10, int(len(ln) * (max_width / max(1, self._text_width(draw, ln, font)))))):
+                # Estimate wrap width conservatively
+                w_ln = max(1, self._text_width(draw, ln, font))
+                est = int(len(ln) * (max_width / w_ln))
+                for chunk in textwrap.wrap(ln, width=max(10, est)):
                     final_lines.append(chunk)
 
         return final_lines
@@ -217,31 +230,26 @@ class Asset(models.Model):
 
         payload = self._get_qr_payload()
 
-        # -----------------------------
-        # 1) Generate QR (extra quiet zone)
-        # -----------------------------
+        # 1) Generate QR (extra quiet zone so it doesn't look cut)
         qr = qrcode.QRCode(
             version=None,
             error_correction=qrcode.constants.ERROR_CORRECT_H,
             box_size=10,
-            border=4,  # ✅ bigger quiet zone so nothing looks cut
+            border=4,
         )
         qr.add_data(payload)
         qr.make(fit=True)
         qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
 
-        # -----------------------------
         # 2) Put "BXI" in center (orange)
-        # -----------------------------
         draw_qr = ImageDraw.Draw(qr_img)
         w, h = qr_img.size
 
         center_text = "BXI"
         font_center = self._load_font(int(w * 0.13), bold=True)
 
-        tw, th = draw_qr.textsize(center_text, font=font_center)
+        tw, th = self._measure_text(draw_qr, center_text, font_center)
 
-        # White patch behind the center text (keep it small so QR remains readable)
         pad = int(w * 0.03)
         x0 = (w - tw) / 2 - pad
         y0 = (h - th) / 2 - pad
@@ -249,27 +257,23 @@ class Asset(models.Model):
         y1 = (h + th) / 2 + pad
         draw_qr.rectangle([(x0, y0), (x1, y1)], fill="white")
 
-        # Orange text
         draw_qr.text(((w - tw) / 2, (h - th) / 2), center_text, fill=ORANGE, font=font_center)
 
-        # -----------------------------
-        # 3) Build canvas with safe padding + border
-        # -----------------------------
-        padding = 50            # ✅ more padding so QR doesn't touch border
+        # 3) Build canvas with padding + border
+        padding = 50
         border_margin = 8
-        text_margin_lr = 30     # left/right margin for text region
+        text_margin_lr = 30  # safer wrap (prevents edge cutting)
 
-        # bottom text font
         font_bottom = self._load_font(18, bold=False)
 
-        # Wrap text so it never cuts
         tmp_canvas = Image.new("RGB", (10, 10), "white")
         tmp_draw = ImageDraw.Draw(tmp_canvas)
 
         max_text_width = (w + padding * 2) - (text_margin_lr * 2)
         lines = self._wrap_text_to_width(tmp_draw, payload, font_bottom, max_text_width)
 
-        line_height = tmp_draw.textsize("Ag", font=font_bottom)[1] + 6
+        _, base_h = self._measure_text(tmp_draw, "Ag", font_bottom)
+        line_height = base_h + 6
         bottom_space = max(90, (len(lines) * line_height) + 35)
 
         canvas_w = w + padding * 2
@@ -278,28 +282,22 @@ class Asset(models.Model):
         canvas = Image.new("RGB", (canvas_w, canvas_h), "white")
         draw = ImageDraw.Draw(canvas)
 
-        # Paste QR
         canvas.paste(qr_img, (padding, padding))
 
-        # Border (inside canvas)
         draw.rectangle(
             [(border_margin, border_margin), (canvas_w - border_margin, canvas_h - border_margin)],
             outline="black",
             width=2,
         )
 
-        # -----------------------------
-        # 4) Draw wrapped bottom text (center aligned)
-        # -----------------------------
+        # 4) Draw wrapped bottom text
         y = h + padding + 18
         for ln in lines:
-            lw, lh = draw.textsize(ln, font=font_bottom)
+            lw, lh = self._measure_text(draw, ln, font_bottom)
             draw.text(((canvas_w - lw) / 2, y), ln, fill="black", font=font_bottom)
             y += line_height
 
-        # -----------------------------
-        # 5) Save & write + auto download
-        # -----------------------------
+        # 5) Save to binary and write to record
         buf = io.BytesIO()
         canvas.save(buf, format="PNG")
         qr_b64 = base64.b64encode(buf.getvalue())
@@ -314,6 +312,7 @@ class Asset(models.Model):
             "qr_generated_on": fields.Datetime.now(),
         })
 
+        # 6) Auto-download
         return {
             "type": "ir.actions.act_url",
             "url": (
