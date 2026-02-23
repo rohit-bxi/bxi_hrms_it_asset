@@ -109,7 +109,8 @@ class Asset(models.Model):
         # Serial number = Internal Reference from product
         serial = (self.product_id.default_code or "").strip()
         if not serial:
-            raise UserError(_("Product Internal Reference is empty. Please set it on the product."))
+            asset_name = (self.product_id.display_name or self.name or "").strip()
+            return f"BXI/Tech/{tags}/{asset_name}"
 
         asset_name = (self.product_id.display_name or self.name or "").strip()
         return f"BXI/Tech/{tags}/{serial}/{asset_name}"
