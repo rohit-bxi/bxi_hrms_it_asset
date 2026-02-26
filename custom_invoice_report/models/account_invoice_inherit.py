@@ -1,15 +1,17 @@
 from odoo import models, fields, api, _
+from odoo.exceptions import UserError
 from num2words import num2words
 
+
 class AccountMove(models.Model):
-    _inherit = 'account.move'
+    _inherit = "account.move"
 
-    def _get_amount_in_words(self):
+    amount_total_in_words = fields.Char(compute="_compute_amount_in_words", store=True)
+
+    @api.depends("amount_total", "currency_id")
+    def _compute_amount_in_words(self):
         for move in self:
-            move.amount_total_in_words = num2words(move.amount_total, lang='en_IN').title()
-
-    amount_total_in_words = fields.Char(compute=_get_amount_in_words)
-
+            move.amount_total_in_words = num2words(move.amount_total or 0.0, lang="en_IN").title()
 
     def action_custom_invoice_report_pdf(self):
         self.ensure_one()
@@ -17,6 +19,17 @@ class AccountMove(models.Model):
         try:
             report = self.env.ref(xmlid)
         except ValueError:
-            raise UserError(_(
-                "Report Not Fount"))
+            raise UserError(_("Report Not Found"))
         return report.report_action(self)
+
+    def _prepare_product_base_line_for_taxes_computation(self, line):
+        """
+        Core hook: tax and totals base quantity uses qty * months.
+        """
+        base_line = super()._prepare_product_base_line_for_taxes_computation(line)
+
+        months = getattr(line, "inv_months", 1) or 1
+        qty = base_line.get("quantity", line.quantity or 0.0) or 0.0
+        base_line["quantity"] = qty * months
+
+        return base_line
