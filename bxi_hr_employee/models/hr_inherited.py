@@ -119,6 +119,8 @@ class HrEmployee(models.Model):
             # Compute slab tax (without cess)
             annual_tax = emp._new_regime_tax_fy_2025_26(annual_taxable)
 
+            print("annual_tax",annual_tax)
+
             # Rebate => tax becomes 0 if taxable <= 12L
             if annual_taxable <= REBATE_TAXABLE_LIMIT:
                 annual_tax = 0.0
@@ -127,7 +129,7 @@ class HrEmployee(models.Model):
             annual_tax_total = annual_tax * 1.04
 
             # Monthly for remaining months
-            monthly_tds = annual_tax_total / months_left
+            monthly_tds = annual_tax_total / 12
 
             # Update standard field
             emp.l10n_in_tds = round(monthly_tds, 2)

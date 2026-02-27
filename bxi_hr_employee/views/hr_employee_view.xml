@@ -30,6 +30,11 @@
                     <field name="employee_ctc" class="oe_inline"/>
                     <span class="text-muted">/ Year</span>
                 </div>
+                <button name="action_calculate_l10n_in_tds_new_regime"
+                        type="object"
+                        string="Calculate TDS"
+                        class="btn btn-primary"
+                        style="margin-left:10px;"/>
             </xpath>
             <xpath expr="//field[@name='parent_id']" position="before">
                 <field name="manager_emp_code"/>
