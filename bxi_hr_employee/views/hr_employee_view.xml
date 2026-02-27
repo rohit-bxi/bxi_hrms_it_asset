@@ -25,12 +25,25 @@
                     <field name="nps_contribution" class="oe_inline"/>
                     <span class="text-muted">/ month</span>
                 </div>
+                <label for="employee_ctc"/>
+                <div class="o_row">
+                    <field name="employee_ctc" class="oe_inline"/>
+                    <span class="text-muted">/ Year</span>
+                </div>
             </xpath>
             <xpath expr="//field[@name='parent_id']" position="before">
                 <field name="manager_emp_code"/>
             </xpath>
             <xpath expr="//field[@name='bank_account_ids']" position="after">
                 <field name="medical_insurance_no"/>
+            </xpath>
+            <xpath expr="//field[@name='l10n_in_tds']" position="after">
+
+                <button name="action_calculate_l10n_in_tds_new_regime"
+                        type="object"
+                        string="Calculate"
+                        class="btn btn-primary"
+                        style="margin-left:10px;"/>
             </xpath>
         </field>
     </record>
