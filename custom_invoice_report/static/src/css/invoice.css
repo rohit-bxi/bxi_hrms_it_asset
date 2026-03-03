@@ -1,97 +1,192 @@
+/* PAGE + FONT (PDF looks like serif) */
 .spark-invoice {
-    font-family: "Calibri", Arial, sans-serif !important;
-    font-size: 11px;
-    color: black;
+  font-family: "Times New Roman", Times, serif;
+  font-size: 12px;
+  color: #000;
 }
 
-/* TOP BAR */
-.top-table td {
-    border: 1px solid black;
-    padding: 3px;
+@page {
+  margin: 18mm 10mm 15mm 10mm;
 }
 
-.title-box {
-    text-align: center;
-    font-weight: bold;
-    background: #0b2e59;
-    color: white;
+/* HEADER */
+.spk-header {
+  border: 1px solid #3a3a3a;
+  border-bottom: none;
 }
 
-.company-name {
-    font-size: 14px;
+.spk-gstin-line {
+  padding: 6px 8px;
+  font-size: 12px;
+}
+.spk-label { font-weight: bold; }
+
+.spk-title {
+  text-align: center;
+  font-weight: bold;
+  font-size: 16px;
+  padding: 4px 0 6px 0;
 }
 
-.company-address {
-    text-align: center;
-    font-size: 11px;
-    border-bottom: 1px solid black;
-    padding: 3px;
+.spk-company-bar {
+  background: #0b2f5b; /* dark blue like PDF */
+  color: #fff;
+  text-align: center;
+  font-weight: bold;
+  padding: 6px 8px;
+  font-size: 14px;
 }
 
-/* HEADER BOXES */
-.header-table td {
-    border: 1px solid black;
-    padding: 5px;
-    vertical-align: top;
+.spk-company-address {
+  text-align: center;
+  padding: 6px 12px 8px 12px;
+  border-top: 1px solid #3a3a3a;
 }
+
+/* META BOX (right side) */
+.spk-meta {
+  width: 40%;
+  margin-left: auto;
+  border-collapse: collapse;
+  border: 1px solid #3a3a3a;
+  border-top: none;
+}
+.spk-meta td {
+  border: 1px solid #3a3a3a;
+  padding: 6px 8px;
+}
+.spk-meta-label {
+  width: 45%;
+  font-weight: bold;
+  text-align: center;
+}
+.spk-meta-value {
+  width: 55%;
+  text-align: right;
+}
+
+/* BILL / SHIP */
+.spk-billship {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 6px;
+}
+.spk-box {
+  border: 1px solid #3a3a3a;
+  vertical-align: top;
+  padding: 8px 10px;
+  width: 50%;
+}
+.spk-box-title {
+  font-weight: bold;
+  color: #0b2f5b;
+  text-decoration: underline;
+  margin-bottom: 6px;
+}
+.spk-row { margin: 2px 0; }
+.spk-field-label { font-weight: bold; }
 
 /* ITEMS TABLE */
-.items-table {
-    width: 100%;
-    border-collapse: collapse;
+.spk-items {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
 }
-
-.items-table th,
-.items-table td {
-    border: 1px solid black;
-    padding: 3px;
+.spk-items th {
+  background: #0b2f5b;
+  color: #fff;
+  border: 1px solid #3a3a3a;
+  padding: 6px 6px;
+  font-weight: bold;
+  text-align: center;
+  font-size: 12px;
 }
-
-.items-header {
-    background: #0b2e59;
-    color: white;
-    font-weight: bold;
+.spk-items td {
+  border: 1px solid #3a3a3a;
+  padding: 6px 6px;
+  vertical-align: top;
 }
+.spk-items td.desc { font-weight: bold; }
+.spk-blank td { height: 18px; }
 
-/* TOTALS */
-.totals-table td {
-    border: 1px solid black;
-    padding: 4px;
+/* COLUMN ALIGNMENTS */
+.center { text-align: center; }
+.right { text-align: right; }
+
+.c-sn { width: 6%; }
+.c-desc { width: 38%; }
+.c-sac { width: 10%; }
+.c-my { width: 12%; }
+.c-qty { width: 10%; }
+.c-unit { width: 12%; }
+.c-total { width: 12%; }
+
+/* TOTALS (right block, no outer table around page) */
+.spk-totals {
+  width: 40%;
+  margin-left: auto;
+  border-collapse: collapse;
+  margin-top: 8px;
 }
-
-.right {
-    text-align: right;
+.spk-totals td {
+  padding: 4px 6px;
 }
-
-.bold {
-    font-weight: bold;
+.spk-totals .lbl {
+  text-align: right;
+  font-weight: bold;
+  border-bottom: 1px solid #3a3a3a;
 }
-
-.total-tax-row {
-    background: #f0f0f0;
+.spk-totals .val {
+  text-align: right;
+  font-weight: bold;
+  border-bottom: 1px solid #3a3a3a;
 }
-
-.invoice-total-row {
-    background: #0b2e59;
-    color: white;
-    font-size: 13px;
+.spk-total-tax .lbl,
+.spk-total-tax .val {
+  border-top: 1px solid #3a3a3a;
+}
+.spk-invoice-value .lbl,
+.spk-invoice-value .val {
+  border-top: 1px solid #3a3a3a;
+  font-size: 13px;
 }
 
 /* WORDS */
-.amount-words {
-    border: 1px solid black;
-    padding: 4px;
-    font-weight: bold;
+.spk-words {
+  border: 1px solid #3a3a3a;
+  border-top: none;
+  padding: 6px 8px;
+  margin-top: 8px;
 }
+.spk-words-label { font-weight: bold; }
 
 /* FOOTER */
-.footer-table td {
-    border: 1px solid black;
-    padding: 6px;
-    vertical-align: top;
+.spk-footer {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
 }
-
-.sign-box {
-    margin-top: 40px;
-    font-weight: bold;
+.spk-foot-box {
+  width: 50%;
+  border: 1px solid #3a3a3a;
+  padding: 10px 10px;
+  vertical-align: top;
+  height: 90px;
+}
+.spk-for {
+  margin-top: 10px;
+  font-weight: bold;
+}
+.spk-sign {
+  margin-top: 28px;
+}
+.spk-bank-title {
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 6px;
+  text-decoration: underline;
+}
+.spk-terms {
+  margin-top: 18px;
+  text-align: right;
 }
