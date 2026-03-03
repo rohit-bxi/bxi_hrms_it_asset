@@ -27,8 +27,8 @@
                     <!-- EMPLOYEE DETAILS -->
                     <table style="width:100%; border-collapse:collapse; border:1px solid #000;">
                         <tr>
-                            <td style="border:1px solid #000;"><b> Employee No </b></td>
-                            <td style="border:1px solid #000;"><t t-esc="o.employee_id.name"/></td>
+                            <td style="border:1px solid #000;"><b> Employee No/Name </b></td>
+                            <td style="border:1px solid #000;"><t t-esc="o.employee_id.employee_code"/> / <t t-esc="o.employee_id.name"/></td>
                             <td style="border:1px solid #000;"><b> Bank Name and Account No </b></td>
                             <td style="border:1px solid #000;" t-foreach="o.employee_id.bank_account_ids" t-as="l">
                                <span t-field="l.bank_id.name"/>, <span t-field="l.acc_number"/> 
