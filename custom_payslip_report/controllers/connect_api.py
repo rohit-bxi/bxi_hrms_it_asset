@@ -4,9 +4,10 @@ import datetime
 
 class BXIController(Controller):
 
-    @route('/api/v1/userpayslipdata', type="json", auth='public', methods=["POST"], csrf=False)
+    @route('/api/v1/userpayslipdata', type="jsonrpc", auth='public', methods=["POST"], csrf=False)
     def user_payslip_data(self, **kw):
-        payload = request.params or {}   # ✅ works in type="json"
+        # ✅ In jsonrpc, request payload comes in request.params
+        payload = request.params or {}
 
         emp_code = payload.get("emp_code")
         month = payload.get("month")
@@ -143,15 +144,12 @@ class BXIController(Controller):
                 "gross_deduction": float(abs(_sum_category_total(slip, "DED"))),
             }
 
-            show_arrear_deduction_row = bool(slip.line_ids.filtered(lambda l: l.code in ("ARA", "DEDUCTION")))
-            net_pay = float(_sum_rule_total(slip, "NET"))
-
             earnings_deductions = {
                 "standard_monthly_salary": standard_monthly_salary,
                 "earnings": earnings,
                 "deductions": deductions,
-                "show_arrear_deduction_row": show_arrear_deduction_row,
-                "net_pay": net_pay,
+                "show_arrear_deduction_row": bool(slip.line_ids.filtered(lambda l: l.code in ("ARA", "DEDUCTION"))),
+                "net_pay": float(_sum_rule_total(slip, "NET")),
             }
 
             income_tax_computation = {
