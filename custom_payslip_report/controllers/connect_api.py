@@ -5,8 +5,8 @@ import datetime
 class BXIController(Controller):
 
     @route('/api/v1/userpayslipdata', type="json", auth='public', methods=["POST"], csrf=False)
-    def user_payslip_data(self):
-        payload = request.jsonrequest or {}
+    def user_payslip_data(self, **kw):
+        payload = request.params or {}   # ✅ works in type="json"
 
         emp_code = payload.get("emp_code")
         month = payload.get("month")
@@ -30,7 +30,6 @@ class BXIController(Controller):
         if not emp:
             return {"status": 0, "message": "No Employee is found for this Employee Code"}
 
-        # get slips for that month/year (you can tighten domain if needed)
         slips = env["hr.payslip"].sudo().search([("employee_id", "=", emp.id)])
         slips = slips.filtered(lambda s: s.date_from and s.date_from.month == month and s.date_from.year == year)
 
@@ -47,30 +46,21 @@ class BXIController(Controller):
             lines = slip.line_ids.filtered(lambda l: l.category_id and l.category_id.code == category_code)
             return sum(lines.mapped("total")) if lines else 0.0
 
-        def _abs(x):
-            return abs(x or 0.0)
-
         def _fy_start_year(date_from):
             return date_from.year if date_from.month >= 4 else (date_from.year - 1)
 
         def _fy_month_wise_tds(employee, upto_date_from):
             fy_start = _fy_start_year(upto_date_from)
             all_slips = employee.slip_ids.sudo()
-
             out = []
 
             def add_month(y, m):
                 month_date = datetime.date(y, m, 1)
                 if month_date <= upto_date_from:
                     ms = all_slips.filtered(lambda s:
-                        s.date_from and
-                        s.date_from.month == m and
-                        s.date_from.year == y and
-                        s.date_from <= upto_date_from
+                        s.date_from and s.date_from.month == m and s.date_from.year == y and s.date_from <= upto_date_from
                     )
-                    tax = _abs(sum(
-                        ms.mapped("line_ids").filtered(lambda l: l.code == "TDS").mapped("total")
-                    ) or 0.0)
+                    tax = abs(sum(ms.mapped("line_ids").filtered(lambda l: l.code == "TDS").mapped("total")) or 0.0)
                     out.append({
                         "month": month_date.strftime("%B"),
                         "year": y,
@@ -87,7 +77,6 @@ class BXIController(Controller):
 
         data = []
         for slip in slips:
-            # HEADER
             header = {
                 "salary_payslip_month": slip.date_to.strftime("%B %Y") if slip.date_to else "",
                 "pay_period_from": slip.date_from.strftime("%d.%m.%Y") if slip.date_from else "",
@@ -98,7 +87,6 @@ class BXIController(Controller):
                 "company_tagline_2": "Service First Mindset",
             }
 
-            # EMPLOYEE DETAILS (as per your PDF)
             bank_accounts = [{
                 "bank_name": acc.bank_id.name if acc.bank_id else "",
                 "account_no": acc.acc_number or "",
@@ -123,15 +111,12 @@ class BXIController(Controller):
                 "band": getattr(emp, "role_band", "") or "",
                 "medical_insurance_no": getattr(emp, "medical_insurance_no", "") or "",
                 "day_worked_in_month": round((work_days or 0.0) - (lwp_days or 0.0)),
-                "pf_pension_no": "",  # blank in your PDF
-                "lwp_current_previous": float(sum(
-                    slip.input_line_ids.filtered(lambda l: l.code == "LWP_DAYS").mapped("amount")
-                ) or 0.0),
+                "pf_pension_no": "",
+                "lwp_current_previous": float(sum(slip.input_line_ids.filtered(lambda l: l.code == "LWP_DAYS").mapped("amount")) or 0.0),
                 "uan_no": getattr(emp, "l10n_in_uan", "") or "",
-                "sabbatical_leave": "",  # blank in your PDF
+                "sabbatical_leave": "",
             }
 
-            # STANDARD MONTHLY SALARY (from employee fields as in your QWeb)
             standard_monthly_salary = {
                 "basic_salary": float(getattr(emp, "l10n_in_basic_salary_amount", 0.0) or 0.0),
                 "hra": float(getattr(emp, "l10n_in_hra", 0.0) or 0.0),
@@ -142,28 +127,23 @@ class BXIController(Controller):
                 (standard_monthly_salary["flexible_allowance"] or 0.0)
             )
 
-            # EARNINGS (from payslip lines)
             earnings = {
                 "basic_salary": float(_sum_rule_total(slip, "BASIC")),
                 "hra": float(_sum_rule_total(slip, "HRA")),
                 "flexible_allowance": float(_sum_rule_total(slip, "SPL")),
-                "arrear_allowance": float(_abs(_sum_rule_total(slip, "ARA"))),
+                "arrear_allowance": float(abs(_sum_rule_total(slip, "ARA"))),
                 "gross_earning": float(_sum_category_total(slip, "GROSS")),
             }
 
-            # DEDUCTIONS (from payslip lines)
             deductions = {
-                "medical_premium": float(_abs(_sum_rule_total(slip, "MIP"))),
-                "ee_pf_monthly": float(_abs(_sum_rule_total(slip, "PF"))),
-                "income_tax": float(_abs(_sum_rule_total(slip, "TDS"))),
-                "deduction": float(_abs(_sum_rule_total(slip, "DEDUCTION"))),
-                "gross_deduction": float(_abs(_sum_category_total(slip, "DED"))),
+                "medical_premium": float(abs(_sum_rule_total(slip, "MIP"))),
+                "ee_pf_monthly": float(abs(_sum_rule_total(slip, "PF"))),
+                "income_tax": float(abs(_sum_rule_total(slip, "TDS"))),
+                "deduction": float(abs(_sum_rule_total(slip, "DEDUCTION"))),
+                "gross_deduction": float(abs(_sum_category_total(slip, "DED"))),
             }
 
-            show_arrear_deduction_row = bool(
-                slip.line_ids.filtered(lambda l: l.code in ("ARA", "DEDUCTION"))
-            )
-
+            show_arrear_deduction_row = bool(slip.line_ids.filtered(lambda l: l.code in ("ARA", "DEDUCTION")))
             net_pay = float(_sum_rule_total(slip, "NET"))
 
             earnings_deductions = {
@@ -174,7 +154,6 @@ class BXIController(Controller):
                 "net_pay": net_pay,
             }
 
-            # INCOME TAX COMPUTATION (as per PDF + month-wise list)
             income_tax_computation = {
                 "exception_us_10": {
                     "er_pf_monthly": float(getattr(emp, "l10n_in_pf_employer_amount", 0.0) or 0.0),
@@ -183,20 +162,11 @@ class BXIController(Controller):
                 "monthly_tax_deduction": _fy_month_wise_tds(emp, slip.date_from) if slip.date_from else [],
             }
 
-            # FOOTER
             footer = {
                 "note_1": "This is a computer-generated payslip and does not require a signature or company seal.",
                 "note_2": "One-time payments are subject to applicable tax slab.",
                 "note_3": "Refer EPF portal for Pension details.",
             }
-
-            # OPTIONAL: Raw salary lines (useful if you want to show detailed breakup later)
-            raw_lines = [{
-                "name": ln.name or "",
-                "code": ln.code or "",
-                "category": ln.category_id.name if ln.category_id else "",
-                "total": float(ln.total or 0.0),
-            } for ln in slip.line_ids]
 
             data.append({
                 "payslip_id": slip.id,
@@ -205,7 +175,6 @@ class BXIController(Controller):
                 "earnings_deductions": earnings_deductions,
                 "income_tax_computation": income_tax_computation,
                 "footer": footer,
-                "raw_lines": raw_lines,
             })
 
         return {"status": 200, "message": "Success", "data": data}
