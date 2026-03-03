@@ -9,12 +9,12 @@ class BXIController(Controller):
         # ✅ In jsonrpc, request payload comes in request.params
         payload = request.params or {}
 
-        emp_code = payload.get("emp_code")
+        emp_email = payload.get("emp_email")
         month = payload.get("month")
         year = payload.get("year")
 
-        if not emp_code:
-            return {"status": 0, "message": "Request atleast contains the emp_code"}
+        if not emp_email:
+            return {"status": 0, "message": "Request atleast contains the emp_email"}
         if not month:
             return {"status": 0, "message": "Request atleast contains the month"}
         if not year:
@@ -27,9 +27,9 @@ class BXIController(Controller):
             return {"status": 0, "message": "month and year must be integers"}
 
         env = request.env
-        emp = env["hr.employee"].sudo().search([("employee_code", "=", emp_code)], limit=1)
+        emp = env["hr.employee"].sudo().search([("work_email", "=", emp_email)], limit=1)
         if not emp:
-            return {"status": 0, "message": "No Employee is found for this Employee Code"}
+            return {"status": 0, "message": "No Employee is found for this Employee Email"}
 
         slips = env["hr.payslip"].sudo().search([("employee_id", "=", emp.id)])
         slips = slips.filtered(lambda s: s.date_from and s.date_from.month == month and s.date_from.year == year)
