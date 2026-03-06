@@ -27,7 +27,10 @@ class BXIController(Controller):
             return {"status": 0, "message": "month and year must be integers"}
 
         env = request.env
-        emp = env["hr.employee"].sudo().search([("work_email", "=", emp_email)], limit=1)
+        emp = env["hr.employee"].sudo().search(
+                    [("work_email", "ilike", emp_email.strip())],
+                    limit=1
+                )
         if not emp:
             return {"status": 0, "message": "No Employee is found for this Employee Email"}
 
