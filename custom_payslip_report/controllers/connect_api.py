@@ -51,7 +51,7 @@ class BXIController(Controller):
             return sum(lines.mapped("total")) if lines else 0.0
 
         def _fy_start_year(date_from):
-            return date_from.year if date_from.month >= 4 else (date_from.year - 1)
+            return date_from.year if date_from.month >= 4 else (date_from.year - 1)zxcvxcvcvbbgfcfsf
 
         def _fy_month_wise_tds(employee, upto_date_from):
             fy_start = _fy_start_year(upto_date_from)
@@ -109,7 +109,7 @@ class BXIController(Controller):
                 "designation": emp.job_title or "",
                 "location": getattr(emp, "psa", "") or "",
                 "doj": emp.contract_date_start.isoformat() if emp.contract_date_start else "",
-                "gender": getattr(emp, "sex", "") or "",
+                "gender": (getattr(emp, "sex", "") or "").capitalize(),
                 "department": emp.department_id.name if emp.department_id else "",
                 "pan_number": getattr(emp, "l10n_in_pan", "") or "",
                 "band": getattr(emp, "role_band", "") or "",
