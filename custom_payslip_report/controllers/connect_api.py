@@ -51,7 +51,7 @@ class BXIController(Controller):
             return sum(lines.mapped("total")) if lines else 0.0
 
         def _fy_start_year(date_from):
-            return date_from.year if date_from.month >= 4 else (date_from.year - 1)zxcvxcvcvbbgfcfsf
+            return date_from.year if date_from.month >= 4 else (date_from.year - 1)
 
         def _fy_month_wise_tds(employee, upto_date_from):
             fy_start = _fy_start_year(upto_date_from)
