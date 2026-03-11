@@ -64,7 +64,6 @@
         <label>Medical Insurance No</label>
         <input name="medical_insurance_no" class="form-control"
                t-att-value="employee.medical_insurance_no"
-               required="1"
                />
     </div>
 
@@ -148,7 +147,6 @@
         <label>Non-Resident</label><br/>
         <input type="checkbox" name="is_non_resident"
                t-att-checked="employee.is_non_resident"
-               required="1"
                />
     </div>
 
@@ -237,7 +235,7 @@
         <div class="col-md-6 mb-3">
             <label>ESIC Number</label>
             <input name="l10n_in_esic_number" type="text" class="form-control" t-att-value="employee.l10n_in_esic_number"
-                required="1"/>
+                />
 
         </div>
 
