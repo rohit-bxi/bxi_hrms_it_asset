@@ -87,6 +87,7 @@
                                     <field name="transfer_employee_id"/>
                                     <field name="assign_date"/>
                                     <field name="assign_by"/>
+                                    <field name="location"/>
                                     <field name="return_date"/>
                                     <field name="stock_qty"/>
                                     <field name="status"/>
