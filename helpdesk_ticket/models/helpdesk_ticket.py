@@ -21,7 +21,7 @@ class HelpdeskTicket(models.Model):
     )
 
     escalation_assignee_ids = fields.Many2many(
-        related="escalation_level_id.assignee_ids",
+        related="escalation_level_id.assignees_ids",
         string="Escalation Assignees"
     )
 
@@ -31,6 +31,11 @@ class HelpdeskTicket(models.Model):
         'parent_id',
         'child_id',
         string='Child Ticket'
+    )
+
+    additional_resolution_owner = fields.Many2one(
+        'hr.employee',
+        string='Additional Resolution Owner'
     )
 
     def _get_team_alias_email(self):
