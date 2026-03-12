@@ -8,9 +8,16 @@
                 <header>
                     <!-- Status bar at the top of the form -->
                     <field name="status" widget="statusbar" options="{'clickable': '1'}"/>
-                    <button string="Print Label" name="action_open_label_layout"
+                    <!-- <button string="Print Label" name="action_open_label_layout"
                             type="object" class="oe_highlight" icon="fa-print"
-                            groups="asset_management.assets_user_group,asset_management.assets_admin_group,base.group_system"/>
+                            groups="asset_management.assets_user_group,asset_management.assets_admin_group,base.group_system"/> -->
+                    <button name="action_generate_qr"
+                                type="object"
+                                string="Generate QR"
+                                class="btn-primary"
+                                icon="fa-qrcode"
+                                groups="asset_management.assets_user_group,asset_management.assets_admin_group,base.group_system"
+                                />
                 </header>
                 <sheet>
                     <!-- Title section with asset name -->
@@ -20,6 +27,12 @@
                         </h1>
                     </div>
                     <!-- Main content organized in groups -->
+                    <group string="QR" invisible='1'>
+                        <field name="qr_payload" readonly="1"/>
+                        <field name="qr_image" widget="image" class="oe_avatar"
+                               options="{'preview_image': 'qr_image'}"/>
+                        <field name="qr_generated_on" readonly="1"/>
+                    </group>
                     <group>
                         <!-- Basic Information group -->
                         <group string="Basic Information">
@@ -32,6 +45,7 @@
                                    required="model_type == 'multiple'"/>
                             <field name="current_stock" invisible="model_type == 'single'"/>
                             <field name="active_transfers" invisible="model_type == 'single'"/>
+                            <field name="asset_configuration"/>
                         </group>
                         <!-- Financial Information group -->
                         <group string="Financial Information">
@@ -55,6 +69,7 @@
                         <!-- Vendor And Warranty group -->
                         <group string="Vendor And Warranty">
                             <field name="expired_warranty_date"/>
+                            <field name="warranty_date"/>
                             <field name="vendor_id"/>
                         </group>
                         <!-- Documentation group -->
@@ -130,6 +145,7 @@
                 </header>
                 <!-- Fields to display in the tree view -->
                 <field name="name"/>
+                <field name="product_id"/>
                 <field name="tag_ids" widget="many2many_tags" optional="show"/>
                 <field name="model_type"/>
                 <field name="initial_stock" optional="show"/>
@@ -144,6 +160,7 @@
                 <field name="depreciation_count"/>
                 <field name="maintenance_count"/>
                 <field name="transfer_count"/>
+                <field name="asset_configuration"/>
                 <field name="status"/>
             </list>
         </field>
@@ -245,11 +262,15 @@
                             
                             <!-- Card Body -->
                             <div class="o_kanban_card_content">
+
+                                <div class="mb-2" t-if="record.product_id">
+                                    <field name="product_id"/>
+                                </div>
                                 <!-- Asset Type Badge -->
                                 <div class="mb-2" t-if="record.asset_type_id.raw_value">
                                     <span class="badge rounded-pill" 
                                           t-attf-class="badge rounded-pill #{record.asset_type_id.color and record.asset_type_id.color.raw_value ? 'o_tag_color_' + record.asset_type_id.color.raw_value : 'bg-secondary'} text-white">
-                                        <i class="fa fa-tag me-1"></i>
+                                        <i class="fa fa-tag me-1" title="Asset Type"></i>
                                         <field name="asset_type_id"/>
                                     </span>
                                 </div>
@@ -310,7 +331,7 @@
                                         </div>
                                         <div t-if="record.expired_warranty_date.raw_value" 
                                              t-attf-class="text-#{record.warranty_status.raw_value == 'expired' ? 'danger' : 'muted'}">
-                                            <i class="fa fa-shield-alt me-1"></i>
+                                            <i class="fa fa-shield-alt me-1" title="Warranty"></i>
                                             Warranty: <field name="expired_warranty_date"/>
                                         </div>
                                     </div>
@@ -339,7 +360,7 @@
                                             #{record.warranty_status.raw_value == 'expired' ? 'bg-danger' : 
                                               record.warranty_status.raw_value == 'expiring_soon' ? 'bg-warning text-dark' : 
                                               'bg-success'}">
-                                            <i class="fa fa-shield-alt me-1"></i>
+                                            <i class="fa fa-shield-alt me-1" title="Remaining Warranty"></i>
                                             <field name="remaining_warranty"/>
                                         </span>
                                     </div>
@@ -377,7 +398,6 @@
         <field name="model">asset.maintenance.entry</field>
         <field name="arch" type="xml">
             <list editable="bottom">
-                <!-- Fields displayed in the tree view for asset maintenance -->
                 <field name="asset_id"/>
                 <field name="maintenance_vendor_id"/>
                 <field name="maintenance_amount"/>

@@ -1,6 +1,20 @@
 from odoo import models, fields, api, _, exceptions
 from dateutil.relativedelta import relativedelta
 from datetime import datetime, timedelta
+# -*- coding: utf-8 -*-
+import base64
+import io
+import os
+import textwrap
+from PIL import Image, ImageDraw, ImageFont
+from odoo.exceptions import UserError
+
+ORANGE = (255, 140, 0)  # orange
+
+try:
+    import qrcode
+except ImportError:
+    qrcode = None
 
 
 class Asset(models.Model):
@@ -31,7 +45,8 @@ class Asset(models.Model):
     depreciation_apply = fields.Boolean(string="Enable Depreciation", help="Check to apply depreciation calculations for this asset")
     
     # Vendor and Purchase Information
-    expired_warranty_date = fields.Date(string="Expired Warranty Date")
+    expired_warranty_date = fields.Date(string="Asset Expiry Date")
+    warranty_date = fields.Date(string="Warranty Expiry Date")
     vendor_id = fields.Many2one('asset.vendor', string="Associated Vendor", help="Select the vendor or supplier of this asset")
     invoice_date = fields.Date(string="Invoice Date", help="Date when the asset was purchased or acquired")
     amount = fields.Float(string="Purchase Price", help="Initial cost of acquiring the asset")
@@ -76,7 +91,242 @@ class Asset(models.Model):
     remaining_warranty = fields.Char(string="Remaining Warranty",
                                      compute="_compute_months_left", store=True)
     warranty_status = fields.Char(string='Warranty Status')
-    
+    asset_configuration = fields.Text(string='Asset Configuration(If Any)')
+
+    qr_payload = fields.Char(string="QR Payload", copy=False, readonly=True)
+    qr_image = fields.Binary(string="QR Code", copy=False, readonly=True, attachment=True)
+    qr_filename = fields.Char(string="QR Filename", copy=False, readonly=True)
+    qr_generated_on = fields.Datetime(string="QR Generated On", copy=False, readonly=True)
+
+    def _get_qr_payload(self):
+        self.ensure_one()
+
+        if not self.product_id:
+            raise UserError(_("Please set Associated Product before generating QR."))
+
+        tags = ",".join(self.tag_ids.mapped("name")) or ""
+
+        # Serial number = Internal Reference from product
+        serial = (self.product_id.default_code or "").strip()
+        if not serial:
+            asset_name = (self.product_id.display_name or self.name or "").strip()
+            return f"BXI/Tech/{tags}/{asset_name}"
+
+        asset_name = (self.product_id.display_name or self.name or "").strip()
+        return f"BXI/Tech/{tags}/{serial}/{asset_name}"
+
+    def _measure_text(self, draw, text, font):
+        """
+        Pillow version safe text measurement.
+        New Pillow: draw.textbbox()
+        Old Pillow: draw.textsize()
+        """
+        if hasattr(draw, "textbbox"):
+            left, top, right, bottom = draw.textbbox((0, 0), text, font=font)
+            return right - left, bottom - top
+        return draw.textsize(text, font=font)
+
+    def _load_font(self, size, bold=False):
+        """
+        Cross-platform font loader (Windows local + Ubuntu production).
+        Tries OS font paths first, then DejaVu names, then falls back.
+        """
+        candidates = []
+
+        # Windows fonts
+        if bold:
+            candidates += [
+                r"C:\Windows\Fonts\arialbd.ttf",
+                r"C:\Windows\Fonts\calibrib.ttf",
+                r"C:\Windows\Fonts\verdana.ttf",
+            ]
+        else:
+            candidates += [
+                r"C:\Windows\Fonts\arial.ttf",
+                r"C:\Windows\Fonts\calibri.ttf",
+                r"C:\Windows\Fonts\verdana.ttf",
+            ]
+
+        # Ubuntu/Linux fonts
+        if bold:
+            candidates += [
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+                "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+                "/usr/share/fonts/truetype/ubuntu/Ubuntu-B.ttf",
+                "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
+            ]
+        else:
+            candidates += [
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+                "/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf",
+                "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+            ]
+
+        # Pillow bundled names
+        candidates += [
+            "DejaVuSans-Bold.ttf" if bold else "DejaVuSans.ttf",
+        ]
+
+        for p in candidates:
+            try:
+                if os.path.isabs(p) and not os.path.exists(p):
+                    continue
+                return ImageFont.truetype(p, size)
+            except Exception:
+                continue
+
+        return ImageFont.load_default()
+
+
+    def _text_width(self, draw, text, font):
+        w, _ = self._measure_text(draw, text, font)
+        return w
+
+
+    def _wrap_text_to_width(self, draw, text, font, max_width):
+        """
+        Wrap long payload to multiple lines so it doesn't cut.
+        Wrap by '/' boundaries first, then character wrap if needed.
+        """
+        parts = text.split("/")
+        lines = []
+        current = ""
+
+        for part in parts:
+            candidate = f"{current}/{part}" if current else part
+            if self._text_width(draw, candidate, font) <= max_width:
+                current = candidate
+            else:
+                if current:
+                    lines.append(current)
+                current = part
+
+        if current:
+            lines.append(current)
+
+        # Still too long? force char wrap
+        final_lines = []
+        for ln in lines:
+            if self._text_width(draw, ln, font) <= max_width:
+                final_lines.append(ln)
+            else:
+                # Estimate wrap width conservatively
+                w_ln = max(1, self._text_width(draw, ln, font))
+                est = int(len(ln) * (max_width / w_ln))
+                for chunk in textwrap.wrap(ln, width=max(10, est)):
+                    final_lines.append(chunk)
+
+        return final_lines
+
+
+    def action_generate_qr(self):
+        self.ensure_one()
+
+        if qrcode is None:
+            raise UserError(_(
+                "Python library 'qrcode' is not installed.\n"
+                "Install with: pip3 install qrcode[pil] pillow"
+            ))
+
+        payload = self._get_qr_payload()
+
+        # 1) Generate QR (extra quiet zone so it doesn't look cut)
+        qr = qrcode.QRCode(
+            version=None,
+            error_correction=qrcode.constants.ERROR_CORRECT_H,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(payload)
+        qr.make(fit=True)
+        qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
+
+        # 2) Put "BXI" in center (orange)
+        draw_qr = ImageDraw.Draw(qr_img)
+        w, h = qr_img.size
+
+        center_text = "BXI"
+        font_center = self._load_font(int(w * 0.13), bold=True)
+
+        tw, th = self._measure_text(draw_qr, center_text, font_center)
+
+        pad = int(w * 0.03)
+        x0 = (w - tw) / 2 - pad
+        y0 = (h - th) / 2 - pad
+        x1 = (w + tw) / 2 + pad
+        y1 = (h + th) / 2 + pad
+        draw_qr.rectangle([(x0, y0), (x1, y1)], fill="white")
+
+        draw_qr.text(((w - tw) / 2, (h - th) / 2), center_text, fill=ORANGE, font=font_center)
+
+        # 3) Build canvas with padding + border
+        padding = 50
+        border_margin = 8
+        text_margin_lr = 30  # safer wrap (prevents edge cutting)
+
+        font_bottom = self._load_font(18, bold=False)
+
+        tmp_canvas = Image.new("RGB", (10, 10), "white")
+        tmp_draw = ImageDraw.Draw(tmp_canvas)
+
+        max_text_width = (w + padding * 2) - (text_margin_lr * 2)
+        lines = self._wrap_text_to_width(tmp_draw, payload, font_bottom, max_text_width)
+
+        _, base_h = self._measure_text(tmp_draw, "Ag", font_bottom)
+        line_height = base_h + 6
+        bottom_space = max(90, (len(lines) * line_height) + 35)
+
+        canvas_w = w + padding * 2
+        canvas_h = h + padding * 2 + bottom_space
+
+        canvas = Image.new("RGB", (canvas_w, canvas_h), "white")
+        draw = ImageDraw.Draw(canvas)
+
+        canvas.paste(qr_img, (padding, padding))
+
+        draw.rectangle(
+            [(border_margin, border_margin), (canvas_w - border_margin, canvas_h - border_margin)],
+            outline="black",
+            width=2,
+        )
+
+        # 4) Draw wrapped bottom text
+        y = h + padding + 18
+        for ln in lines:
+            lw, lh = self._measure_text(draw, ln, font_bottom)
+            draw.text(((canvas_w - lw) / 2, y), ln, fill="black", font=font_bottom)
+            y += line_height
+
+        # 5) Save to binary and write to record
+        buf = io.BytesIO()
+        canvas.save(buf, format="PNG")
+        qr_b64 = base64.b64encode(buf.getvalue())
+
+        serial = (self.product_id.default_code or "NA").strip()
+        filename = f"{(self.name or 'ASSET')}_{serial}.png"
+
+        self.write({
+            "qr_payload": payload,
+            "qr_image": qr_b64,
+            "qr_filename": filename,
+            "qr_generated_on": fields.Datetime.now(),
+        })
+
+        # 6) Auto-download
+        return {
+            "type": "ir.actions.act_url",
+            "url": (
+                "/web/content?"
+                f"model=asset.management&id={self.id}"
+                "&field=qr_image"
+                "&filename_field=qr_filename"
+                "&download=true"
+            ),
+            "target": "self",
+        }
+
+
     @api.depends('transfer_ids', 'transfer_ids.status', 'transfer_ids.stock_qty')
     def _compute_active_transfers(self):
         for record in self:
