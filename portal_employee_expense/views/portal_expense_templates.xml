@@ -21,11 +21,11 @@
                 <table class="table table-bordered" id="expense_table">
                     <thead>
                         <tr class="active">
-                            <th name="expense_name">Expense Name</th>
-                            <th name="expenses_date">Date</th>
-                            <th name="product_category">Product/Category</th>
+                            <th name="Employee">Employee</th>
                             <th name="Description">Description</th>
-                            <th name="toltal_amount">Total Amount</th>
+                            <th name="expenses_date">Expense Date</th>
+                            <th name="product_category">Category</th>
+                            <th name="toltal_amount">Total</th>
                             <th name="status">Status</th>
                         </tr>
                     </thead>
@@ -35,6 +35,9 @@
                             <t t-foreach="expenses" t-as="exp">
                                 <tr>
                                     <td>
+                                        <t t-esc="exp.employee_id.name" />
+                                    </td>
+                                    <td>
                                         <t t-esc="exp.name" />
                                     </td>
                                     <td>
@@ -42,9 +45,6 @@
                                     </td>
                                     <td>
                                         <t t-esc="exp.product_id.display_name" />
-                                    </td>
-                                    <td>
-                                        <t t-esc="exp.description" />
                                     </td>
                                     <td>
                                         <t t-esc="exp.total_amount" />
