@@ -89,42 +89,103 @@
             </t>
         </t>
     </template>
+
     <template id="portal_submit_expense_template" name="Submit Expense">
         <t t-call="portal.portal_layout">
 
             <div class="container mt-4">
                 <h2>Add Expense</h2>
 
-                <form method="post">
-                    <input type="hidden" name="csrf_token"
-                           t-att-value="request.csrf_token()"/>
+                <form method="post" enctype="multipart/form-data" id="expense_form">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
 
-                    <div class="mb-3">
-                        <label>Expense Name</label>
-                        <input type="text" name="name" class="form-control" required="True"/>
-                    </div>
+                    <table class="table table-bordered" id="expense_table">
+                        <thead>
+                            <tr>
+                                <th>Expense Name</th>
+                                <th>Category / Product</th>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Description</th>
+                                <th>Receipt</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expense_lines_container">
+                            <tr class="expense_line">
+                                <td>
+                                    <input type="text" name="name[]" class="form-control" required="True"/>
+                                </td>
+                                <td>
+                                    <input type="text" name="category[]" class="form-control"/>
+                                </td>
+                                <td>
+                                    <input type="date" name="date[]" class="form-control" required="True"/>
+                                </td>
+                                <td>
+                                    <input type="number" name="amount[]" class="form-control" required="True"/>
+                                </td>
+                                <td>
+                                    <input type="text" name="description[]" class="form-control"/>
+                                </td>
+                                <td>
+                                    <input type="file" name="receipt[]" class="form-control"/>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-danger remove_line" style="display:none;">
+                                        Remove
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
 
-                    <div class="mb-3">
-                        <label>Date</label>
-                        <input type="date" name="date" class="form-control" required="True"/>
-                    </div>
-
-                    <div class="mb-3">
-                        <label>Description</label>
-                        <input type="text" name="description" class="form-control"/>
-                    </div>
-
-                    <div class="mb-3">
-                        <label>Amount</label>
-                        <input type="number" name="amount" class="form-control" required="True"/>
-                    </div>
+                    <button type="button" id="add_line_btn" class="btn btn-success mb-3">Add Expense</button>
+                    <br/>
 
                     <button type="submit" class="btn btn-primary">Submit</button>
-
                     <a href="/my/employee-expenses" class="btn btn-secondary">Back</a>
                 </form>
             </div>
 
         </t>
     </template>
+<!--    <template id="portal_submit_expense_template" name="Submit Expense">-->
+<!--        <t t-call="portal.portal_layout">-->
+
+<!--            <div class="container mt-4">-->
+<!--                <h2>Add Expense</h2>-->
+
+<!--                <form method="post">-->
+<!--                    <input type="hidden" name="csrf_token"-->
+<!--                           t-att-value="request.csrf_token()"/>-->
+
+<!--                    <div class="mb-3">-->
+<!--                        <label>Expense Name</label>-->
+<!--                        <input type="text" name="name" class="form-control" required="True"/>-->
+<!--                    </div>-->
+
+<!--                    <div class="mb-3">-->
+<!--                        <label>Date</label>-->
+<!--                        <input type="date" name="date" class="form-control" required="True"/>-->
+<!--                    </div>-->
+
+<!--                    <div class="mb-3">-->
+<!--                        <label>Description</label>-->
+<!--                        <input type="text" name="description" class="form-control"/>-->
+<!--                    </div>-->
+
+<!--                    <div class="mb-3">-->
+<!--                        <label>Amount</label>-->
+<!--                        <input type="number" name="amount" class="form-control" required="True"/>-->
+<!--                    </div>-->
+
+<!--                    <button type="submit" class="btn btn-primary">Submit</button>-->
+
+<!--                    <a href="/my/employee-expenses" class="btn btn-secondary">Back</a>-->
+<!--                </form>-->
+<!--            </div>-->
+
+<!--        </t>-->
+<!--    </template>-->
 </odoo>

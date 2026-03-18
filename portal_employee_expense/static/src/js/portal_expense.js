@@ -1,19 +1,33 @@
-// odoo.define('portal_employee_expense.form', function (require) {
-//     "use strict";
-//
-//     var publicWidget = require('web.public.widget');
-//
-//     publicWidget.registry.Form = publicWidget.Widget.extend({
-//         selector: '#expense_table',
-//
-//         events: {
-//             'click #add_line': '_addLine',
-//         },
-//
-//         _addLine: function () {
-//             var $row = this.$('tbody tr:first').clone();
-//             $row.find('input').val('');
-//             this.$('tbody').append($row);
-//         },
-//     });
-// });
+document.addEventListener('DOMContentLoaded', function () {
+    var container = document.getElementById('expense_lines_container');
+    var addBtn = document.getElementById('add_line_btn');
+
+    addBtn.addEventListener('click', function () {
+        // Clone the first row
+        var firstRow = container.querySelector('.expense_line');
+        var newRow = firstRow.cloneNode(true);
+
+        // Clear input values
+        newRow.querySelectorAll('input').forEach(function(input){
+            if(input.type === 'file'){
+                input.value = '';
+            } else {
+                input.value = '';
+            }
+        });
+
+        // Show remove button
+        var removeBtn = newRow.querySelector('.remove_line');
+        removeBtn.style.display = 'inline-block';
+
+        removeBtn.addEventListener('click', function(){
+            newRow.remove();
+        });
+
+        // Append new row
+        container.appendChild(newRow);
+    });
+
+    // Hide remove button on first row
+    container.querySelector('.expense_line .remove_line').style.display = 'none';
+});
