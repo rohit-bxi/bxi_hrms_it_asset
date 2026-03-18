@@ -1,6 +1,8 @@
 from odoo import http
 from odoo.http import request
 from odoo.exceptions import AccessError
+import base64
+
 
 
 class EmployeePortalExpense(http.Controller):
@@ -8,7 +10,7 @@ class EmployeePortalExpense(http.Controller):
     @http.route(['/my/employee-expenses'], type='http', auth='user', website=True)
     def portal_employee_expenses(self, **kwargs):
         user = request.env.user
-        
+
         # Restrict to portal users only
         # if not user.has_group('base.group_portal'):
         #     raise AccessError("This page is only for portal users")
@@ -30,30 +32,22 @@ class EmployeePortalExpense(http.Controller):
     def submit_expenses(self, **post):
 
         user = request.env.user
-    
+
         employee = request.env['hr.employee'].sudo().search([
             ('user_id', '=', user.id)
         ], limit=1)
-    
-        names = post.getlist('expense_name[]')
-        dates = post.getlist('date[]')
-        amounts = post.getlist('amount[]')
-        descriptions = post.getlist('description[]')
-    
-        for i in range(len(names)):
-    
+
+        #  IF FORM SUBMITTED
+        if post:
             request.env['hr.expense'].sudo().create({
-    
-                'name': names[i],
-    
+                'name': post.get('name'),
+                'date': post.get('date'),
+                'description': post.get('description'),
+                'total_amount': float(post.get('amount') or 0),
                 'employee_id': employee.id,
-    
-                'date': dates[i],
-    
-                'total_amount': amounts[i],
-    
-                'description': descriptions[i],
-    
             })
-    
-        return request.redirect('/my/employee-expenses')
+
+            return request.redirect('/my/employee-expenses')
+
+        #  OTHERWISE OPEN FORM
+        return request.render('portal_employee_expense.portal_submit_expense_template')

@@ -12,4 +12,11 @@
             </t>
         </xpath>
     </template>
+    <!--  Assets (JS Load) -->
+<!--    <template id="assets_frontend" inherit_id="web.assets_frontend">-->
+<!--        <xpath expr="." position="inside">-->
+<!--            <script type="text/javascript"-->
+<!--                    src="/portal_employee_expense/static/src/js/expense_portal.js"/>-->
+<!--        </xpath>-->
+<!--    </template>-->
 </odoo>

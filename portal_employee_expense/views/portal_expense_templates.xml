@@ -6,9 +6,12 @@
                 <t t-call="portal.portal_searchbar">
                     <t t-set="title">My Expenses</t>
                 </t>
-                <button type="button" class="btn btn-success ms-3" id="add_expense_btn">
+                <a href="/my/submit-expenses" class="btn btn-success ms-3">
                     + Add Expense
-                </button>
+                </a>
+<!--                <button type="button" class="btn btn-success ms-3" id="add_expense_btn">-->
+<!--                    + Add Expense-->
+<!--                </button>-->
             </div>
             <t t-if="not expenses">
                 <p class="alert alert-warning">There are currently no expense available for this
@@ -84,6 +87,44 @@
                     </div>
                 </table>
             </t>
+        </t>
+    </template>
+    <template id="portal_submit_expense_template" name="Submit Expense">
+        <t t-call="portal.portal_layout">
+
+            <div class="container mt-4">
+                <h2>Add Expense</h2>
+
+                <form method="post">
+                    <input type="hidden" name="csrf_token"
+                           t-att-value="request.csrf_token()"/>
+
+                    <div class="mb-3">
+                        <label>Expense Name</label>
+                        <input type="text" name="name" class="form-control" required="True"/>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Date</label>
+                        <input type="date" name="date" class="form-control" required="True"/>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Description</label>
+                        <input type="text" name="description" class="form-control"/>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Amount</label>
+                        <input type="number" name="amount" class="form-control" required="True"/>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Submit</button>
+
+                    <a href="/my/employee-expenses" class="btn btn-secondary">Back</a>
+                </form>
+            </div>
+
         </t>
     </template>
 </odoo>
