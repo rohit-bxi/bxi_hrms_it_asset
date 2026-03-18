@@ -1,0 +1,89 @@
+<odoo>
+    <template id="portal_my_expenses_template" name="My Expenses">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True" />
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <t t-call="portal.portal_searchbar">
+                    <t t-set="title">My Expenses</t>
+                </t>
+                <button type="button" class="btn btn-success ms-3" id="add_expense_btn">
+                    + Add Expense
+                </button>
+            </div>
+            <t t-if="not expenses">
+                <p class="alert alert-warning">There are currently no expense available for this
+                    user.</p>
+            </t>
+            <t t-if="expenses" t-call="portal.portal_table">
+                <table class="table table-bordered" id="expense_table">
+                    <thead>
+                        <tr class="active">
+                            <th name="expense_name">Expense Name</th>
+                            <th name="expenses_date">Date</th>
+                            <th name="product_category">Product/Category</th>
+                            <th name="Description">Description</th>
+                            <th name="toltal_amount">Total Amount</th>
+                            <th name="status">Status</th>
+                        </tr>
+                    </thead>
+                    <div class="container mt-4">
+                        <h2>My Expenses</h2>
+                        <tbody>
+                            <t t-foreach="expenses" t-as="exp">
+                                <tr>
+                                    <td>
+                                        <t t-esc="exp.name" />
+                                    </td>
+                                    <td>
+                                        <t t-esc="exp.date" />
+                                    </td>
+                                    <td>
+                                        <t t-esc="exp.product_id.display_name" />
+                                    </td>
+                                    <td>
+                                        <t t-esc="exp.description" />
+                                    </td>
+                                    <td>
+                                        <t t-esc="exp.total_amount" />
+                                    </td>
+                                    <td>
+                                        <span t-if="exp.state == 'draft'" class="badge bg-secondary">
+                                            Draft</span>
+                                        <span t-elif="exp.state == 'submitted'"
+                                            class="badge bg-info">Submitted</span>
+                                        <span t-elif="exp.state == 'approved'"
+                                            class="badge bg-primary">Approved</span>
+                                        <span t-elif="exp.state == 'paid'" class="badge bg-success">
+                                            Paid</span>
+                                        <span t-else="" class="badge bg-dark">
+                                            <t t-esc="exp.state" />
+                                        </span>
+                                    </td>
+                                </tr>
+                            </t>
+                            <tr id="empty_row_template" style="display: none;">
+                                <td>
+                                    <input type="text" class="form-control" name="name" />
+                                </td>
+                                <td>
+                                    <input type="date" class="form-control" name="date" />
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control" name="description" />
+                                </td>
+                                <td>
+                                    <input type="number" class="form-control" name="amount" />
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-success btn-sm save_btn">
+                                        Save
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </div>
+                </table>
+            </t>
+        </t>
+    </template>
+</odoo>

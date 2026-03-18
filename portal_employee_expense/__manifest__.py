@@ -11,14 +11,16 @@
         'hr',
         'portal',
         'website',
+        'hr_expense'
     ],
     'data': [
         'views/portal_expense_menu.xml',
+        'views/portal_expense_templates.xml',
     ],
-    "assets": {
-        "web.assets_frontend": [
-            # "portal_employee_profile/static/src/css/portal_employee.css",
-        ]
+    'assets': {
+        'web.assets_frontend': [
+            'portal_employee_expense/static/src/js/portal_expense.js',
+        ],
     },
     'installable': True,
     'application': False,
