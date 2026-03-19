@@ -64,25 +64,6 @@
                                     </td>
                                 </tr>
                             </t>
-                            <tr id="empty_row_template" style="display: none;">
-                                <td>
-                                    <input type="text" class="form-control" name="name" />
-                                </td>
-                                <td>
-                                    <input type="date" class="form-control" name="date" />
-                                </td>
-                                <td>
-                                    <input type="text" class="form-control" name="description" />
-                                </td>
-                                <td>
-                                    <input type="number" class="form-control" name="amount" />
-                                </td>
-                                <td>
-                                    <button type="button" class="btn btn-success btn-sm save_btn">
-                                        Save
-                                    </button>
-                                </td>
-                            </tr>
                         </tbody>
                     </div>
                 </table>
@@ -116,7 +97,7 @@
                                     <input type="text" name="name[]" class="form-control" required="True"/>
                                 </td>
                                  <td>
-                                    <select name="product_id[]" class="form-control">
+                                    <select name="product_id[]" class="form-control" required="True">
                                         <option value="">Select Product</option>
                                         <t t-foreach="products" t-as="p">
                                             <option t-att-value="p.id">
