@@ -36,17 +36,36 @@ class EmployeePortalExpense(http.Controller):
             ('user_id', '=', user.id)
         ], limit=1)
 
-        #  IF FORM SUBMITTED
-        if post:
+        # Render form (GET request)
+        if not post:
+            products = request.env['product.product'].sudo().search([])
+            return request.render(
+                'portal_employee_expense.portal_submit_expense_template',
+                {'products': products}
+            )
+
+        # Handle form submission (POST)
+        form = request.httprequest.form
+
+        names = form.getlist('name[]')
+        product_ids = form.getlist('product_id[]')
+        dates = form.getlist('date[]')
+        amounts = form.getlist('amount[]')
+
+        for name, product, date, amount in zip(names, product_ids, dates, amounts):
+
+            if not name:
+                continue
+
+            product_id = int(product) if product else False
+
             request.env['hr.expense'].sudo().create({
-                'name': post.get('name'),
-                'date': post.get('date'),
-                'description': post.get('description'),
-                'total_amount': float(post.get('amount') or 0),
+                'name': name,
+                'date': date,
+                'product_id': product_id,
+                'total_amount': float(amount or 0),
                 'employee_id': employee.id,
+                'state': 'submitted',
             })
 
-            return request.redirect('/my/employee-expenses')
-
-        #  OTHERWISE OPEN FORM
-        return request.render('portal_employee_expense.portal_submit_expense_template')
+        return request.redirect('/my/employee-expenses')

@@ -102,11 +102,10 @@
                     <table class="table table-bordered" id="expense_table">
                         <thead>
                             <tr>
-                                <th>Expense Name</th>
+                                <th>Description</th>
                                 <th>Category / Product</th>
                                 <th>Date</th>
                                 <th>Amount</th>
-                                <th>Description</th>
                                 <th>Receipt</th>
                                 <th>Action</th>
                             </tr>
@@ -116,18 +115,28 @@
                                 <td>
                                     <input type="text" name="name[]" class="form-control" required="True"/>
                                 </td>
-                                <td>
-                                    <input type="text" name="category[]" class="form-control"/>
+                                 <td>
+                                    <select name="product_id[]" class="form-control">
+                                        <option value="">Select Product</option>
+                                        <t t-foreach="products" t-as="p">
+                                            <option t-att-value="p.id">
+                                                <t t-esc="p.name"/>
+                                            </option>
+                                        </t>
+                                    </select>
                                 </td>
+<!--                                <td>-->
+<!--                                    <input type="text" name="category[]" class="form-control"/>-->
+<!--                                </td>-->
                                 <td>
                                     <input type="date" name="date[]" class="form-control" required="True"/>
                                 </td>
                                 <td>
                                     <input type="number" name="amount[]" class="form-control" required="True"/>
                                 </td>
-                                <td>
-                                    <input type="text" name="description[]" class="form-control"/>
-                                </td>
+<!--                                <td>-->
+<!--                                    <input type="text" name="description[]" class="form-control"/>-->
+<!--                                </td>-->
                                 <td>
                                     <input type="file" name="receipt[]" class="form-control"/>
                                 </td>
@@ -150,42 +159,4 @@
 
         </t>
     </template>
-<!--    <template id="portal_submit_expense_template" name="Submit Expense">-->
-<!--        <t t-call="portal.portal_layout">-->
-
-<!--            <div class="container mt-4">-->
-<!--                <h2>Add Expense</h2>-->
-
-<!--                <form method="post">-->
-<!--                    <input type="hidden" name="csrf_token"-->
-<!--                           t-att-value="request.csrf_token()"/>-->
-
-<!--                    <div class="mb-3">-->
-<!--                        <label>Expense Name</label>-->
-<!--                        <input type="text" name="name" class="form-control" required="True"/>-->
-<!--                    </div>-->
-
-<!--                    <div class="mb-3">-->
-<!--                        <label>Date</label>-->
-<!--                        <input type="date" name="date" class="form-control" required="True"/>-->
-<!--                    </div>-->
-
-<!--                    <div class="mb-3">-->
-<!--                        <label>Description</label>-->
-<!--                        <input type="text" name="description" class="form-control"/>-->
-<!--                    </div>-->
-
-<!--                    <div class="mb-3">-->
-<!--                        <label>Amount</label>-->
-<!--                        <input type="number" name="amount" class="form-control" required="True"/>-->
-<!--                    </div>-->
-
-<!--                    <button type="submit" class="btn btn-primary">Submit</button>-->
-
-<!--                    <a href="/my/employee-expenses" class="btn btn-secondary">Back</a>-->
-<!--                </form>-->
-<!--            </div>-->
-
-<!--        </t>-->
-<!--    </template>-->
 </odoo>
