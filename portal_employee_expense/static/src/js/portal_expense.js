@@ -1,33 +1,45 @@
-document.addEventListener('DOMContentLoaded', function () {
-    var container = document.getElementById('expense_lines_container');
-    var addBtn = document.getElementById('add_line_btn');
+/** @odoo-module **/
 
-    addBtn.addEventListener('click', function () {
-        // Clone the first row
-        var firstRow = container.querySelector('.expense_line');
-        var newRow = firstRow.cloneNode(true);
+import publicWidget from "@web/legacy/js/public/public_widget";
 
-        // Clear input values
-        newRow.querySelectorAll('input').forEach(function(input){
-            if(input.type === 'file'){
-                input.value = '';
-            } else {
-                input.value = '';
-            }
+publicWidget.registry.PortalExpense = publicWidget.Widget.extend({
+    selector: '#expense_form',
+
+    events: {
+        'click #add_line_btn': '_addLine',
+        'click .remove_line': '_removeLine',
+    },
+
+    start() {
+        // Hide remove button for first row
+        this.el.querySelector('.expense_line .remove_line').style.display = 'none';
+        return this._super(...arguments);
+    },
+
+    _addLine(ev) {
+        ev.preventDefault();
+
+        const container = this.el.querySelector('#expense_lines_container');
+        const firstRow = container.querySelector('.expense_line');
+        const newRow = firstRow.cloneNode(true);
+
+        // Clear inputs
+        newRow.querySelectorAll('input').forEach(input => {
+            input.value = '';
         });
 
         // Show remove button
-        var removeBtn = newRow.querySelector('.remove_line');
+        const removeBtn = newRow.querySelector('.remove_line');
         removeBtn.style.display = 'inline-block';
 
-        removeBtn.addEventListener('click', function(){
-            newRow.remove();
-        });
-
-        // Append new row
         container.appendChild(newRow);
-    });
+    },
 
-    // Hide remove button on first row
-    container.querySelector('.expense_line .remove_line').style.display = 'none';
+    _removeLine(ev) {
+        ev.preventDefault();
+        const row = ev.currentTarget.closest('.expense_line');
+        if (row) {
+            row.remove();
+        }
+    },
 });
