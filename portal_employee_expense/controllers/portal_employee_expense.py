@@ -9,11 +9,6 @@ class EmployeePortalExpense(http.Controller):
     @http.route(['/my/employee-expenses'], type='http', auth='user', website=True)
     def portal_employee_expenses(self, **kwargs):
         user = request.env.user
-
-        # Restrict to portal users only
-        # if not user.has_group('base.group_portal'):
-        #     raise AccessError("This page is only for portal users")
-
         employee = request.env['hr.employee'].sudo().search([
             ('user_id', '=', user.id)
         ], limit=1)

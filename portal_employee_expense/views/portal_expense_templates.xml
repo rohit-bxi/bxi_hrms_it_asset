@@ -9,9 +9,6 @@
                 <a href="/my/submit-expenses" class="btn btn-success ms-3">
                     + Add Expense
                 </a>
-<!--                <button type="button" class="btn btn-success ms-3" id="add_expense_btn">-->
-<!--                    + Add Expense-->
-<!--                </button>-->
             </div>
             <t t-if="not expenses">
                 <p class="alert alert-warning">There are currently no expense available for this
