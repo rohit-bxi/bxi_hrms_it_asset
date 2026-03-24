@@ -44,7 +44,7 @@ publicWidget.registry.PortalExpense = publicWidget.Widget.extend({
             row.remove();
         }
     },
-    //  ADD THIS FUNCTION
+    //  NEW FUNCTION (for reimbursement_date auto-fill)
     _onDateChange(ev) {
         const input = ev.currentTarget;
         const value = input.value;
@@ -56,6 +56,7 @@ publicWidget.registry.PortalExpense = publicWidget.Widget.extend({
         let year = date.getFullYear();
         let month = date.getMonth() + 1;
 
+        // next month logic
         if (month === 12) {
             month = 1;
             year += 1;
@@ -64,14 +65,9 @@ publicWidget.registry.PortalExpense = publicWidget.Widget.extend({
         }
 
         const reimbursementDate = new Date(year, month - 1, 15);
+        const formatted = reimbursementDate.toISOString().split('T')[0];
 
-        //  FORMAT CHANGE HERE
-        const day = String(reimbursementDate.getDate()).padStart(2, '0');
-        const monthFormatted = String(reimbursementDate.getMonth() + 1).padStart(2, '0');
-        const yearFormatted = reimbursementDate.getFullYear();
-
-        const formatted = `${day}-${monthFormatted}-${yearFormatted}`;
-
+        // set in same row
         const row = input.closest('.expense_line');
         row.querySelector('.reimbursement_date').value = formatted;
     }

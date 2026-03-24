@@ -42,8 +42,7 @@
                                         <t t-esc="exp.date" />
                                     </td>
                                     <td>
-                                        <input type="text" name="reimbursement_date[]"
-                                               class="form-control reimbursement_date" readonly="readonly"/>
+                                        <t t-esc="exp.reimbursement_date"/>
                                     </td>
                                     <td>
                                         <t t-esc="exp.product_id.display_name" />
