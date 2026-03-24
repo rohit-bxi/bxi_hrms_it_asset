@@ -261,7 +261,10 @@
                     <!-- AMOUNT WORDS -->
                     <div class="amount-words">
                         Invoice Value in Words:
-                        <span t-esc="o.amount_total_in_words"/>
+                        <t t-if="o.currency_id">
+                            <span t-esc="o.currency_id.amount_to_text(o.amount_total)"/>
+                        </t>
+                        <!--  <span t-esc="o.amount_total_in_words"/>-->
                     </div>
 
                     <!-- FOOTER BANK + SIGN -->
