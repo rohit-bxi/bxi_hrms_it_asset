@@ -15,6 +15,7 @@
     ],
     'data': [
         'security/ir.model.access.csv',
+        'views/hr_expense_inherit.xml',
         'views/portal_expense_menu.xml',
         'views/portal_expense_templates.xml',
     ],
