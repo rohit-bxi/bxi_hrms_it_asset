@@ -56,7 +56,6 @@ publicWidget.registry.PortalExpense = publicWidget.Widget.extend({
         let year = date.getFullYear();
         let month = date.getMonth() + 1;
 
-        // next month logic
         if (month === 12) {
             month = 1;
             year += 1;
@@ -64,10 +63,16 @@ publicWidget.registry.PortalExpense = publicWidget.Widget.extend({
             month += 1;
         }
 
-        const reimbursementDate = new Date(year, month - 1, 15);
-        const formatted = reimbursementDate.toISOString().split('T')[0];
+        //  UPDATED HERE
+        const reimbursementDate = new Date(Date.UTC(year, month - 1, 15));
 
-        // set in same row
+        //  UPDATED HERE
+        const day = String(reimbursementDate.getUTCDate()).padStart(2, '0');
+        const monthFormatted = String(reimbursementDate.getUTCMonth() + 1).padStart(2, '0');
+        const yearFormatted = reimbursementDate.getUTCFullYear();
+
+        const formatted = `${day}-${monthFormatted}-${yearFormatted}`;
+
         const row = input.closest('.expense_line');
         row.querySelector('.reimbursement_date').value = formatted;
     }
