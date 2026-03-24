@@ -1,0 +1,29 @@
+# -*- coding: utf-8 -*-
+{
+    'name': 'Employee Portal Expenses',
+    'category': 'Human Resources',
+    'version': '19.0.1.0.0',
+    'sequence': 1,
+    'author': 'BXI',
+    'summary': 'Employee Expense Submission Portal',
+    'description': 'Employee Expense Submission Portal',
+    'depends': [
+        'hr',
+        'portal',
+        'website',
+        'hr_expense'
+    ],
+    'data': [
+        'security/ir.model.access.csv',
+        'views/portal_expense_menu.xml',
+        'views/portal_expense_templates.xml',
+    ],
+    'assets': {
+        'web.assets_frontend': [
+            'portal_employee_expense/static/src/js/portal_expense.js',
+        ],
+    },
+    'installable': True,
+    'application': False,
+    'auto_install': False,
+}
