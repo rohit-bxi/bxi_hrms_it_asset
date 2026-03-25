@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_travel_root" name="Travel Request" sequence="10"
+        web_icon="bxi_travel_request,static/description/icon.png"/>
+
+    <menuitem
+        id="menu_travel_request"
+        name="Travel Requests"
+        parent="menu_travel_root"
+        action="action_travel_request"
+        sequence="20"  
+    />
+</odoo>

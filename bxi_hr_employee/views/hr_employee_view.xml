@@ -25,11 +25,6 @@
                     <field name="nps_contribution" class="oe_inline"/>
                     <span class="text-muted">/ month</span>
                 </div>
-                <label for="employee_ctc"/>
-                <div class="o_row">
-                    <field name="employee_ctc" class="oe_inline"/>
-                    <span class="text-muted">/ Year</span>
-                </div>
                 <button name="action_calculate_l10n_in_tds_new_regime"
                         type="object"
                         string="Calculate TDS"
