@@ -20,6 +20,9 @@
       <field name="report_type">qweb-pdf</field>
       <field name="print_report_name">'Invoice - %s' % (object.name)</field>
       <field name="paperformat_id" ref="paperformat_custom_invoice_report_pdf_small"/>
+      <field name="is_invoice_report" eval="True"/>
+      <field name="binding_model_id" ref="account.model_account_move"/>
+      <field name="binding_type">report</field>
     </record>
   </data>
 </odoo>

@@ -1,3 +1,5 @@
+import base64
+
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 from num2words import num2words
@@ -22,6 +24,7 @@ class AccountMove(models.Model):
             raise UserError(_("Report Not Found"))
         return report.report_action(self)
 
+
     def _prepare_product_base_line_for_taxes_computation(self, line):
         """
         Core hook: tax and totals base quantity uses qty * months.
@@ -33,3 +36,29 @@ class AccountMove(models.Model):
         base_line["quantity"] = qty * months
 
         return base_line
+
+
+
+class AccountMoveSendWizard(models.TransientModel):
+    _inherit = 'account.move.send.wizard'
+
+    @api.model
+    def default_get(self, fields_list):
+        res = super().default_get(fields_list)
+
+        custom_report = self.env.ref(
+            'custom_invoice_report.action_custom_invoice_report_pdf',
+            raise_if_not_found=False
+        )
+
+        if custom_report:
+            res['pdf_report_id'] = custom_report.id
+
+        return res
+
+    def _get_default_pdf_report_id(self, move):
+        custom_report = self.env.ref(
+            'custom_invoice_report.action_custom_invoice_report_pdf',
+            raise_if_not_found=False
+        )
+        return custom_report

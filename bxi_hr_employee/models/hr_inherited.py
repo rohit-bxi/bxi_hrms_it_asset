@@ -44,7 +44,11 @@ class HrEmployee(models.Model):
         string="Onsite/Offshore"
     )
     company_code = fields.Char(string="Company Code")
-    employee_ctc = fields.Float(string="Employee CTC (Annual)")
+    employee_ctc = fields.Float(string="Employee Earning (Annual)")
+
+    def get_employee_earning(self):
+        for data in self:
+            data.employee_ctc = data.wage
 
     def _compute_monthly_tds_new_regime(self, annual_ctc):
         if not annual_ctc:
@@ -83,5 +87,6 @@ class HrEmployee(models.Model):
         return round(monthly_tds, 2)
 
     def action_calculate_l10n_in_tds_new_regime(self):
+        self.get_employee_earning()
         for emp in self:
             emp.l10n_in_tds = emp._compute_monthly_tds_new_regime(emp.employee_ctc)
