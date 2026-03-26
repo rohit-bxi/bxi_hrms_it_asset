@@ -1,185 +1,308 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
+    <template id="custom_invoice_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <div class="page spark-invoice">
+                    <style>
+                        .spark-invoice {
+                        font-family: 'Times New Roman', serif;
+                        font-size: 12px;
+                        color: #000;
+                        }
 
-  <template id="custom_invoice_template">
-    <t t-call="web.html_container">
-      <t t-foreach="docs" t-as="o">
-        <div class="page spark-invoice">
+                        table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        }
 
-          <!-- TOP GST + TITLE -->
-          <table width="100%" class="top-table">
-            <tr>
-              <td width="30%" class="gst-box">
-                GSTIN: <span t-field="o.company_id.vat"/>
-              </td>
-              <td width="40%" class="title-box">
-                TAX INVOICE<br/>
-                <span class="company-name" t-field="o.company_id.name"/>
-              </td>
-              <td width="30%"></td>
-            </tr>
-          </table>
+                        th, td {
+                        border: 1px solid #000;
+                        padding: 5px;
+                        vertical-align: top;
+                        }
 
-          <!-- COMPANY ADDRESS -->
-          <div class="company-address">
-            <span t-field="o.company_id.partner_id.contact_address"/>
-          </div>
+                        .top-table td {
+                        border: none;
+                        }
 
-          <!-- BILL / SHIP / INVOICE META -->
-          <table width="100%" class="header-table">
-            <tr>
-              <td width="50%" class="box">
-                <b>BILL TO</b><br/>
-                <span t-field="o.partner_id.name"/><br/>
-                GSTIN: <span t-field="o.partner_id.vat"/><br/>
-                <span t-field="o.partner_id.contact_address"/>
-              </td>
+                        .title-box {
+                        background-color: #1f3c88;
+                        color: #fff;
+                        text-align: center;
+                        font-weight: bold;
+                        font-size: 16px;
+                        padding: 6px 0;
+                        }
 
-              <td width="25%" class="box">
-                <b>DATE</b><br/>
-                <span t-field="o.invoice_date"/><br/><br/>
-                <b>INVOICE NO.</b><br/>
-                <span t-field="o.name"/>
-              </td>
+                        .company-name {
+                        display: block;
+                        font-size: 18px;
+                        font-weight: bold;
+                        }
 
-              <td width="25%" class="box">
-                <b>SHIP TO</b><br/>
-                <span t-field="o.partner_id.name"/><br/>
-                GSTIN: <span t-field="o.partner_id.vat"/><br/>
-                <span t-field="o.partner_id.contact_address"/>
-              </td>
-            </tr>
-          </table>
+                        .company-address {
+                        text-align: center;
+                        font-size: 11px;
+                        font-weight: bold;
+                        margin-bottom: 5px;
+                        }
 
-          <!-- ITEMS TABLE -->
-          <table width="100%" class="items-table">
-            <thead>
-              <tr class="items-header">
-                <th>S.No</th>
-                <th>DESCRIPTION</th>
-                <th>SAC CODE</th>
-                <th>MONTH/YEAR</th>
-                <th>QTY</th>
-                <th>UNIT PRICE</th>
-                <th>TOTAL</th>
-              </tr>
-            </thead>
+                        .box b {
+                        text-decoration: underline;
+                        }
 
-            <tbody>
-              <t t-set="i" t-value="1"/>
-              <t t-foreach="o.invoice_line_ids" t-as="l">
-                <tr>
-                  <td class="center"><t t-esc="i"/></td>
-                  <td><span t-field="l.name"/></td>
-                  <td class="center"><span t-field="l.product_id.l10n_in_hsn_code"/></td>
+                        .header-table td {
+                        height: 130px;
+                        }
 
-                  <!-- ✅ Your custom field -->
-                  <td class="center">
-                    <t t-if="l.inv_months">
-                      <span t-field="l.inv_months"/>
-                    </t>
-                  </td>
+                        .items-header th {
+                        background-color: #1f3c88;
+                        color: #fff;
+                        text-align: center;
+                        font-weight: bold;
+                        }
 
-                  <td class="center"><span t-field="l.quantity"/></td>
-                  <td class="right">
-                    <span t-field="l.price_unit"
-                          t-options="{'widget':'monetary','display_currency':o.currency_id}"/>
-                  </td>
-                  <td class="right">
-                    <span t-field="l.price_subtotal"
-                          t-options="{'widget':'monetary','display_currency':o.currency_id}"/>
-                  </td>
-                </tr>
-                <t t-set="i" t-value="i+1"/>
-              </t>
-            </tbody>
-          </table>
+                        .center { text-align: center; }
+                        .right { text-align: right; }
 
-          <!-- TOTALS SECTION (DYNAMIC TAXES using tax_totals) -->
-            <table width="100%" class="totals-table">
+                        .totals-table td {
+                        border: none;
+                        padding: 4px;
+                        }
 
-                <!-- SUBTOTAL -->
-                <tr>
-                    <td width="60%"></td>
-                    <td width="20%" class="right bold">SUBTOTAL</td>
-                    <td width="20%" class="right bold">
-                        <span t-field="o.amount_untaxed"
-                              t-options="{'widget':'monetary','display_currency':o.currency_id}"/>
-                    </td>
-                </tr>
+                        .total-tax-row td,
+                        .invoice-total-row td {
+                        border-top: 1px solid #000;
+                        }
 
-                <!-- ✅ Dynamic Taxes -->
-                <t t-set="tax_totals" t-value="o.tax_totals"/>
-                <t t-if="tax_totals and tax_totals.get('groups_by_subtotal')">
-                    <!-- groups_by_subtotal is a dict; we loop through its values (list of tax groups) -->
-                    <t t-foreach="tax_totals.get('groups_by_subtotal').values()" t-as="tax_group_list">
-                        <t t-foreach="tax_group_list" t-as="tax_group">
-                            <tr>
-                                <td></td>
-                                <td class="right bold">
-                                    <t t-esc="tax_group.get('tax_group_name')"/>
-                                </td>
-                                <td class="right bold">
-                                    <!-- formatted_tax_group_amount already formatted with currency -->
-                                    <t t-esc="tax_group.get('formatted_tax_group_amount')"/>
-                                </td>
+                        .amount-words {
+                        border: 1px solid #000;
+                        padding: 5px;
+                        margin-top: 10px;
+                        font-size: 11px;
+                        }
+
+                        .footer-table td {
+                        height: 120px;
+                        }
+
+                        .sign-box {
+                        margin-top: 40px;
+                        }
+                    </style>
+
+                    <!-- TOP GST + TITLE -->
+                    <table width="100%" class="top-table">
+                        <tr>
+                            <td width="30%" class="gst-box">
+                                GSTIN:
+                                <span t-field="o.company_id.vat"/>
+                            </td>
+                            <td width="40%" class="title-box">
+                                TAX INVOICE
+
+                                <span class="company-name" t-field="o.company_id.name"/>
+                            </td>
+                            <td width="30%"></td>
+                        </tr>
+                    </table>
+
+                    <!-- COMPANY ADDRESS -->
+                    <div class="company-address">
+                        <span t-field="o.company_id.partner_id.contact_address"/>
+                    </div>
+
+                    <!-- BILL / SHIP / INVOICE META -->
+                    <table width="100%" class="header-table">
+                        <tr>
+                            <td width="50%" class="box">
+                                <b>BILL TO</b>
+
+                                <span t-field="o.partner_id.name"/>
+
+                                GSTIN:
+                                <span t-field="o.partner_id.vat"/>
+
+                                <span t-field="o.partner_id.contact_address"/>
+                            </td>
+
+                            <td width="25%" class="box">
+                                <b>DATE</b>
+
+                                <span t-field="o.invoice_date"/>
+
+
+                                <b>INVOICE NO.</b>
+
+                                <span t-field="o.name"/>
+                            </td>
+
+                            <td width="25%" class="box">
+                                <b>SHIP TO</b>
+
+                                <span t-field="o.partner_id.name"/>
+
+                                GSTIN:
+                                <span t-field="o.partner_id.vat"/>
+
+                                <span t-field="o.partner_id.contact_address"/>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <!-- ITEMS TABLE -->
+                    <table width="100%" class="items-table">
+                        <thead>
+                            <tr class="items-header">
+                                <th>S.No</th>
+                                <th>DESCRIPTION</th>
+                                <th>SAC CODE</th>
+                                <th>MONTH/YEAR</th>
+                                <th>QTY</th>
+                                <th>UNIT PRICE</th>
+                                <th>TOTAL</th>
                             </tr>
+                        </thead>
+
+                        <tbody>
+                            <t t-set="i" t-value="1"/>
+                            <t t-foreach="o.invoice_line_ids" t-as="l">
+                                <tr>
+                                    <td class="center">
+                                        <t t-esc="i"/>
+                                    </td>
+                                    <td>
+                                        <span t-field="l.name"/>
+                                    </td>
+                                    <td class="center">
+                                        <span t-field="l.product_id.l10n_in_hsn_code"/>
+                                    </td>
+
+                                    <!-- ✅ Your custom field -->
+                                    <td class="center">
+                                        <t t-if="l.inv_months">
+                                            <span t-field="l.inv_months"/>
+                                        </t>
+                                    </td>
+
+                                    <td class="center">
+                                        <span t-field="l.quantity"/>
+                                    </td>
+                                    <td class="right">
+                                        <span t-field="l.price_unit"
+                                              t-options="{'widget':'monetary','display_currency':o.currency_id}"/>
+                                    </td>
+                                    <td class="right">
+                                        <span t-field="l.price_subtotal"
+                                              t-options="{'widget':'monetary','display_currency':o.currency_id}"/>
+                                    </td>
+                                </tr>
+                                <t t-set="i" t-value="i+1"/>
+                            </t>
+                        </tbody>
+                    </table>
+
+                    <!-- TOTALS SECTION (DYNAMIC TAXES using tax_totals) -->
+                    <table width="100%" class="totals-table">
+
+                        <!-- SUBTOTAL -->
+                        <tr>
+                            <td width="60%"></td>
+                            <td width="20%" class="right bold">SUBTOTAL</td>
+                            <td width="20%" class="right bold">
+                                <span t-field="o.amount_untaxed"
+                                      t-options="{'widget':'monetary','display_currency':o.currency_id}"/>
+                            </td>
+                        </tr>
+
+                        <!-- ✅ Dynamic Taxes -->
+                        <t t-set="tax_totals" t-value="o.tax_totals"/>
+                        <t t-if="tax_totals and tax_totals.get('groups_by_subtotal')">
+                            <!-- groups_by_subtotal is a dict; we loop through its values (list of tax groups) -->
+                            <t t-foreach="tax_totals.get('groups_by_subtotal').values()" t-as="tax_group_list">
+                                <t t-foreach="tax_group_list" t-as="tax_group">
+                                    <tr>
+                                        <td></td>
+                                        <td class="right bold">
+                                            <t t-esc="tax_group.get('tax_group_name')"/>
+                                        </td>
+                                        <td class="right bold">
+                                            <!-- formatted_tax_group_amount already formatted with currency -->
+                                            <t t-esc="tax_group.get('formatted_tax_group_amount')"/>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </t>
                         </t>
-                    </t>
-                </t>
 
-                <!-- TOTAL TAX -->
-                <tr class="total-tax-row">
-                    <td></td>
-                    <td class="right bold">TOTAL TAX</td>
-                    <td class="right bold">
-                        <span t-field="o.amount_tax"
-                              t-options="{'widget':'monetary','display_currency':o.currency_id}"/>
-                    </td>
-                </tr>
+                        <!-- TOTAL TAX -->
+                        <tr class="total-tax-row">
+                            <td></td>
+                            <td class="right bold">TOTAL TAX</td>
+                            <td class="right bold">
+                                <span t-field="o.amount_tax"
+                                      t-options="{'widget':'monetary','display_currency':o.currency_id}"/>
+                            </td>
+                        </tr>
 
-                <!-- INVOICE VALUE -->
-                <tr class="invoice-total-row">
-                    <td></td>
-                    <td class="right bold">INVOICE VALUE</td>
-                    <td class="right bold">
-                        <span t-field="o.amount_total"
-                              t-options="{'widget':'monetary','display_currency':o.currency_id}"/>
-                    </td>
-                </tr>
+                        <!-- INVOICE VALUE -->
+                        <tr class="invoice-total-row">
+                            <td></td>
+                            <td class="right bold">INVOICE VALUE</td>
+                            <td class="right bold">
+                                <span t-field="o.amount_total"
+                                      t-options="{'widget':'monetary','display_currency':o.currency_id}"/>
+                            </td>
+                        </tr>
 
-            </table>
+                    </table>
 
-          <!-- AMOUNT WORDS -->
-          <div class="amount-words">
-            Invoice Value in Words:
-            <span t-esc="o.amount_total_in_words"/>
-          </div>
+                    <!-- AMOUNT WORDS -->
+                    <div class="amount-words">
+                        Invoice Value in Words:
+                        <t t-if="o.currency_id">
+                            <span t-esc="o.currency_id.amount_to_text(o.amount_total)"/>
+                        </t>
+                        <!--  <span t-esc="o.amount_total_in_words"/>-->
+                    </div>
 
-          <!-- FOOTER BANK + SIGN -->
-          <table width="100%" class="footer-table">
-            <tr>
-              <td width="50%" class="box">
-                Certified that the particulars given above are true and correct.<br/><br/>
-                <b>For <span t-field="o.company_id.name"/></b><br/><br/>
-                <div class="sign-box">Authorised Signatory</div>
-              </td>
+                    <!-- FOOTER BANK + SIGN -->
+                    <table width="100%" class="footer-table">
+                        <tr>
+                            <td width="50%" class="box">
+                                Certified that the particulars given above are true and correct.
 
-              <td width="50%" class="box">
-                <b>Bank Details</b><br/>
-                <t t-set="bank" t-value="o.company_id.partner_id.bank_ids[:1]"/>
-                <t t-foreach="bank" t-as="b">
-                  Bank A/c No: <span t-field="b.acc_number"/><br/>
-                  Bank IFSC: <span t-field="b.bank_bic"/><br/>
-                  Bank Name: <span t-field="b.bank_name"/>
-                </t>
-              </td>
-            </tr>
-          </table>
 
-        </div>
-      </t>
-    </t>
-  </template>
+                                <b>For
+                                    <span t-field="o.company_id.name"/>
+                                </b>
+
+
+                                <div class="sign-box">Authorised Signatory</div>
+                            </td>
+
+                            <td width="50%" class="box">
+                                <b>Bank Details</b>
+
+                                <t t-set="bank" t-value="o.company_id.partner_id.bank_ids[:1]"/>
+                                <t t-foreach="bank" t-as="b">
+                                    Bank A/c No:
+                                    <span t-field="b.acc_number"/>
+
+                                    Bank IFSC:
+                                    <span t-field="b.bank_bic"/>
+
+                                    Bank Name:
+                                    <span t-field="b.bank_name"/>
+                                </t>
+                            </td>
+                        </tr>
+                    </table>
+
+                </div>
+            </t>
+        </t>
+    </template>
 
 </odoo>

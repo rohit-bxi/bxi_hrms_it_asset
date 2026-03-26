@@ -19,8 +19,13 @@ class HelpdeskEscalationLevel(models.Model):
         help="Level number like 1, 2, 3"
     )
 
-    assignee_ids = fields.Many2many(
-        "res.users",
+    # assignee_ids = fields.Many2many(
+    #     "res.users",
+    #     string="Level Assignees",
+    #     help="Users responsible for this escalation level"
+    # )
+    assignees_ids = fields.Many2many(
+        "hr.employee",
         string="Level Assignees",
         help="Users responsible for this escalation level"
     )

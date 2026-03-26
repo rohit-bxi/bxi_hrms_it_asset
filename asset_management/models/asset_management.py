@@ -537,6 +537,7 @@ class AssetTransferEntry(models.Model):
                                default=lambda self: _('New'), help="Unique identifier for this transfer")
     stock_qty = fields.Integer(string="Quantity", default=1, 
                               help="Quantity of assets being transferred (for multiple assets)")
+    location = fields.Char(string="Location")
     
     @api.model_create_multi
     def create(self, vals_list):

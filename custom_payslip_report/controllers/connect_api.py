@@ -109,7 +109,7 @@ class BXIController(Controller):
                 "designation": emp.job_title or "",
                 "location": getattr(emp, "psa", "") or "",
                 "doj": emp.contract_date_start.isoformat() if emp.contract_date_start else "",
-                "gender": getattr(emp, "sex", "") or "",
+                "gender": (getattr(emp, "sex", "") or "").capitalize(),
                 "department": emp.department_id.name if emp.department_id else "",
                 "pan_number": getattr(emp, "l10n_in_pan", "") or "",
                 "band": getattr(emp, "role_band", "") or "",

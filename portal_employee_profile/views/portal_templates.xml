@@ -26,7 +26,8 @@
     <div class="col-md-6">
         <label>Employee Name</label>
         <input name="name" class="form-control"
-               t-att-value="employee.name"/>
+               t-att-value="employee.name"
+               required="1"/>
     </div>
 
     <div class="col-md-6">
@@ -38,37 +39,46 @@
     <div class="col-md-6">
         <label>Personal Email</label>
         <input name="private_email" class="form-control"
-               t-att-value="employee.private_email"/>
+               t-att-value="employee.private_email"
+               required="1"
+               />
     </div>
 
     <div class="col-md-6">
         <label>Work Email</label>
         <input name="work_email" class="form-control"
-               t-att-value="employee.work_email"/>
+               t-att-value="employee.work_email"
+               required="1"
+               />
     </div>
 
     <div class="col-md-6">
         <label>Phone</label>
         <input name="private_phone" class="form-control"
-               t-att-value="employee.private_phone"/>
+               t-att-value="employee.private_phone"
+               required="1"
+               />
     </div>
 
     <div class="col-md-6">
         <label>Medical Insurance No</label>
         <input name="medical_insurance_no" class="form-control"
-               t-att-value="employee.medical_insurance_no"/>
+               t-att-value="employee.medical_insurance_no"
+               />
     </div>
 
     <div class="col-md-6">
         <label>Bank Accounts</label>
         <input class="form-control"
                t-att-value="', '.join(employee.bank_account_ids.mapped('acc_number'))"
-               readonly="1"/>
+               />
     </div>
     <div class="col-md-6">
         <label>Aadhar Number</label>
         <input name="aadhar_card" class="form-control"
-               t-att-value="employee.aadhar_card"/>
+               t-att-value="employee.aadhar_card"
+               required="1"
+               />
     </div>
 </div>
 
@@ -88,7 +98,7 @@
         <label>Language</label>
         <input class="form-control"
                t-att-value="employee.lang"
-               readonly="1"/>
+               />
     </div>
 </div>
 
@@ -100,7 +110,9 @@
     <div class="col-md-4">
         <label>Contact Name</label>
         <input name="emergency_contact" class="form-control"
-               t-att-value="employee.emergency_contact"/>
+               t-att-value="employee.emergency_contact"
+               required="1"/>
+
     </div>
 
     <div class="col-md-4">
@@ -112,7 +124,9 @@
     <div class="col-md-4">
         <label>Phone</label>
         <input name="emergency_phone" class="form-control"
-               t-att-value="employee.emergency_phone"/>
+               t-att-value="employee.emergency_phone"
+               required="1"
+               />
     </div>
 </div>
 
@@ -125,13 +139,15 @@
         <label>Nationality</label>
         <input class="form-control"
                t-att-value="employee.country_id.name"
-               readonly="1"/>
+               required="1"
+               />
     </div>
 
     <div class="col-md-3">
         <label>Non-Resident</label><br/>
         <input type="checkbox" name="is_non_resident"
-               t-att-checked="employee.is_non_resident"/>
+               t-att-checked="employee.is_non_resident"
+               />
     </div>
 
     <div class="col-md-3">
@@ -148,7 +164,7 @@
 <div class="row g-3">
     <div class="col-md-4">
         <label>Marital Status</label>
-        <select name="marital" class="form-control" disabled="disabled">
+        <select name="marital" class="form-control">
             <t t-foreach="employee.fields_get(['marital'])['marital']['selection']" t-as="opt">
                 <option t-att-value="opt[0]"
                         t-att-selected="opt[0] == employee.marital">
@@ -191,7 +207,9 @@
     <div class="col-md-3">
         <label>City</label>
         <input name="city" class="form-control"
-               t-att-value="employee.private_city"/>
+               t-att-value="employee.private_city"
+               required="1"/>
+
     </div>
 
     <div class="col-md-3">
@@ -208,19 +226,25 @@
         <!-- UAN -->
         <div class="col-md-6 mb-3">
             <label>UAN</label>
-            <input name="l10n_in_uan" type="text" class="form-control" t-att-value="employee.l10n_in_uan"/>
+            <input name="l10n_in_uan" type="text" class="form-control" t-att-value="employee.l10n_in_uan"
+                required="1"
+                />
         </div>
 
         <!-- ESIC Number -->
         <div class="col-md-6 mb-3">
             <label>ESIC Number</label>
-            <input name="l10n_in_esic_number" type="text" class="form-control" t-att-value="employee.l10n_in_esic_number"/>
+            <input name="l10n_in_esic_number" type="text" class="form-control" t-att-value="employee.l10n_in_esic_number"
+                />
+
         </div>
 
         <!-- PAN -->
         <div class="col-md-6 mb-3">
             <label>PAN</label>
-            <input name="l10n_in_pan" type="text" class="form-control" t-att-value="employee.l10n_in_pan"/>
+            <input name="l10n_in_pan" type="text" class="form-control" t-att-value="employee.l10n_in_pan"
+                required="1"
+                />
         </div>
     </div>
 </div>
