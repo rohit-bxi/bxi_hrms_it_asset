@@ -73,13 +73,13 @@
                                                 Draft
                                             </span>
                                             <span t-elif="req.state == 'manager_approval'" class="badge bg-info px-3 py-2">
-                                                Manager
+                                                Manager Approval
                                             </span>
                                             <span t-elif="req.state == 'hr_approval'" class="badge bg-warning text-dark px-3 py-2">
-                                                HR
+                                                HR Approval
                                             </span>
                                             <span t-elif="req.state == 'finance_approval'" class="badge bg-success px-3 py-2">
-                                                Finance
+                                                Finance Approval
                                             </span>
                                             <span t-elif="req.state == 'approved'" class="badge bg-primary px-3 py-2">
                                                 Approved
