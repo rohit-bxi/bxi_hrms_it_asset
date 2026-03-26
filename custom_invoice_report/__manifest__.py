@@ -12,6 +12,7 @@
         'report/account_invoice_report.xml',
         'views/custom_invoice_template.xml',
         'views/account_invoice_view.xml',
+        'views/res_user.xml',
     ],
     'assets': {
                 'web.report_assets_common': [
