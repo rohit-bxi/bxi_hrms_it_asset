@@ -123,13 +123,14 @@ class TravelRequest(models.Model):
     to_city = fields.Char(string='To City',tracking=True,)
     to_state = fields.Many2one(
         'res.country.state',
-        string='From State',
+        string='To State',
         domain="[('country_id', '=', to_country)]",
         tracking=True
     )
     to_country = fields.Many2one(
         'res.country',
-        string='From Country',
+
+        string='To Country',
         tracking=True
     )
 

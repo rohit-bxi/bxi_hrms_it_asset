@@ -42,10 +42,16 @@ class TravelRequest(http.Controller):
                 'travel_purpose': post.get('travel_purpose'),
                 'departure_date': post.get('departure_date'),
                 'return_date': post.get('return_date'),
+                'from_city':post.get('from_city'),
+                'to_city':post.get('to_city'),
+                'departure_date': post.get('departure_date'),
+                'return_date': post.get('return_date'),
+                'mode_of_travel': post.get('mode_of_travel'),
             })
             return request.redirect(f'/my/travel-request/{records.id}')
         values = {
             'employee': employee,
+            'mode_options': request.env['travel.request']._fields['mode_of_travel'].selection,
         }
         return request.render('bxi_travel_request.submit_travel_template', values)
     
