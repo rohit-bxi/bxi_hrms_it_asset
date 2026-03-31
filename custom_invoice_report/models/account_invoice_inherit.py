@@ -1,5 +1,4 @@
 import base64
-
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 from num2words import num2words
@@ -61,4 +60,3 @@ class AccountMoveSendWizard(models.TransientModel):
             'custom_invoice_report.action_custom_invoice_report_pdf',
             raise_if_not_found=False
         )
-        return custom_report

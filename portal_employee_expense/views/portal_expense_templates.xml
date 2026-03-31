@@ -59,6 +59,8 @@
                                             class="badge bg-primary">Approved</span>
                                         <span t-elif="exp.state == 'paid'" class="badge bg-success">
                                             Paid</span>
+                                        <span t-elif="exp.state == 'hr_approval'" class="badge bg-success">Hr Approval</span>
+                                        <span t-elif="exp.state == 'finance_approval'" class="badge bg-success">Finance Approval</span>
                                         <span t-else="" class="badge bg-dark">
                                             <t t-esc="exp.state" />
                                         </span>
@@ -108,9 +110,7 @@
                                         </t>
                                     </select>
                                 </td>
-<!--                                <td>-->
-<!--                                    <input type="text" name="category[]" class="form-control"/>-->
-<!--                                </td>-->
+
                                 <td>
                                     <input type="date" name="date[]" class="form-control" required="True"/>
                                 </td>
@@ -121,9 +121,6 @@
                                 <td>
                                     <input type="number" name="amount[]" class="form-control" required="True"/>
                                 </td>
-<!--                                <td>-->
-<!--                                    <input type="text" name="description[]" class="form-control"/>-->
-<!--                                </td>-->
                                 <td>
                                     <input type="file" name="receipt[]" class="form-control"/>
                                 </td>

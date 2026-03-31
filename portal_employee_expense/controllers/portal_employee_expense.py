@@ -69,6 +69,6 @@ class EmployeePortalExpense(http.Controller):
             })  
             
             if expense:
-                expense.state = 'submitted'
+                expense.state = 'hr_approval'
 
         return request.redirect('/my/employee-expenses')

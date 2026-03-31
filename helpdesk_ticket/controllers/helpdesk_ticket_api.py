@@ -16,6 +16,7 @@ class HelpdeskAPI(http.Controller):
             name = data.get('name')
             description = data.get('description')
             team_id = data.get('team_id')
+            team_name = data.get('team_name')
             user_id = data.get('user_id')
             partner_id = data.get('partner_id')
             priority = data.get('priority')
@@ -26,11 +27,25 @@ class HelpdeskAPI(http.Controller):
             if not name:
                 return {"status": 400, "message": "Subject is required"}
 
+            team = False
+
             # Team Validation
             if team_id:
                 team = request.env['helpdesk.team'].sudo().browse(team_id)
                 if not team.exists():
                     return {"status": 400, "message": "Invalid team_id"}
+
+            elif team_name:
+                team = request.env['helpdesk.team'].sudo().search(
+                    [('name', 'ilike', team_name)],
+                    limit=1
+                )
+                if not team:
+                    return {"status": 400, "message": "No team found with given name"}
+
+            else:
+                # Default team fallback (optional)
+                team = request.env['helpdesk.team'].sudo().search([], limit=1)
 
             # Assigned User Validation
             if user_id:
@@ -48,7 +63,8 @@ class HelpdeskAPI(http.Controller):
             # Prepare Values
             # -------------------------
             vals = {
-                "name": name
+                "name": name,
+                "team_id": team.id if team else False
             }
 
             if description:
@@ -78,7 +94,8 @@ class HelpdeskAPI(http.Controller):
                 "status": 200,
                 "message": "Ticket Created Successfully",
                 "ticket_id": ticket.id,
-                "ticket_name": ticket.name
+                "ticket_name": ticket.name,
+                "team": ticket.team_id.name,
             }
 
         except Exception as e:
