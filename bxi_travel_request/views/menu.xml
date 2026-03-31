@@ -14,6 +14,7 @@
         inherit_id="portal.portal_my_home"
         name="Portal Home - Travel Request">
         <xpath expr="//div[@id='portal_common_category']/t[1]" position="after">
+            <t t-if="request.env.user.has_group('base.group_portal') or request.env.user.has_group('base.group_user')"/>
             <t
                 t-if="(request.env.user.has_group('base.group_portal') or request.env.user.has_group('base.group_user')) 
          and not request.env.user.sudo().vender_custmer_access">

@@ -40,6 +40,8 @@ class TravelRequest(http.Controller):
                 'manager_id': employee.parent_id.id if employee.parent_id else False,
                 'department_id': employee.department_id.id if employee.department_id else False,
                 'travel_purpose': post.get('travel_purpose'),
+                'departure_date': post.get('departure_date'),
+                'return_date': post.get('return_date'),
                 'from_city':post.get('from_city'),
                 'to_city':post.get('to_city'),
                 'departure_date': post.get('departure_date'),

@@ -129,6 +129,7 @@ class TravelRequest(models.Model):
     )
     to_country = fields.Many2one(
         'res.country',
+
         string='To Country',
         tracking=True
     )
