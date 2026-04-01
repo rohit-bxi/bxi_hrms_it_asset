@@ -400,10 +400,7 @@
                                 <input type="checkbox"
                                     name="advance_required"
                                     class="form-check-input"
-
                                     id="advance_required"/>
-
-                                    id="advance_required" />
                             </div>
                         </div>
                         <div class="mt-4">
