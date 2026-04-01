@@ -16,6 +16,7 @@
         'website',
         'project',
         'account',
+        'bxi_user_access'
     ],
     'data': [
         'security/ir.model.access.csv',
@@ -24,6 +25,11 @@
         'views/menu.xml',
         'views/bxi_travel_template.xml',
     ],
+    'assets': {
+        'web.assets_frontend': [
+            'bxi_travel_request/static/src/js/travel.js',
+        ],
+    },
     'installable': True,
     'application': False,
     'auto_install': False,

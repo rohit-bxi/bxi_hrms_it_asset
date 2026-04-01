@@ -33,27 +33,52 @@ class TravelRequest(http.Controller):
                 ('user_id', '=', user.id)
             ], limit=1)
         
-        if request.httprequest.method == 'POST':
-            records = request.env['travel.request'].sudo().create({
+        country_id = request.params.get('country_id')
+        if country_id:
+            states = request.env['res.country.state'].sudo().search([
+                ('country_id', '=', int(country_id))
+            ])
+            return request.make_json_response({
+                'states': [{'id': s.id, 'name': s.name} for s in states]
+            })
+        india_id = request.env.ref('base.in').id
+
+        def get_int(field, default):
+            return int(post.get(field)) if post.get(field) else default
+
+        from_country = get_int('from_country', india_id)
+        to_country = get_int('to_country', india_id)
+        state_model = request.env['res.country.state'].sudo()
+        from_states = state_model.search([('country_id', '=', from_country)])
+        to_states = state_model.search([('country_id', '=', to_country)])
+        if request.httprequest.method == 'POST' and post.get('travel_purpose'):
+            record = request.env['travel.request'].sudo().create({
                 'name': 'New',
                 'employee_id': employee.id,
                 'manager_id': employee.parent_id.id if employee.parent_id else False,
                 'department_id': employee.department_id.id if employee.department_id else False,
                 'travel_purpose': post.get('travel_purpose'),
-                'departure_date': post.get('departure_date'),
-                'return_date': post.get('return_date'),
-                'from_city':post.get('from_city'),
-                'to_city':post.get('to_city'),
+                'from_country': from_country,
+                'to_country': to_country,
+                'from_state': get_int('from_state', False),
+                'to_state': get_int('to_state', False),
+                'from_city': post.get('from_city'),
+                'to_city': post.get('to_city'),
                 'departure_date': post.get('departure_date'),
                 'return_date': post.get('return_date'),
                 'mode_of_travel': post.get('mode_of_travel'),
             })
-            return request.redirect(f'/my/travel-request/{records.id}')
-        values = {
+            return request.redirect(f'/my/travel-request/{record.id}')
+        
+        return request.render('bxi_travel_request.submit_travel_template', {
             'employee': employee,
+            'countries': request.env['res.country'].sudo().search([]),
+            'from_country_id': from_country,
+            'to_country_id': to_country,
+            'from_states': from_states,
+            'to_states': to_states,
             'mode_options': request.env['travel.request']._fields['mode_of_travel'].selection,
-        }
-        return request.render('bxi_travel_request.submit_travel_template', values)
+        })    
     
     @http.route(['/my/travel-request/<int:rec_id>'], type='http', auth='user', website=True)
     def travel_request_detail(self, rec_id):

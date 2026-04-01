@@ -103,35 +103,39 @@ class TravelRequest(models.Model):
     from_country = fields.Many2one(
         'res.country',
         string='From Country',
-        tracking=True
+        tracking=True,
+        required=True,
+        default=lambda self: self.env.ref('base.in').id
     )
 
     from_state = fields.Many2one(
         'res.country.state',
         string='From State',
         domain="[('country_id', '=', from_country)]",
-        tracking=True
+        tracking=True,
     )
 
     from_city = fields.Char(
         string='From City',
-        tracking=True
+        tracking=True,
+        required=True,
     )
 
     # To address
     to_address = fields.Char(string='To Address',tracking=True,)
-    to_city = fields.Char(string='To City',tracking=True,)
+    to_city = fields.Char(string='To City',tracking=True,required=True)
     to_state = fields.Many2one(
         'res.country.state',
         string='To State',
         domain="[('country_id', '=', to_country)]",
-        tracking=True
+        tracking=True,
     )
     to_country = fields.Many2one(
         'res.country',
 
         string='To Country',
-        tracking=True
+        required=True,
+        default=lambda self: self.env.ref('base.in').id
     )
 
     departure_date = fields.Date(

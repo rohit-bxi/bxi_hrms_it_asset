@@ -114,7 +114,7 @@
                     <div class="card shadow-sm">
                         <div class="table-responsive">
                             <table class="table table-hover table-striped mb-0">
-                                 <thead class="table-light">
+                                <thead class="table-light">
                                     <tr>
                                         <th>Name</th>
                                         <th>Employee</th>
@@ -122,6 +122,10 @@
                                         <th>Department</th>
                                         <th>Request By</th>
                                         <th>Travel Purpose</th>
+                                        <th>From Country</th>
+                                        <th>To Country</th>
+                                        <th>From State</th>
+                                        <th>To State</th>
                                         <th>From City</th>
                                         <th>To City</th>
                                         <th>Departure Date</th>
@@ -151,6 +155,18 @@
 
                                             <td>
                                                 <t t-esc="req.travel_purpose" />
+                                            </td>
+                                            <td>
+                                                <t t-esc="req.from_country.name" />
+                                            </td>
+                                            <td>
+                                                <t t-esc="req.to_country.name" />
+                                            </td>
+                                            <td>
+                                                <t t-esc="req.from_state.name" />
+                                            </td>
+                                            <td>
+                                                <t t-esc="req.to_state.name" />
                                             </td>
                                             <td>
                                                 <t t-esc="req.from_city"></t>
@@ -259,26 +275,37 @@
                                                 class="form-control" />
                                         </div>
                                         <div class="mb-3">
+                                            <label>From Country</label>
+                                            <select name="from_country" id="from_country"
+                                                class="form-control" required="1">
+                                                <option value="">Select Country</option>
+                                                <t t-foreach="countries" t-as="c">
+                                                    <option t-att-value="c.id"
+                                                        t-att-selected="c.id == to_country_id">
+                                                        <t t-esc="c.name" />
+                                                    </option>
+                                                </t>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label>From State</label>
+                                            <select name="from_state" id="from_state"
+                                                class="form-control">
+                                                <option value="">Select State</option>
+                                                <t t-foreach="from_states" t-as="s">
+                                                    <option t-att-value="s.id">
+                                                        <t t-esc="s.name" />
+                                                    </option>
+                                                </t>
+                                            </select>
+                                        </div>
+                                         <div class="mb-3">
                                             <label>From City</label>
 
                                             <input type="text" name="from_city" class="form-control" />
 
                                             <input type="text" name="from_city" class="form-control"
                                                 required="True" />
-                                        </div>
-                                        <div class="mb-3">
-                                            <label>From State</label>
-                                            <input type="text" name="from_state"
-
-                                                class="form-control" />
-
-                                                class="form-control" required="True" />
-
-                                        </div>
-                                        <div class="mb-3">
-                                            <label>From Country</label>
-                                            <input type="text" name="from_country"
-                                                class="form-control" />
                                         </div>
                                         <div class="mb-3">
                                             <label>Request Departure Date</label>
@@ -315,26 +342,34 @@
                                                 class="form-control" />
                                         </div>
                                         <div class="mb-3">
-                                            <label>To City</label>
-
-                                            <input type="text" name="to_city" class="form-control" />
+                                            <label>To Country</label>
+                                            <select id="to_country" name="to_country"
+                                            class="form-control"
+                                                required="1">
+                                                <option value="">Select Country</option>
+                                                <t t-foreach="countries" t-as="c">
+                                                    <option t-att-value="c.id"
+                                                        t-att-selected="c.id == to_country_id">
+                                                        <t t-esc="c.name" />
+                                                    </option>
+                                                </t>
+                                            </select>
                                         </div>
                                         <div class="mb-3">
                                             <label>To State</label>
-                                            <input type="text" name="to_state" class="form-control" />
-
+                                            <select id="to_state" name="to_state" class="form-control">
+                                                <option value="">Select State</option>
+                                                <t t-foreach="to_states" t-as="s">
+                                                    <option t-att-value="s.id">
+                                                        <t t-esc="s.name" />
+                                                    </option>
+                                                </t>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label>To City</label>
                                             <input type="text" name="to_city" class="form-control"
                                                 required="True" />
-                                        </div>
-                                        <div class="mb-3">
-                                            <label>To State</label>
-                                            <input type="text" name="to_state" class="form-control"
-                                                required="True" />
-                                        </div>
-                                        <div class="mb-3">
-                                            <label>To Country</label>
-                                            <input type="text" name="to_country"
-                                                class="form-control" />
                                         </div>
                                         <div class="mb-3">
                                             <label>Contact Number</label>
@@ -382,8 +417,10 @@
                     </form>
                 </div>
             </div>
+            <script type="text/javascript" src="/bxi_travel_request/static/src/js/state.js"></script>
         </t>
     </template>
+
     <template id="travel_request_detail_template">
         <t t-call="portal.portal_layout">
             <div class="container mt-4 o_form_sheet_bg">
@@ -444,8 +481,34 @@
                                 class="form-control"
                                 readonly="1" />
                         </div>
-
-
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">From Country</label>
+                            <input type="text"
+                                t-att-value="record.from_country.name"
+                                class="form-control"
+                                readonly="1" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">To Country </label>
+                            <input type="text"
+                                t-att-value="record.to_country.name"
+                                class="form-control"
+                                readonly="1" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">From State</label>
+                            <input type="text"
+                                t-att-value="record.to_state.name"
+                                class="form-control"
+                                readonly="1" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">To State</label>
+                            <input type="text"
+                                t-att-value="record.to_state.name"
+                                class="form-control"
+                                readonly="1" />
+                        </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">From City</label>
                             <input type="text"
