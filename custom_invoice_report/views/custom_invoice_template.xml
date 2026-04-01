@@ -214,7 +214,7 @@
                             <td width="20%" class="right">Untaxed Amount:</td>
                             <td width="20%" class="right">
                                 <span t-field="o.amount_untaxed"
-                                      t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                     />
                             </td>
                         </tr>
 
@@ -228,7 +228,7 @@
                                             <t t-esc="tax_group.get('group_name')"/>:
                                         </td>
                                         <td class="right">
-                                            <t t-esc="tax_group.get('formatted_tax_group_amount')"/>
+                                            <t t-esc="tax_group.get('tax_amount')"/>
                                         </td>
                                     </tr>
                                 </t>
