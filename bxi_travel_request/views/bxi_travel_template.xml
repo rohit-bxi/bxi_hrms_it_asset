@@ -224,8 +224,6 @@
                     </div>
                     <form method="post" action="/my/submit-travel-request" id="request_form">
                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()" />
-
-                        <div class="row">
                         <div class="row">
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Employee</label>
@@ -233,8 +231,6 @@
                                     class="form-control"
                                     t-att-value="employee.name"
                                     readonly="1"/>
-
-                                    readonly="1" />
                             </div>
                         </div>
                         <ul class="nav nav-tabs mt-4" id="travelTabs">
