@@ -11,7 +11,8 @@
         'hr',
         'portal',
         'website',
-        'hr_expense'
+        'hr_expense',
+        'bxi_user_access'
     ],
     'data': [
         'security/ir.model.access.csv',
