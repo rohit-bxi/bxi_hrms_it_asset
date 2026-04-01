@@ -9,24 +9,25 @@ class EmployeePortalExpense(http.Controller):
     @http.route(['/my/employee-expenses'], type='http', auth='user', website=True)
     def portal_employee_expenses(self, **kwargs):
         user = request.env.user
+        Expense = request.env['hr.expense'].sudo()
 
-        # Restrict to portal users only
-        # if not user.has_group('base.group_portal'):
-        #     raise AccessError("This page is only for portal users")
+        if user.has_group('base.group_user'):
+            expenses = Expense.search([])
+        else:
+            employee = request.env['hr.employee'].sudo().search([
+                ('user_id', '=', user.id)
+            ], limit=1)
 
-        employee = request.env['hr.employee'].sudo().search([
-            ('user_id', '=', user.id)
-        ], limit=1)
-        expenses = []
-        if employee:
-            expenses = request.env['hr.expense'].sudo().search([
-                ('employee_id', '=', employee.id)
-            ])
+            expenses = []
+            if employee:
+                expenses = Expense.search([
+                    ('employee_id', '=', employee.id)
+                ])
         values = {
             'expenses': expenses,
         }
         return request.render('portal_employee_expense.portal_my_expenses_template', values)
-
+    
     @http.route('/my/submit-expenses', type='http', auth="user", website=True)
     def submit_expenses(self, **post):
 
@@ -68,6 +69,6 @@ class EmployeePortalExpense(http.Controller):
             })  
             
             if expense:
-                expense.state = 'submitted'
+                expense.state = 'hr_approval'
 
         return request.redirect('/my/employee-expenses')

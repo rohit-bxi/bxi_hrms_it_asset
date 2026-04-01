@@ -39,7 +39,8 @@
                 <field name="child_ticket_ids"
                        widget="many2many_tags"
                        domain="[('id','!=',id)]"/>
-                <field name="additional_resolution_owner"/>
+                <field name="additional_resolution_owner"
+                    options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
             </xpath>
             <xpath expr="//field[@name='partner_id']" position="attributes">
                 <attribute name="string">Client</attribute>

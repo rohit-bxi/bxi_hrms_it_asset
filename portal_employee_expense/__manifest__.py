@@ -14,8 +14,9 @@
         'hr_expense'
     ],
     'data': [
-        'security/expense_rule.xml',
         'security/ir.model.access.csv',
+        'views/hr_expense_inherit.xml',
+        'views/hr_expense.xml',
         'views/portal_expense_menu.xml',
         'views/portal_expense_templates.xml',
     ],
