@@ -331,3 +331,31 @@ class TravelRequest(models.Model):
             'finance_approved_by': False,
             'finance_approved_date': False,
         })
+
+    def write(self, vals):
+        res = super().write(vals)
+        if 'state' in vals:
+            for record in self:
+                record._send_state_email()
+        return res
+    
+    def _send_state_email(self):
+        self.ensure_one()
+        template = False
+        email_to = False
+        if self.state == 'manager_approval':
+            template = self.env.ref('bxi_travel_request.email_template_manager')
+            email_to = self.employee_id.parent_id.work_email if self.employee_id.parent_id else False
+        elif self.state == 'hr_approval':
+            template = self.env.ref('bxi_travel_request.email_template_hr')
+            email_to = 'hr@bxitech.com'
+        elif self.state == 'finance_approval':
+            template = self.env.ref('bxi_travel_request.email_template_finance')
+            email_to = 'fso@bxiventure.com'
+        if not template or not email_to:
+            return
+        template.send_mail(
+            self.id,
+            email_values={'email_to': email_to},
+            force_send=True
+        )
