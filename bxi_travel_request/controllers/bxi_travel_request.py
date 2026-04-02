@@ -67,7 +67,10 @@ class TravelRequest(http.Controller):
                 'departure_date': post.get('departure_date'),
                 'return_date': post.get('return_date'),
                 'mode_of_travel': post.get('mode_of_travel'),
+                'state': 'manager_approval',
             })
+            record._send_state_email()
+            
             return request.redirect(f'/my/travel-request/{record.id}')
         
         return request.render('bxi_travel_request.submit_travel_template', {
