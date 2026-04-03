@@ -208,62 +208,43 @@
             </div>
 
             <!-- ================= JS ================= -->
-            <script>
+    <script type="text/javascript">
+    <![CDATA[
+        document.getElementById("req_type").addEventListener("change", function () {
 
-                const typeField = document.getElementById("req_type");
-                const customerDiv = document.getElementById("customer_div");
-                const customerField = document.getElementById("customer_id");
+            let customerField = document.getElementById("customer_id");
 
-                function toggleCustomer() {
-                    if (typeField.value === "customer") {
-                        customerDiv.style.display = "block";
-                        customerField.setAttribute("required", "required");
-                    } else {
-                        customerDiv.style.display = "none";
-                        customerField.removeAttribute("required");
-                        customerField.value = "";
-                    }
+            if (this.value === "customer") {
+                customerField.setAttribute("required", "true");
+            } else {
+                customerField.removeAttribute("required");
+                customerField.value = "";
+            }
+        });
+
+        document.getElementById("req_form").addEventListener("submit", function (e) {
+
+            let rows = document.querySelectorAll("#product_body tr");
+
+            if (rows.length === 0) {
+                alert("Please add at least one product.");
+                e.preventDefault();
+                return;
+            }
+
+            for (let row of rows) {
+                let product = row.querySelector("select").value;
+                let qty = row.querySelector("input").value;
+
+                if (!product || !qty || qty <= 0) {
+                    alert("Please fill all product details correctly.");
+                    e.preventDefault();
+                    return;
                 }
-
-                typeField.addEventListener("change", toggleCustomer);
-                window.addEventListener("load", toggleCustomer);
-
-                // Add Row
-                document.getElementById("add_row").addEventListener("click", function () {
-                    let row = document.querySelector("#product_body tr").cloneNode(true);
-                    row.querySelectorAll("input").forEach(i => i.value = "");
-                    row.querySelectorAll("select").forEach(s => s.selectedIndex = 0);
-                    document.getElementById("product_body").appendChild(row);
-                });
-
-                // Remove Row
-                document.addEventListener("click", function (e) {
-                    if (e.target.classList.contains("remove_row")) {
-                        let rows = document.querySelectorAll("#product_body tr");
-                        if (rows.length > 1) {
-                            e.target.closest("tr").remove();
-                        }
-                    }
-                });
-
-                // Validation
-                document.getElementById("req_form").addEventListener("submit", function (e) {
-
-                    let rows = document.querySelectorAll("#product_body tr");
-
-                    for (let row of rows) {
-                        let product = row.querySelector("select").value;
-                        let qty = row.querySelector("input").value;
-
-                        if (!product || !qty || qty <= 0) {
-                            alert("Please fill all product details correctly.");
-                            e.preventDefault();
-                            return;
-                        }
-                    }
-                });
-
-            </script>
+            }
+        });
+    ]]>
+</script>
 
         </t>
     </template>
