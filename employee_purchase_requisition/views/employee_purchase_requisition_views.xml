@@ -33,28 +33,28 @@
                             invisible="state != 'waiting_department_approval'"
                             string="Approve" type="object"
                             help="Approve purchase requisition,Submit for Approval for Finance Head"
-                            groups="employee_purchase_requisition.material_category_hr_group"
+                            groups="employee_purchase_requisition.material_category_hr_group,employee_purchase_requisition.material_category_admin_group"
                             />
                     <button name="action_department_cancel"
                             class="oe_highlight"
                             invisible="state != 'waiting_department_approval'"
                             string="Reject" type="object"
                             help="Reject Purchase Requisition"
-                            groups="employee_purchase_requisition.material_category_hr_group"
+                            groups="employee_purchase_requisition.material_category_hr_group,employee_purchase_requisition.material_category_admin_group"
                             />
                     <button name="action_head_approval" class="oe_highlight"
                             invisible="state != 'waiting_head_approval'"
                             string="Approve"
                             type="object"
                             help="Approve Purchase requisition"
-                            groups="employee_purchase_requisition.material_category_finance_group"
+                            groups="employee_purchase_requisition.material_category_finance_group,employee_purchase_requisition.material_category_admin_group"
                             />
                     <button name="action_head_cancel" class="oe_highlight"
                             invisible="state != 'waiting_head_approval'"
                             string="Reject"
                             type="object"
                             help="Reject Purchase Requisition"
-                            groups="employee_purchase_requisition.material_category_finance_group"
+                            groups="employee_purchase_requisition.material_category_finance_group,employee_purchase_requisition.material_category_admin_group"
                             />
                     <button name="action_create_purchase_order"
                             class="oe_highlight"
@@ -62,13 +62,13 @@
                             string="Create Picking and PO"
                             type="object"
                             help="Create Picking/Purchase order"
-                            groups="employee_purchase_requisition.material_category_finance_group"
+                            groups="employee_purchase_requisition.material_category_finance_group,employee_purchase_requisition.material_category_admin_group"
                             />
                     <button name="action_receive" class="oe_highlight"
                             invisible="state != 'purchase_order_created'"
                             string="Received"
                             type="object"
-                            groups="employee_purchase_requisition.material_category_finance_group"
+                            groups="employee_purchase_requisition.material_category_finance_group,employee_purchase_requisition.material_category_admin_group"
                             />
                 </header>
                 <sheet>
