@@ -1,0 +1,271 @@
+<odoo>
+
+    <!-- ================= LIST VIEW ================= -->
+    <template id="bxi_purchase_requisition_template" name="My Requisitions">
+        <t t-call="portal.portal_layout">
+            <div class="container mt-6 o_form_sheet_bg">
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="fw-bold mb-0">My Requisitions</h2>
+                    <a href="/my/submit-requisition" class="btn btn-success">
+                        + Add Requisition
+                    </a>
+                </div>
+
+                <t t-if="not requests">
+                    <div class="alert alert-warning text-center">
+                        No requisitions found.
+                    </div>
+                </t>
+
+                <t t-if="requests">
+                    <div class="card shadow-sm">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped mb-0">
+
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Reference</th>
+                                        <th>Employee</th>
+                                        <th>Department</th>
+                                        <th>Responsible</th>
+                                        <th>Date</th>
+                                        <th>Deadline</th>
+                                        <th>Type</th>
+                                        <th>Customer</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    <t t-foreach="requests" t-as="req">
+                                        <tr>
+
+                                            <td class="fw-bold text-primary">
+                                                <t t-esc="req.name"/>
+                                            </td>
+
+                                            <td><t t-esc="req.employee_id.name"/></td>
+                                            <td><t t-esc="req.dept_id.name"/></td>
+                                            <td><t t-esc="req.user_id.name"/></td>
+
+                                            <td><t t-esc="req.requisition_date"/></td>
+                                            <td><t t-esc="req.requisition_deadline"/></td>
+
+                                            <td class="text-capitalize">
+                                                <t t-esc="req.req_type"/>
+                                            </td>
+
+                                            <td>
+                                                <t t-if="req.req_type == 'customer'">
+                                                    <t t-esc="req.customer_id.name"/>
+                                                </t>
+                                                <t t-else="">-</t>
+                                            </td>
+
+                                            <td>
+                                                <span t-if="req.state == 'new'" class="badge bg-secondary">New</span>
+                                                <span t-elif="req.state == 'waiting_department_approval'" class="badge bg-info">Dept Approval</span>
+                                                <span t-elif="req.state == 'waiting_head_approval'" class="badge bg-warning text-dark">Head Approval</span>
+                                                <span t-elif="req.state == 'approved'" class="badge bg-primary">Approved</span>
+                                                <span t-elif="req.state == 'purchase_order_created'" class="badge bg-success">PO Created</span>
+                                                <span t-elif="req.state == 'received'" class="badge bg-success">Received</span>
+                                                <span t-elif="req.state == 'cancelled'" class="badge bg-danger">Cancelled</span>
+                                                <span t-else="" class="badge bg-dark">
+                                                    <t t-esc="req.state"/>
+                                                </span>
+                                            </td>
+
+                                        </tr>
+                                    </t>
+                                </tbody>
+
+                            </table>
+                        </div>
+                    </div>
+                </t>
+
+            </div>
+        </t>
+    </template>
+
+
+    <!-- ================= FORM ================= -->
+    <template id="material_requisition_form" name="Submit Material Requisition">
+        <t t-call="portal.portal_layout">
+
+            <div class="container mt-5">
+                <div class="card shadow-lg border-0 rounded-4">
+
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Submit Material Requisition</h4>
+                    </div>
+
+                    <div class="card-body">
+
+                        <form id="req_form" action="/my/material-requisition/submit" method="post">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+
+                            <!-- BASIC -->
+                            <div class="row g-3">
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Requisition Date *</label>
+                                    <input type="date" name="requisition_date" class="form-control" required="required"/>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Deadline *</label>
+                                    <input type="date" name="requisition_deadline" class="form-control" required="required"/>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Type *</label>
+                                    <select name="req_type" id="req_type" class="form-select" required="required">
+                                        <option value="">Select Type</option>
+                                        <option value="internal">Internal</option>
+                                        <option value="customer">Customer</option>
+                                    </select>
+                                </div>
+
+                                <!-- ✅ FIXED: wrapped -->
+                                <div class="col-md-6" id="customer_div" style="display:none;">
+                                    <label class="form-label">Customer *</label>
+                                    <select name="customer_id" id="customer_id" class="form-select">
+                                        <option value="">Select Customer</option>
+                                        <t t-foreach="customers" t-as="cust">
+                                            <option t-att-value="cust.id">
+                                                <t t-esc="cust.name"/>
+                                            </option>
+                                        </t>
+                                    </select>
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label">Reason *</label>
+                                    <textarea name="requisition_description"
+                                              class="form-control"
+                                              rows="3"
+                                              required="required"></textarea>
+                                </div>
+
+                            </div>
+
+                            <!-- PRODUCTS -->
+                            <hr class="my-4"/>
+
+                            <h5>Products *</h5>
+
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Product *</th>
+                                            <th>Quantity *</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody id="product_body">
+                                        <tr>
+                                            <td>
+                                                <select name="product_id[]" class="form-select" required="required">
+                                                    <option value="">Select Product</option>
+                                                    <t t-foreach="products" t-as="prod">
+                                                        <option t-att-value="prod.id">
+                                                            <t t-esc="prod.name"/>
+                                                        </option>
+                                                    </t>
+                                                </select>
+                                            </td>
+
+                                            <td>
+                                                <input type="number" name="quantity[]" class="form-control"
+                                                       min="1" required="required"/>
+                                            </td>
+
+                                            <td>
+                                                <button type="button" class="btn btn-danger btn-sm remove_row">X</button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <button type="button" class="btn btn-outline-primary" id="add_row">
+                                + Add Product
+                            </button>
+
+                            <div class="text-end mt-4">
+                                <button type="submit" class="btn btn-success">
+                                    Submit Request
+                                </button>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= JS ================= -->
+            <script>
+
+                const typeField = document.getElementById("req_type");
+                const customerDiv = document.getElementById("customer_div");
+                const customerField = document.getElementById("customer_id");
+
+                function toggleCustomer() {
+                    if (typeField.value === "customer") {
+                        customerDiv.style.display = "block";
+                        customerField.setAttribute("required", "required");
+                    } else {
+                        customerDiv.style.display = "none";
+                        customerField.removeAttribute("required");
+                        customerField.value = "";
+                    }
+                }
+
+                typeField.addEventListener("change", toggleCustomer);
+                window.addEventListener("load", toggleCustomer);
+
+                // Add Row
+                document.getElementById("add_row").addEventListener("click", function () {
+                    let row = document.querySelector("#product_body tr").cloneNode(true);
+                    row.querySelectorAll("input").forEach(i => i.value = "");
+                    row.querySelectorAll("select").forEach(s => s.selectedIndex = 0);
+                    document.getElementById("product_body").appendChild(row);
+                });
+
+                // Remove Row
+                document.addEventListener("click", function (e) {
+                    if (e.target.classList.contains("remove_row")) {
+                        let rows = document.querySelectorAll("#product_body tr");
+                        if (rows.length > 1) {
+                            e.target.closest("tr").remove();
+                        }
+                    }
+                });
+
+                // Validation
+                document.getElementById("req_form").addEventListener("submit", function (e) {
+
+                    let rows = document.querySelectorAll("#product_body tr");
+
+                    for (let row of rows) {
+                        let product = row.querySelector("select").value;
+                        let qty = row.querySelector("input").value;
+
+                        if (!product || !qty || qty <= 0) {
+                            alert("Please fill all product details correctly.");
+                            e.preventDefault();
+                            return;
+                        }
+                    }
+                });
+
+            </script>
+
+        </t>
+    </template>
+
+</odoo>
