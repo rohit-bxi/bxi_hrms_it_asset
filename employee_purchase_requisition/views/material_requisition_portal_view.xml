@@ -3,36 +3,35 @@
     <!-- ================= LIST VIEW ================= -->
     <template id="bxi_purchase_requisition_template" name="My Requisitions">
         <t t-call="portal.portal_layout">
-            <div class="container mt-6 o_form_sheet_bg">
+            <div class="container mt-5">
 
+                <!-- Header -->
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2 class="fw-bold mb-0">My Requisitions</h2>
-                    <a href="/my/submit-requisition" class="btn btn-success">
-                        + Add Requisition
+                    <h2 class="fw-bold">My Requisitions</h2>
+                    <a href="/my/submit-requisition" class="btn btn-success shadow-sm">
+                        + New Requisition
                     </a>
                 </div>
 
+                <!-- Empty -->
                 <t t-if="not requests">
-                    <div class="alert alert-warning text-center">
+                    <div class="alert alert-warning text-center shadow-sm">
                         No requisitions found.
                     </div>
                 </t>
 
+                <!-- Table -->
                 <t t-if="requests">
-                    <div class="card shadow-sm">
+                    <div class="card shadow-lg border-0 rounded-4">
                         <div class="table-responsive">
-                            <table class="table table-hover table-striped mb-0">
+                            <table class="table table-hover align-middle mb-0">
 
                                 <thead class="table-light">
                                     <tr>
                                         <th>Reference</th>
                                         <th>Employee</th>
                                         <th>Department</th>
-                                        <th>Responsible</th>
                                         <th>Date</th>
-                                        <th>Deadline</th>
-                                        <th>Type</th>
-                                        <th>Customer</th>
                                         <th>Status</th>
                                     </tr>
                                 </thead>
@@ -45,34 +44,30 @@
                                                 <t t-esc="req.name"/>
                                             </td>
 
-                                            <td><t t-esc="req.employee_id.name"/></td>
-                                            <td><t t-esc="req.dept_id.name"/></td>
-                                            <td><t t-esc="req.user_id.name"/></td>
-
-                                            <td><t t-esc="req.requisition_date"/></td>
-                                            <td><t t-esc="req.requisition_deadline"/></td>
-
-                                            <td class="text-capitalize">
-                                                <t t-esc="req.req_type"/>
+                                            <td>
+                                                <t t-esc="req.employee_id.name"/>
                                             </td>
 
                                             <td>
-                                                <t t-if="req.req_type == 'customer'">
-                                                    <t t-esc="req.customer_id.name"/>
-                                                </t>
-                                                <t t-else="">-</t>
+                                                <t t-esc="req.dept_id.name"/>
                                             </td>
 
                                             <td>
-                                                <span t-if="req.state == 'new'" class="badge bg-secondary">New</span>
-                                                <span t-elif="req.state == 'waiting_department_approval'" class="badge bg-info">Dept Approval</span>
-                                                <span t-elif="req.state == 'waiting_head_approval'" class="badge bg-warning text-dark">Head Approval</span>
-                                                <span t-elif="req.state == 'approved'" class="badge bg-primary">Approved</span>
-                                                <span t-elif="req.state == 'purchase_order_created'" class="badge bg-success">PO Created</span>
-                                                <span t-elif="req.state == 'received'" class="badge bg-success">Received</span>
-                                                <span t-elif="req.state == 'cancelled'" class="badge bg-danger">Cancelled</span>
-                                                <span t-else="" class="badge bg-dark">
-                                                    <t t-esc="req.state"/>
+                                                <t t-esc="req.requisition_date"/>
+                                            </td>
+
+                                            <!-- ✅ FIXED STATUS -->
+                                            <td>
+                                                <span t-if="req.state == 'new'" class="badge bg-secondary px-3 py-2">New</span>
+                                                <span t-elif="req.state == 'waiting_department_approval'" class="badge bg-info px-3 py-2">Dept Approval</span>
+                                                <span t-elif="req.state == 'waiting_head_approval'" class="badge bg-warning text-dark px-3 py-2">Head Approval</span>
+                                                <span t-elif="req.state == 'approved'" class="badge bg-primary px-3 py-2">Approved</span>
+                                                <span t-elif="req.state == 'purchase_order_created'" class="badge bg-success px-3 py-2">PO Created</span>
+                                                <span t-elif="req.state == 'received'" class="badge bg-success px-3 py-2">Received</span>
+                                                <span t-elif="req.state == 'cancelled'" class="badge bg-danger px-3 py-2">Cancelled</span>
+
+                                                <span t-else="" class="badge bg-dark px-3 py-2">
+                                                    <t t-esc="dict(req._fields['state'].selection).get(req.state)"/>
                                                 </span>
                                             </td>
 
@@ -95,18 +90,22 @@
         <t t-call="portal.portal_layout">
 
             <div class="container mt-5">
+
                 <div class="card shadow-lg border-0 rounded-4">
 
-                    <div class="card-header bg-primary text-white">
+                    <!-- Header -->
+                    <div class="card-header bg-gradient bg-primary text-white rounded-top-4">
                         <h4 class="mb-0">Submit Material Requisition</h4>
                     </div>
 
-                    <div class="card-body">
+                    <div class="card-body p-4">
 
                         <form id="req_form" action="/my/material-requisition/submit" method="post">
                             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
 
                             <!-- BASIC -->
+                            <h5 class="mb-3 text-primary">Basic Details</h5>
+
                             <div class="row g-3">
 
                                 <div class="col-md-6">
@@ -128,14 +127,13 @@
                                     </select>
                                 </div>
 
-                                <!-- ✅ FIXED: wrapped -->
                                 <div class="col-md-6" id="customer_div" style="display:none;">
                                     <label class="form-label">Customer *</label>
                                     <select name="customer_id" id="customer_id" class="form-select">
                                         <option value="">Select Customer</option>
-                                        <t t-foreach="customers" t-as="cust">
-                                            <option t-att-value="cust.id">
-                                                <t t-esc="cust.name"/>
+                                        <t t-foreach="customers" t-as="c">
+                                            <option t-att-value="c.id">
+                                                <t t-esc="c.name"/>
                                             </option>
                                         </t>
                                     </select>
@@ -143,10 +141,7 @@
 
                                 <div class="col-12">
                                     <label class="form-label">Reason *</label>
-                                    <textarea name="requisition_description"
-                                              class="form-control"
-                                              rows="3"
-                                              required="required"></textarea>
+                                    <textarea name="requisition_description" class="form-control" rows="3" required="required"></textarea>
                                 </div>
 
                             </div>
@@ -154,15 +149,16 @@
                             <!-- PRODUCTS -->
                             <hr class="my-4"/>
 
-                            <h5>Products *</h5>
+                            <h5 class="mb-3 text-primary">Product Details</h5>
 
                             <div class="table-responsive">
-                                <table class="table table-bordered">
-                                    <thead>
+                                <table class="table table-bordered align-middle">
+
+                                    <thead class="table-light">
                                         <tr>
-                                            <th>Product *</th>
-                                            <th>Quantity *</th>
-                                            <th></th>
+                                            <th>Product</th>
+                                            <th width="150">Quantity</th>
+                                            <th width="80"></th>
                                         </tr>
                                     </thead>
 
@@ -171,9 +167,9 @@
                                             <td>
                                                 <select name="product_id[]" class="form-select" required="required">
                                                     <option value="">Select Product</option>
-                                                    <t t-foreach="products" t-as="prod">
-                                                        <option t-att-value="prod.id">
-                                                            <t t-esc="prod.name"/>
+                                                    <t t-foreach="products" t-as="p">
+                                                        <option t-att-value="p.id">
+                                                            <t t-esc="p.name"/>
                                                         </option>
                                                     </t>
                                                 </select>
@@ -184,67 +180,74 @@
                                                        min="1" required="required"/>
                                             </td>
 
-                                            <td>
-                                                <button type="button" class="btn btn-danger btn-sm remove_row">X</button>
+                                            <td class="text-center">
+                                                <button type="button" class="btn btn-danger btn-sm remove_row">
+                                                    ✕
+                                                </button>
                                             </td>
                                         </tr>
                                     </tbody>
+
                                 </table>
                             </div>
 
-                            <button type="button" class="btn btn-outline-primary" id="add_row">
+                            <button type="button" id="add_row" class="btn btn-outline-primary mt-2">
                                 + Add Product
                             </button>
 
+                            <!-- SUBMIT -->
                             <div class="text-end mt-4">
-                                <button type="submit" class="btn btn-success">
+                                <button type="submit" class="btn btn-success px-4 shadow-sm">
                                     Submit Request
                                 </button>
                             </div>
 
                         </form>
+
                     </div>
                 </div>
+
             </div>
 
-            <!-- ================= JS ================= -->
-    <script type="text/javascript">
-    <![CDATA[
-        document.getElementById("req_type").addEventListener("change", function () {
+            <!-- JS -->
+            <script>
+            <![CDATA[
+            document.addEventListener("DOMContentLoaded", function () {
 
-            let customerField = document.getElementById("customer_id");
+                let reqType = document.getElementById("req_type");
+                let customerDiv = document.getElementById("customer_div");
+                let customerField = document.getElementById("customer_id");
 
-            if (this.value === "customer") {
-                customerField.setAttribute("required", "true");
-            } else {
-                customerField.removeAttribute("required");
-                customerField.value = "";
-            }
-        });
+                reqType.addEventListener("change", function () {
+                    if (this.value === "customer") {
+                        customerDiv.style.display = "block";
+                        customerField.setAttribute("required", "required");
+                    } else {
+                        customerDiv.style.display = "none";
+                        customerField.removeAttribute("required");
+                        customerField.value = "";
+                    }
+                });
 
-        document.getElementById("req_form").addEventListener("submit", function (e) {
+                document.getElementById("add_row").addEventListener("click", function () {
+                    let row = document.querySelector("#product_body tr").cloneNode(true);
+                    row.querySelectorAll("input").forEach(i => i.value = "");
+                    row.querySelectorAll("select").forEach(s => s.selectedIndex = 0);
+                    document.getElementById("product_body").appendChild(row);
+                });
 
-            let rows = document.querySelectorAll("#product_body tr");
+                document.addEventListener("click", function (e) {
+                    if (e.target.classList.contains("remove_row")) {
+                        let rows = document.querySelectorAll("#product_body tr");
+                        if (rows.length > 1) {
+                            e.target.closest("tr").remove();
+                        }
+                    }
+                });
 
-            if (rows.length === 0) {
-                alert("Please add at least one product.");
-                e.preventDefault();
-                return;
-            }
-
-            for (let row of rows) {
-                let product = row.querySelector("select").value;
-                let qty = row.querySelector("input").value;
-
-                if (!product || !qty || qty <= 0) {
-                    alert("Please fill all product details correctly.");
-                    e.preventDefault();
-                    return;
-                }
-            }
-        });
-    ]]>
-</script>
+            });
+            ]]>
+            </script>
 
         </t>
     </template>

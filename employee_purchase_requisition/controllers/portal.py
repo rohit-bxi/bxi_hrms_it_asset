@@ -75,37 +75,49 @@ class MaterialRequisitionPortal(CustomerPortal):
         )
 
     # ---------------------------------------------------------
-    # Submit Form (FIXED + SAFE)
+    # Submit Form (FINAL FIXED)
     # ---------------------------------------------------------
     @http.route('/my/material-requisition/submit', type='http', auth='user', website=True, methods=['POST'])
     def submit_requisition(self, **post):
 
         user = request.env.user
-        employee = user.employee_id
+        employee = user.employee_id.sudo()
 
+        # ✅ Validation: employee
         if not employee:
             return request.redirect('/my?error=no_employee')
 
+        # ✅ Required fields
         if not post.get('requisition_date') or not post.get('requisition_deadline'):
             return request.redirect('/my/submit-requisition?error=missing_fields')
 
-        if post.get('req_type') == 'customer' and not post.get('customer_id'):
-            return request.redirect('/my/submit-requisition?error=customer_required')
+        # ✅ Validate req_type
+        req_type = post.get('req_type')
+        if req_type not in ['internal', 'customer']:
+            return request.redirect('/my/submit-requisition?error=invalid_type')
 
-        products = request.httprequest.form.getlist('product_id[]')
-        qtys = request.httprequest.form.getlist('quantity[]')
+        # ✅ Customer validation
+        customer_id = False
+        if req_type == 'customer':
+            if not post.get('customer_id'):
+                return request.redirect('/my/submit-requisition?error=customer_required')
+            customer_id = int(post.get('customer_id'))
+
+        # ✅ Get products safely
+        products = request.httprequest.form.getlist('product_id[]') or []
+        qtys = request.httprequest.form.getlist('quantity[]') or []
 
         lines = []
 
         for i in range(min(len(products), len(qtys))):
-
             try:
                 product_id = int(products[i])
                 qty = int(qtys[i])
             except:
                 continue
 
-            if product_id <= 0 or qty <= 0 or qty > 1000000:
+            # ✅ Safe validation
+            if product_id <= 0 or qty <= 0 or qty > 100000:
                 continue
 
             lines.append((0, 0, {
@@ -113,17 +125,23 @@ class MaterialRequisitionPortal(CustomerPortal):
                 'quantity': qty,
             }))
 
+        # ❌ No valid product
         if not lines:
             return request.redirect('/my/submit-requisition?error=no_products')
 
+        # ✅ Create requisition
         requisition = request.env['employee.purchase.requisition'].sudo().create({
             'employee_id': employee.id,
             'requisition_date': post.get('requisition_date'),
             'requisition_deadline': post.get('requisition_deadline'),
-            'req_type': post.get('req_type'),
-            'customer_id': int(post.get('customer_id')) if post.get('customer_id') else False,
+            'req_type': req_type,
+            'customer_id': customer_id,
             'requisition_description': post.get('requisition_description'),
             'requisition_order_ids': lines
         })
-        requisition.action_confirm_requisition()
+
+        # ✅ Optional: call only if method exists
+        if hasattr(requisition, 'action_confirm_requisition'):
+            requisition.action_confirm_requisition()
+
         return request.redirect('/my/material-requisition')
