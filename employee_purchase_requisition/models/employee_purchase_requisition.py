@@ -73,16 +73,13 @@ class PurchaseRequisition(models.Model):
     internal_transfer_count = fields.Integer(string='Internal Transfer count',
                                              help='Internal transfer count',
                                              compute='_compute_internal_transfer_count')
-    state = fields.Selection([('new', 'New'), ('waiting_department_approval',
-                                               'Waiting Department Approval'),
-                              ('waiting_head_approval',
-                               'Waiting Head Approval'),
-                              ('approved', 'Approved'),
-                              ('purchase_order_created',
-                               'Purchase Order Created'),
-                              ('received', 'Received'),
-                              ('cancelled', 'Cancelled')], default='new',
-                             copy=False, tracking=True)
+    state = fields.Selection([('new', 'New'), 
+                            ('waiting_department_approval','Waiting HR Approval'),
+                            ('waiting_head_approval','Waiting Finance Approval'),
+                            ('approved', 'Approved'),
+                            ('purchase_order_created','Purchase Order Created'),
+                            ('received', 'Received'),
+                            ('cancelled', 'Cancelled')], default='new', copy=False, tracking=True)
 
     req_type = fields.Selection([('internal', 'Internal'),
                                 ('customer', 'Customer')], default='internal',
@@ -153,7 +150,7 @@ class PurchaseRequisition(models.Model):
                 raise ValidationError('Select a vendor')
         for rec in self.requisition_order_ids:
             if rec.requisition_type == 'internal_transfer':
-                self.env['stock.picking'].create({
+                self.env['stock.picking'].sudo().create({
                     'location_id': self.source_location_id.id,
                     'location_dest_id': self.destination_location_id.id,
                     'picking_type_id': self.internal_picking_id.id,
@@ -168,7 +165,7 @@ class PurchaseRequisition(models.Model):
                     })]
                 })
             else:
-                self.env['purchase.order'].create({
+                self.env['purchase.order'].sudo().sudo().create({
                     'partner_id': rec.partner_id.id,
                     'requisition_order': self.name,
                     "order_line": [(0, 0, {
