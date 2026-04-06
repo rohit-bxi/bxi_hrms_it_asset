@@ -74,3 +74,29 @@ class HrExpense(models.Model):
     def action_refuse(self):
         for rec in self:
             rec.state = 'refused'
+
+    def write(self, vals):
+        res = super().write(vals)
+        if 'state' in vals:
+            for record in self:
+                record._send_state_email()
+        return res
+    
+    def _send_state_email(self):
+        self.ensure_one()
+        template = False
+        email_to = False
+        if self.state == 'hr_approval':
+            template = self.env.ref('portal_employee_expense.email_template_hr')
+            email_to = 'shekhawatritika2001@gmail.com'
+        elif self.state == 'finance_approval':
+            template = self.env.ref('portal_employee_expense.email_template_finance')
+            email_to = 'shekhawatritika2001@gmail.com'
+        if not template or not email_to:
+            return
+        template.send_mail(
+            self.id,
+            email_values={'email_to': email_to},
+            force_send=True
+        )
+
