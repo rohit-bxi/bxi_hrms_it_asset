@@ -74,7 +74,7 @@ class PurchaseRequisition(models.Model):
                                              help='Internal transfer count',
                                              compute='_compute_internal_transfer_count')
     state = fields.Selection([('new', 'New'), 
-                            ('waiting_department_approval','Waiting HR Approval'),
+                            # ('waiting_department_approval','Waiting HR Approval'),
                             ('waiting_head_approval','Waiting Finance Approval'),
                             ('approved', 'Approved'),
                             ('purchase_order_created','Purchase Order Created'),
@@ -99,7 +99,18 @@ class PurchaseRequisition(models.Model):
                     'employee.purchase.requisition'
                 ) or 'New'
 
-        return super().create(vals_list)
+        records = super().create(vals_list)
+
+        template = self.env.ref(
+            'employee_purchase_requisition.email_template_requisition_submit',
+            raise_if_not_found=False
+        )
+
+        for rec in records:
+            if template:
+                template.send_mail(rec.id, force_send=True)
+
+        return records
 
     def action_confirm_requisition(self):
         """Function to confirm purchase requisition"""
@@ -115,7 +126,7 @@ class PurchaseRequisition(models.Model):
             self.source_location_id.warehouse_id.in_type_id.id)
         self.internal_picking_id = (
             self.source_location_id.warehouse_id.int_type_id.id)
-        self.write({'state': 'waiting_department_approval'})
+        self.write({'state': 'waiting_head_approval'})
         self.confirm_id = self.env.uid
         self.confirmed_date = fields.Date.today()
 
@@ -136,6 +147,14 @@ class PurchaseRequisition(models.Model):
         self.write({'state': 'approved'})
         self.requisition_head_id = self.env.uid
         self.approval_date = fields.Date.today()
+        template = self.env.ref(
+            'employee_purchase_requisition.email_template_requisition_approved',
+            raise_if_not_found=False
+        )
+
+        for rec in self:
+            if template:
+                template.send_mail(rec.id, force_send=True)
 
     def action_head_cancel(self):
         """Cancellation from department head"""

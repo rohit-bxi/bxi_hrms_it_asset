@@ -17,6 +17,7 @@
         'security/employee_purchase_requisition_security.xml',
         'security/ir.model.access.csv',
         'data/ir_sequence_data.xml',
+        'data/mail_template.xml',
         'views/employee_purchase_requisition_views.xml',
         'views/requisition_order_views.xml',
         'views/hr_employee_views.xml',
