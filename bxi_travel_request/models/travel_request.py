@@ -103,34 +103,38 @@ class TravelRequest(models.Model):
     from_country = fields.Many2one(
         'res.country',
         string='From Country',
-        tracking=True
+        tracking=True,
+        required=True,
+        default=lambda self: self.env.ref('base.in').id
     )
 
     from_state = fields.Many2one(
         'res.country.state',
         string='From State',
         domain="[('country_id', '=', from_country)]",
-        tracking=True
+        tracking=True,
     )
 
     from_city = fields.Char(
         string='From City',
-        tracking=True
+        tracking=True,
+        required=True,
     )
 
     # To address
     to_address = fields.Char(string='To Address',tracking=True,)
-    to_city = fields.Char(string='To City',tracking=True,)
+    to_city = fields.Char(string='To City',tracking=True,required=True)
     to_state = fields.Many2one(
         'res.country.state',
         string='To State',
         domain="[('country_id', '=', to_country)]",
-        tracking=True
+        tracking=True,
     )
     to_country = fields.Many2one(
         'res.country',
         string='To Country',
-        tracking=True
+        required=True,
+        default=lambda self: self.env.ref('base.in').id
     )
 
     departure_date = fields.Date(
@@ -327,3 +331,31 @@ class TravelRequest(models.Model):
             'finance_approved_by': False,
             'finance_approved_date': False,
         })
+
+    def write(self, vals):
+        res = super().write(vals)
+        if 'state' in vals:
+            for record in self:
+                record._send_state_email()
+        return res
+    
+    def _send_state_email(self):
+        self.ensure_one()
+        template = False
+        email_to = False
+        if self.state == 'manager_approval':
+            template = self.env.ref('bxi_travel_request.email_template_manager')
+            email_to = self.employee_id.parent_id.work_email if self.employee_id.parent_id else False
+        elif self.state == 'hr_approval':
+            template = self.env.ref('bxi_travel_request.email_template_hr')
+            email_to = 'hr@bxitech.com'
+        elif self.state == 'finance_approval':
+            template = self.env.ref('bxi_travel_request.email_template_finance')
+            email_to = 'fso@bxiventure.com'
+        if not template or not email_to:
+            return
+        template.send_mail(
+            self.id,
+            email_values={'email_to': email_to},
+            force_send=True
+        )
