@@ -67,6 +67,10 @@ class TravelRequest(http.Controller):
                 'departure_date': post.get('departure_date'),
                 'return_date': post.get('return_date'),
                 'mode_of_travel': post.get('mode_of_travel'),
+                'from_address':post.get('from_address'),
+                'to_address':post.get('to_address'),
+                'contact_number':post.get('contact_number'),
+                'email':post.get('email'),
                 'state': 'manager_approval',
             })
             record._send_state_email()
