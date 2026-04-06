@@ -21,14 +21,14 @@
             <form>
                 <header>
                     <field name="state" widget='statusbar'
-                           statusbar_visible='new,waiting_department_approval,waiting_head_approval,approved,purchase_order_created,received'/>
+                           statusbar_visible='new,waiting_head_approval,approved,purchase_order_created,received'/>
                     <button name="action_confirm_requisition"
                             class="oe_highlight"
                             invisible="state != 'new'" string="Confirm"
                             type="object"
                             help="Submit to HR Approval"
                             />
-                    <button name="action_department_approval"
+                    <!-- <button name="action_department_approval"
                             class="oe_highlight"
                             invisible="state != 'waiting_department_approval'"
                             string="Approve" type="object"
@@ -41,7 +41,7 @@
                             string="Reject" type="object"
                             help="Reject Purchase Requisition"
                             groups="employee_purchase_requisition.material_category_hr_group,employee_purchase_requisition.material_category_admin_group"
-                            />
+                            /> -->
                     <button name="action_head_approval" class="oe_highlight"
                             invisible="state != 'waiting_head_approval'"
                             string="Approve"
@@ -138,8 +138,8 @@
                                     <field name="rejected_user_id"/>
                                 </group>
                                 <group>
-                                    <field name="confirmed_date"/>
-                                    <field name="department_approval_date"/>
+                                    <!-- <field name="confirmed_date"/>
+                                    <field name="department_approval_date"/> -->
                                     <field name="approval_date"/>
                                     <field name="reject_date"/>
                                 </group>
