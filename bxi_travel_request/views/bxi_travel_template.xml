@@ -98,6 +98,7 @@
         </div>
     </t>
 </template>
+    <template>
         <t t-call="portal.portal_layout">
             <div class="container mt-6 o_form_sheet_bg">
                 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -214,7 +215,7 @@
                 </t>
             </div>
         </t>
-
+    </template>
     <template id="submit_travel_template" name="Submit Request">
         <t t-call="portal.portal_layout">
             <div class="container mt-4">
@@ -231,6 +232,7 @@
                                     class="form-control"
                                     t-att-value="employee.name"
                                     readonly="1"/>
+                                    readonly="1" />
                             </div>
                         </div>
                         <ul class="nav nav-tabs mt-4" id="travelTabs">
@@ -297,10 +299,8 @@
                                         </div>
                                          <div class="mb-3">
                                             <label>From City</label>
-
                                             <input type="text" name="from_city" class="form-control" />
-
-                                            <input type="text" name="from_city" class="form-control"
+                                             <input type="text" name="from_city" class="form-control"
                                                 required="True" />
                                         </div>
                                         <div class="mb-3">

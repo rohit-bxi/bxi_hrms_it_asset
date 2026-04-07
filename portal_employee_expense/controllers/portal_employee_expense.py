@@ -11,18 +11,15 @@ class EmployeePortalExpense(http.Controller):
         user = request.env.user
         Expense = request.env['hr.expense'].sudo()
 
-        if user.has_group('base.group_user'):
-            expenses = Expense.search([])
-        else:
-            employee = request.env['hr.employee'].sudo().search([
-                ('user_id', '=', user.id)
-            ], limit=1)
+        employee = request.env['hr.employee'].sudo().search([
+            ('user_id', '=', user.id)
+        ], limit=1)
 
-            expenses = []
-            if employee:
-                expenses = Expense.search([
-                    ('employee_id', '=', employee.id)
-                ])
+        expenses = []
+        if employee:
+            expenses = Expense.search([
+                ('employee_id', '=', employee.id)
+            ])
         values = {
             'expenses': expenses,
         }
