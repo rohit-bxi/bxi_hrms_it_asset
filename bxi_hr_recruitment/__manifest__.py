@@ -8,4 +8,7 @@
     'data': [],
     'installable': True,
     'application': False,
+    'data': [
+        'views/hr_hire_form.xml',
+    ],
 }
