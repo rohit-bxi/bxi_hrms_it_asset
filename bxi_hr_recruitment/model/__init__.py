@@ -1,0 +1,1 @@
+from . import hr_hire_form

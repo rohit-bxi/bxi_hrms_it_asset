@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<record id="stage_make_proposal" model="hr.recruitment.stage">
+    <field name="name">Make Proposal</field>
+    <field name="sequence">3</field>
+    <field name="fold">False</field>
+</record>
+<record id="view_hr_applicant_form_inherit_proposal" model="ir.ui.view">
+    <field name="name">hr.applicant.form.proposal</field>
+    <field name="model">hr.applicant</field>
+    <field name="inherit_id" ref="hr_recruitment.hr_applicant_view_form"/>
+    <field name="arch" type="xml">
+        <xpath expr="//notebook" position="inside">
+            <page string="Proposal">
+                <group>
+                    <field name="father_name"/>
+                </group>
+            </page>
+        </xpath>
+    </field>
+</record>
+</odoo>
