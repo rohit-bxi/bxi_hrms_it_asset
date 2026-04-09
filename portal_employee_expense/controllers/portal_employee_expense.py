@@ -1,6 +1,7 @@
 from odoo import http
 from odoo.http import request
 from odoo.exceptions import AccessError
+import base64
 
 
 
@@ -44,11 +45,13 @@ class EmployeePortalExpense(http.Controller):
 
         # Handle form submission (POST)
         form = request.httprequest.form
+        files = request.httprequest.files.getlist('receipt[]')
 
         names = form.getlist('name[]')
         product_ids = form.getlist('product_id[]')
         dates = form.getlist('date[]')
-        amounts = form.getlist('amount[]')
+        amounts = form.getlist('total_amount[]')
+        # amounts = form.getlist('amount[]')
 
         for name, product, date, amount in zip(names, product_ids, dates, amounts):
 
@@ -61,9 +64,22 @@ class EmployeePortalExpense(http.Controller):
                 'name': name,
                 'date': date,
                 'product_id': product_id,
-                'total_amount': float(amount or 0),
+                # 'total_amount': float(amount or 0),
+                'total_amount': float(amount) if amount else 0.0,
                 'employee_id': employee.id,
-            })  
+            })
+            # (SAVE MULTIPLE FILES)
+            for file in files:
+                if file and file.filename:
+                    file_content = file.read()
+                    if file_content:
+                        request.env['ir.attachment'].sudo().create({
+                            'name': file.filename,
+                            'datas': base64.b64encode(file_content),
+                            'res_model': 'hr.expense',
+                            'res_id': expense.id,
+                            'mimetype': file.mimetype,
+                        })
             
             if expense:
                 expense.state = 'hr_approval'
