@@ -9,6 +9,7 @@
     'installable': True,
     'application': False,
     'data': [
+        'security/ir.model.access.csv',
         'views/hr_hire_form.xml',
     ],
 }
