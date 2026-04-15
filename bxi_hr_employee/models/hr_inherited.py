@@ -48,12 +48,9 @@ class HrEmployee(models.Model):
 
     def get_employee_earning(self):
         for data in self:
-            print("data.wage",data.wage)
             data.employee_ctc = (data.wage)*12
-            print("data.employee_ctc",data.employee_ctc)
 
     # def _compute_monthly_tds_new_regime(self, annual_ctc):
-    #     print("ANNUAL CTC", annual_ctc)
     #     if not annual_ctc:
     #         return 0.0
 
@@ -86,11 +83,9 @@ class HrEmployee(models.Model):
     #     tax = tax * 1.04
 
     #     monthly_tds = tax / 12.0
-    #     print("round(monthly_tds, 2)", round(monthly_tds, 2))
     #     return round(monthly_tds, 2)
 
     def _compute_monthly_tds_new_regime(self, annual_ctc):
-        print("ANNUAL CTC:", annual_ctc)
 
         if not annual_ctc:
             return 0.0
@@ -99,7 +94,6 @@ class HrEmployee(models.Model):
 
         # Calculate taxable income
         taxable_income = max(annual_ctc - STANDARD_DEDUCTION, 0.0)
-        print("Taxable Income:", taxable_income)
 
         # Section 87A Rebate: No tax if taxable income is up to ₹12,00,000
         if taxable_income <= 1200000:
@@ -128,8 +122,6 @@ class HrEmployee(models.Model):
             else:
                 break
 
-        print("Tax before surcharge and cess:", tax)
-
         # Apply surcharge if applicable
         surcharge = 0.0
         if taxable_income > 50000000:  # Above ₹5 Cr
@@ -149,13 +141,9 @@ class HrEmployee(models.Model):
         annual_tax = round(tax, 2)
         monthly_tds = round(annual_tax / 12.0, 2)
 
-        print("Annual Tax:", annual_tax)
-        print("Monthly TDS:", monthly_tds)
-
         return monthly_tds
 
     def action_calculate_l10n_in_tds_new_regime(self):
         self.get_employee_earning()
         for emp in self:
-            print("emp.employee_ctc",emp.employee_ctc)
             emp.l10n_in_tds = emp._compute_monthly_tds_new_regime(emp.employee_ctc)
