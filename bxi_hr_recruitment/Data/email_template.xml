@@ -1,0 +1,27 @@
+<odoo>
+    <record id="email_template_applicant_stage" model="mail.template">
+        <field name="name">Applicant Stage Notification</field>
+        <field name="model_id" ref="hr_recruitment.model_hr_applicant"/>
+        <field name="subject">Application Status Update</field>
+        <field name="email_from">hrsupport@bxitech.com</field>
+        <field name="email_to">FSO@bxiventures.com</field>
+        <field name="body_html">
+            <![CDATA[
+           <p>Dear <b><t t-esc="object.partner_name"/></b>,</p>
+                <p>
+                    Your application for the position of
+                    <strong><t t-esc="object.job_id.name"/></strong>
+                                    has moved to the stage:
+                    <strong><t t-esc="object.stage_id.name"/></strong>.
+                 </p>
+
+                <p>We will keep you informed about further updates.</p>
+
+                <p>
+                    Best Regards,<br/>
+                    HR Team
+               </p>
+                ]]>
+        </field>
+    </record>
+</odoo>

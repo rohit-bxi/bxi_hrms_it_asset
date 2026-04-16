@@ -1,0 +1,197 @@
+<odoo>
+    <template id="report_offer_letter">
+
+        <!-- Custom Styles to Match PDF -->
+        <style>
+            .offer-body {
+                font-family: "Times New Roman", Times, serif;
+                font-size: 12pt;
+                line-height: 1.8;
+                text-align: justify;
+                color: #000000;
+            }
+            .offer-title {
+                text-align: center;
+                font-size: 24pt;
+                font-weight: bold;
+                color: #1f4e79; /* Corporate Blue */
+                letter-spacing: 1px;
+                margin-bottom: 10px;
+            }
+            .offer-meta {
+                font-size: 12pt;
+                margin-bottom: 5px;
+            }
+            .doc-id {
+                text-align: right;
+                font-size: 11pt;
+                margin-bottom: 10px;
+            }
+            .company-highlight {
+                font-weight: bold;
+                color: #1f4e79;
+            }
+            .signature {
+                margin-top: 40px;
+            }
+            .legal-text {
+                font-size: 10pt;
+                color: #444444;
+            }
+        </style>
+
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+
+                <!-- Set Company -->
+                <t t-set="company" t-value="o.company_id or res_company"/>
+
+                <!-- ===================== PAGE 1 ===================== -->
+                <t t-call="web.external_layout">
+                    <div class="page offer-body">
+
+                        <!-- Title -->
+                        <div class="offer-title">
+                            OFFER LETTER
+                        </div>
+
+                        <!-- Offer Release Date -->
+                        <p class="offer-meta">
+                            <strong>Offer Release Date:</strong>
+                            <t t-esc="o.create_date.strftime('%b %d, %Y') if o.create_date else ''"/>
+                        </p>
+
+                        <!-- Candidate Details -->
+                        <p class="offer-meta">
+                            <t t-esc="o.partner_name"/><br/>
+                            <t t-esc="o.partner_id.city if o.partner_id else ''"/>
+                        </p>
+
+                        <!-- Document ID -->
+                        <p class="doc-id">
+                            <strong>Document ID - </strong>
+                            <t t-esc="o.id"/>
+                        </p>
+
+                        <!-- Greeting -->
+                        <p>
+                            Dear <strong><t t-esc="o.partner_name"/></strong>,
+                        </p>
+
+                        <!-- Paragraph 1 -->
+                        <p>
+                            Congratulations! With reference to your application and subsequent interview with us for a
+                            career in our organization, we are pleased to inform you that you have been selected for
+                            employment in <span class="company-highlight">
+                                <t t-esc="company.name"/>
+                            </span>.
+                            (Herein referred as “<span class="company-highlight">
+                                <t t-esc="company.name"/>
+                            </span>” or “Company”) we are pleased to inform you that you have been selected for
+                            employment in our organization as
+                            <strong><t t-esc="o.job_id.name"/></strong>.
+                        </p>
+
+                        <!-- Paragraph 2 -->
+                        <p>
+                            In the coming year, keep aspiring for change and be known for your thoughts and your work;
+                            be the catalyst that this fast-changing world needs; keep sharpening your skills and
+                            investing in yourself; and last but not the least – keep your work and life in perfect
+                            balance, because that is the prerequisite for success.
+                        </p>
+
+                        <!-- Paragraph 3 -->
+                        <p>
+                            We take this opportunity to thank &amp; appreciate your decision to join
+                            <span class="company-highlight">
+                                <t t-esc="company.name"/>
+                            </span>.
+                            You are requested to join us on or before
+                            <strong>
+                                <t t-esc="o.joining_date.strftime('%Y-%m-%d') if o.joining_date else ''"/>
+                            </strong>.
+                        </p>
+
+                        <!-- Paragraph 4 -->
+                        <p>
+                            You will be on probation for a period of 6 months from the date of your joining.
+                            Your compensation would be as outlined in a separate document (Annexure I) “Salary Structure”.
+                            The general terms and conditions governing your employment are outlined in Annexure III.
+                        </p>
+
+                    </div>
+                </t>
+
+                <!-- ===================== PAGE 2 ===================== -->
+                <t t-call="web.basic_layout">
+                    <div class="page offer-body">
+
+                        <!-- Paragraph 5 -->
+                        <p>
+                            You would be required to furnish digital copies of the documents and other listed
+                            information in Annexure IV, before your joining date. Please note that the submission of
+                            all the documents is mandatory to facilitate joining, background verification / validation
+                            and appointment process at
+                            <span class="company-highlight">
+                                <t t-esc="company.name"/>
+                            </span>.
+                            Annexure II provides details on the various compensation components and selected benefits
+                            that we offer you as a part of the
+                            <span class="company-highlight">
+                                <t t-esc="company.name"/>
+                            </span> family.
+                        </p>
+
+                        <!-- Paragraph 6 -->
+                        <p>
+                            This offer will be valid subject to successful clearance of your pre-employment background
+                            verification check conducted by
+                            <span class="company-highlight">
+                                <t t-esc="company.name"/>
+                            </span>.
+                            Your written consent and requisite copies of documents is necessary to complete the
+                            pre-employment check. You are requested to complete the submission of requisite documents
+                            for pre-employment background check within two business days from the date of acceptance of
+                            our offer of employment.
+                        </p>
+
+                        <p>
+                            Your cooperation is solicited in this regard to enable us complete the necessary
+                            pre-employment check on time and enable you on-board us.
+                        </p>
+
+                        <!-- Paragraph 7 -->
+                        <p>
+                            Any change in the date of joining needs to be communicated to the concerned recruiter at
+                            least one week in advance.
+                        </p>
+
+                        <!-- Paragraph 8 -->
+                        <p>
+                            Looking ahead, we see exciting times – we look up to you to provide impetus in accomplishing
+                            our mutual endeavor of being the best in the business of IT Services. Welcome to our
+                            Organization! We look forward to a mutually fruitful association.
+                        </p>
+
+                        <!-- Signature -->
+                        <div class="signature">
+                            <p>
+                                <strong>For <t t-esc="company.name"/></strong>,
+                            </p>
+                        </div>
+
+                        <!-- Legal Note -->
+                        <p class="legal-text">
+                            This is system generated Letter/Contract. Agreeing to the Offer and its terms and
+                            conditions in the workflow is as good as signing of physical contract/letter on mutual
+                            agreement between us. It has all legal binding as per the law, if mutual trust is breached
+                            at any point of time.
+                        </p>
+
+                    </div>
+                </t>
+
+            </t>
+        </t>
+    </template>
+</odoo>
