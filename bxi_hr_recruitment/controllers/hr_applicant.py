@@ -87,3 +87,49 @@ class ApplicantCreation(http.Controller):
                 "status": "error",
                 "message": str(e)
             }
+
+    # @http.route('/api/recruitment/send_selection_notification', type='jsonrpc', auth='public', methods=['POST'], csrf=False)
+    # def send_selection_notification(self, **kwargs):
+    #     """API to send notification for selected candidates."""
+    #     try:
+    #         applicant_id = kwargs.get('applicant_id')
+    #
+    #         if not applicant_id:
+    #             return {
+    #                 "status": "error",
+    #                 "message": "applicant_id is required"
+    #             }
+    #
+    #         applicant = request.env['hr.applicant'].sudo().browse(applicant_id)
+    #
+    #         if not applicant.exists():
+    #             return {
+    #                 "status": "error",
+    #                 "message": "Applicant not found"
+    #             }
+    #
+    #         # Ensure candidate is selected
+    #         if not applicant.stage_id.hired_stage:
+    #             return {
+    #                 "status": "error",
+    #                 "message": "Notification can only be sent for selected candidates"
+    #             }
+    #
+    #         applicant._send_selection_notification()
+    #
+    #         return {
+    #             "status": "success",
+    #             "message": "Notification sent successfully",
+    #             "data": {
+    #                 "applicant_id": applicant.id,
+    #                 "candidate_name": applicant.partner_name or applicant.name,
+    #                 "job_position": applicant.job_id.name if applicant.job_id else "",
+    #                 "status": "selected"
+    #             }
+    #         }
+    #
+    #     except Exception as e:
+    #         return {
+    #             "status": "error",
+    #             "message": str(e)
+    #         }
