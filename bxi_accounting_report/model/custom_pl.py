@@ -6,26 +6,52 @@ class CustomPLReport(models.Model):
     _name = 'custom.pl.report'
 
     @api.model
-    def get_filtered_data(self, financial_year=None, quarters=None, company_ids=None):
+    def get_filtered_data(self, financial_year=None, quarters=None, company_ids=None, currency_id=None):
+        start_date = False
+        end_date = False
+        if financial_year:
+            fy_start = int(financial_year)
+            fy_end = fy_start + 1
+            start_date = f"{fy_start}-04-01"
+            end_date = f"{fy_end}-03-31"
 
         def get_quarter(date):
-            if not date:
+            if not date or not financial_year:
                 return None
-            m = date.month
-            if m in [4, 5, 6]:
-                return 'q1'
-            elif m in [7, 8, 9]:
-                return 'q2'
-            elif m in [10, 11, 12]:
-                return 'q3'
-            else:
-                return 'q4'
 
-        invoices = self.env['account.move'].search([
+            fy_start = int(financial_year)
+            fy_end = fy_start + 1
+
+            if fields.Date.from_string(f"{fy_start}-04-01") <= date <= fields.Date.from_string(f"{fy_start}-06-30"):
+                return 'q1'
+            elif fields.Date.from_string(f"{fy_start}-07-01") <= date <= fields.Date.from_string(f"{fy_start}-09-30"):
+                return 'q2'
+            elif fields.Date.from_string(f"{fy_start}-10-01") <= date <= fields.Date.from_string(f"{fy_start}-12-31"):
+                return 'q3'
+            elif fields.Date.from_string(f"{fy_end}-01-01") <= date <= fields.Date.from_string(f"{fy_end}-03-31"):
+                return 'q4'
+            return None
+
+        domain = [
             ('move_type', '=', 'out_invoice'),
             ('state', '=', 'posted')
-        ])
+        ]
 
+        if start_date and end_date:
+            domain += [
+                ('invoice_date', '>=', start_date),
+                ('invoice_date', '<=', end_date),
+            ]
+
+        invoices = self.env['account.move'].search(domain)
+
+        # ---------------- CURRENCY ----------------
+        target_currency = (
+            self.env['res.currency'].browse(currency_id)
+            if currency_id else self.env.company.currency_id
+        )
+
+        # ---------------- DATA STRUCTURE ----------------
         customers = defaultdict(lambda: {
             'salespersons': {},
             'total_booking': 0,
@@ -35,6 +61,7 @@ class CustomPLReport(models.Model):
             'country': '',
         })
 
+        # ---------------- PROCESS INVOICES ----------------
         for inv in invoices:
             partner = inv.partner_id
             customer = partner.name or 'N/A'
@@ -44,13 +71,16 @@ class CustomPLReport(models.Model):
 
             cust = customers[customer]
 
-            cust['country'] = partner.country_id.name or ''
+            # country
+            if not cust['country']:
+                cust['country'] = partner.country_id.name or ''
 
+            # salesperson init
             if salesperson not in cust['salespersons']:
                 cust['salespersons'][salesperson] = {
                     'salesperson': salesperson,
                     'products': set(),
-                    'booking': 0,
+                    'booking': 0,  # always 0
                     'billing': 0,
                     'quarters_projected': defaultdict(float),
                     'quarters_actual': defaultdict(float),
@@ -58,24 +88,29 @@ class CustomPLReport(models.Model):
 
             sp = cust['salespersons'][salesperson]
 
+            # products
             products = inv.invoice_line_ids.mapped('product_id.name')
             sp['products'].update(products)
 
+            # ---------------- CURRENCY CONVERSION ----------------
             company_currency = inv.company_id.currency_id
-            target_currency = self.env.company.currency_id
             date = inv.invoice_date or fields.Date.today()
+
             projected = company_currency._convert(
                 inv.amount_total,
                 target_currency,
                 inv.company_id,
                 date
             )
+
             actual = company_currency._convert(
                 inv.amount_total if inv.payment_state == 'paid' else 0,
                 target_currency,
                 inv.company_id,
                 date
             )
+
+            # totals
             sp['billing'] += actual
             cust['total_billing'] += actual
 
@@ -86,12 +121,14 @@ class CustomPLReport(models.Model):
                 cust['quarters_projected'][q] += projected
                 cust['quarters_actual'][q] += actual
 
+        # ---------------- FORMAT RESULT ----------------
         result = []
         for cust_name, cust_data in customers.items():
 
             salespersons = []
             for sp in cust_data['salespersons'].values():
                 sp['products'] = ', '.join(sp['products'])
+                sp['booking'] = 0  # enforce again
                 salespersons.append(sp)
 
             result.append({
@@ -104,6 +141,7 @@ class CustomPLReport(models.Model):
                 'quarters_actual': cust_data['quarters_actual'],
             })
 
+        # ---------------- EXPENSES ----------------
         expenses_data = {
             'people': 0,
             'tools': 0,
@@ -127,15 +165,14 @@ class CustomPLReport(models.Model):
             else:
                 expenses_data['misc'] += exp.total_amount
 
-        currency = self.env.company.currency_id
-
+        # ---------------- FINAL RETURN ----------------
         return {
             'customers': result,
             'expenses': expenses_data,
             'quarters': ['q1', 'q2', 'q3', 'q4'],
             'currency': {
-                'name': currency.name,
-                'symbol': currency.symbol,
+                'name': target_currency.name,
+                'symbol': target_currency.symbol,
             }
         }
 
