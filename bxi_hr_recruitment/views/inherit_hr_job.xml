@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data>
+
+    <record id="hr_job_form_inherit_location" model="ir.ui.view">
+        <field name="name">hr.job.form.location</field>
+        <field name="model">hr.job</field>
+
+        <field name="inherit_id" ref="hr.view_hr_job_form"/>
+                <field name="arch" type="xml">
+
+            <!-- Add Job Location after Expected Degree -->
+            <xpath expr='//div[@name="recruitment_target"]'
+                   position="after">
+                <field name="location_id"/>
+                <field name="requisition_id"/>
+            </xpath>
+        </field>
+    </record>
+    </data>
+
+</odoo>

@@ -15,6 +15,23 @@
         <field name="inherit_id" ref="hr_recruitment.hr_applicant_view_form"/>
         <field name="arch" type="xml">
 
+            <xpath expr="//field[@name='categ_ids']" position="after">
+                <field name="first_interview_remark"
+                       invisible="stage_id != 3"
+                       placeholder="Enter feedback for First Interview"/>
+                <field name="second_interview_remark"
+                       invisible="stage_id != 4"
+                       placeholder="Enter feedback for Second Interview"/>/>
+            </xpath>
+
+<!--            <xpath expr="//header" position="inside">-->
+<!--                <button name="action_send_selection_notification"-->
+<!--                        type="object"-->
+<!--                        string="Send Selection Notification"-->
+<!--                        class="oe_highlight"-->
+<!--                        invisible="not stage_id.hired_stage"/>-->
+<!--            </xpath>-->
+
             <xpath expr="//notebook" position="inside">
                 <page string="Proposal">
 
@@ -36,6 +53,22 @@
                     <!-- Address -->
                     <group string="Full Address">
                         <field name="full_address"/>
+                        <field name="joining_date"/>
+                    </group>
+                     <!-- Offer Letter Section -->
+                    <group string="Offer Letter">
+                        <field name="offer_letter_generated" invisible="1"/>
+
+                        <button name="action_generate_offer_letter"
+                                type="object"
+                                string="Generate Offer Letter"
+                                class="btn-primary"/>
+
+                        <button name="action_view_offer_letter"
+                                type="object"
+                                string="View Offer Letter"
+                                class="btn-secondary"
+                                invisible="not offer_letter_generated"/>
                     </group>
 
                     <!-- Document Upload -->
