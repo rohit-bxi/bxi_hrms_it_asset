@@ -2,11 +2,11 @@
 <odoo>
 
     <!-- Recruitment Stage -->
-    <record id="stage_make_proposal" model="hr.recruitment.stage">
-        <field name="name">Make Proposal</field>
-        <field name="sequence">3</field>
-        <field name="fold">False</field>
-    </record>
+<!--    <record id="stage_make_proposal" model="hr.recruitment.stage">-->
+<!--        <field name="name">Make Proposal</field>-->
+<!--        <field name="sequence">5</field>-->
+<!--        <field name="fold">False</field>-->
+<!--    </record>-->
 
     <!-- Applicant Form Inheritance -->
     <record id="view_hr_applicant_form_inherit_proposal" model="ir.ui.view">
@@ -17,11 +17,11 @@
 
             <xpath expr="//field[@name='categ_ids']" position="after">
                 <field name="first_interview_remark"
-                       invisible="stage_id != 3"
                        placeholder="Enter feedback for First Interview"/>
                 <field name="second_interview_remark"
-                       invisible="stage_id != 4"
-                       placeholder="Enter feedback for Second Interview"/>/>
+                       placeholder="Enter feedback for Second Interview"/>
+                 <field name="final_interview_remark"
+                       placeholder="Enter feedback for Final Interview"/>
             </xpath>
 
 <!--            <xpath expr="//header" position="inside">-->
