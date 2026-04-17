@@ -25,7 +25,9 @@ class PLDashboard extends Component {
 
         this.financial_year = ctx.financial_year || false;
         this.company_ids = ctx.company_ids || [];
-        this.currency_id = ctx.currency_id || false;
+        this.state.currency = {
+            symbol: ctx.currency_symbol || "$",
+        };
 
         onWillStart(async () => {
             if (!this.state.loaded) {
@@ -51,11 +53,6 @@ class PLDashboard extends Component {
         this.state.expenses = result.expenses || {};
         this.state.quarters = result.quarters || ["q1", "q2", "q3", "q4"];
 
-        // ✅ FIXED currency handling
-        this.state.currency = result.currency || {
-            name: "USD",
-            symbol: "$",
-        };
     }
 
     getQuarterLabel(q) {

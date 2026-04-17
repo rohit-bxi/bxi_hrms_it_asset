@@ -29,10 +29,10 @@ td, th {
     <th rowspan="3">Work Order</th>
     <th rowspan="3">Tenure(month)</th>
 <th rowspan="3">
-    Booking Value ($)
+    Booking Value (<t t-esc="state.currency.symbol"/>)
 </th>
 <th rowspan="3">
-    Billing Value ($)
+    Billing Value (<t t-esc="state.currency.symbol"/>)
 </th>
     <t t-foreach="state.quarters" t-as="q" t-key="'h1_' + q">
         <th colspan="2" class="header-blue">
@@ -132,7 +132,7 @@ td, th {
 <!-- ================= EXPENSE ================= -->
 <tr class="portfolio">
     <td colspan="3"><b>Expenses</b></td>
-    <td>People</td>
+    <td>People (<t t-esc="state.currency.symbol"/>)</td>
     <td colspan="6">
         <t t-esc="state.expenses.people || 0"/>
     </td>
@@ -140,7 +140,7 @@ td, th {
 
 <tr>
     <td colspan="3"></td>
-    <td>Tools</td>
+    <td>Tools (<t t-esc="state.currency.symbol"/>)</td>
     <td colspan="6">
         <t t-esc="state.expenses.tools || 0"/>
     </td>
@@ -148,7 +148,7 @@ td, th {
 
 <tr>
     <td colspan="3"></td>
-    <td>Travel</td>
+    <td>Travel (<t t-esc="state.currency.symbol"/>)</td>
     <td colspan="6">
         <t t-esc="state.expenses.travel || 0"/>
     </td>
@@ -156,7 +156,7 @@ td, th {
 
 <tr>
     <td colspan="3"></td>
-    <td>Misc</td>
+    <td>Misc (<t t-esc="state.currency.symbol"/>)</td>
     <td colspan="6">
         <t t-esc="state.expenses.misc || 0"/>
     </td>
