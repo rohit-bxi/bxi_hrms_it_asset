@@ -23,9 +23,8 @@ class PLReportWizard(models.TransientModel):
     )
 
     company_ids = fields.Many2many(
-        'res.partner',
+        'res.company',
         string="Companies",
-        domain="[('is_company','=',True)]"
     )
 
     def action_open_dashboard(self):
