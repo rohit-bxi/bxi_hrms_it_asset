@@ -10,17 +10,10 @@ class HrHire(models.Model):
     _inherit = 'hr.applicant'
     _description = "HR Applicant Extension for Offer Letter"
 
-    first_interview_remark = fields.Text(
-        string="First Interview Remark",
-        tracking=True,
-        help="Feedback provided by the interviewer during the first interview."
-    )
+    first_interview_remark = fields.Text(string="First Interview Remark")
+    second_interview_remark = fields.Text(string="Second Interview Remark")
+    final_interview_remark = fields.Text(string="Final Interview Remark")
 
-    second_interview_remark = fields.Text(
-        string="Second Interview Remark",
-        tracking=True,
-        help="Feedback provided by the interviewer during the second interview."
-    )
 
     # frontend_webhook_url = fields.Char(
     #     string="Frontend Webhook URL",
@@ -140,37 +133,60 @@ class HrHire(models.Model):
             'bxi_hr_recruitment.action_report_offer_letter'
         ).report_action(self)
 
-    # ---------------------------------------------------------
     # SEND EMAIL ON STAGE CHANGE
-    # ---------------------------------------------------------
-    # def write(self, vals):
-    #     res = super().write(vals)
-    #
-    #     if 'stage_id' in vals:
-    #         template = self.env.ref(
-    #             'bxi_hr_recruitment.email_template_applicant_stage',
-    #             raise_if_not_found=False
-    #         )
-    #
-    #         for rec in self:
-    #             if template and rec.email_from:
-    #                 template.send_mail(rec.id, force_send=True)
-    #
-    #     return res
     def write(self, vals):
+        old_stages = {rec.id: rec.stage_id.id for rec in self}
+
         res = super().write(vals)
+
         if 'stage_id' in vals:
-            template = self.env.ref(
-                'bxi_hr_recruitment.email_template_applicant_stage',
-                raise_if_not_found=False
-            )
+
             for rec in self:
+
+                template = None
+
+                #  STEP 2: GET OLD STAGE PROPERLY
+                old_stage_id = old_stages.get(rec.id)
+                old_stage = self.env['hr.recruitment.stage'].browse(old_stage_id)
+
+                #  STOP MAIL IF MOVING BACKWARD
+                if old_stage and rec.stage_id.sequence <= old_stage.sequence:
+                    continue
+
+                # 1️⃣ Qualification
+                if rec.stage_id.name == 'Qualification':
+                    template = self.env.ref('bxi_hr_recruitment.email_stage_qualification')
+
+                # 2️⃣ First Interview
+                elif rec.stage_id.name == 'First Interview':
+                    template = self.env.ref('bxi_hr_recruitment.email_stage_first_interview')
+
+                # 3️⃣ Second Interview
+                elif rec.stage_id.name == 'Second Interview':
+                    if not rec.first_interview_remark:
+                        raise UserError("⚠ Please fill First Interview Feedback before moving to Second Interview.")
+                    template = self.env.ref('bxi_hr_recruitment.email_stage_second_interview')
+
+                # 4️⃣ Final Interview
+                elif rec.stage_id.name == 'Final Interview':
+                    if not rec.second_interview_remark:
+                        raise UserError("⚠ Please fill Second Interview Feedback before moving to Final Interview.")
+                    template = self.env.ref('bxi_hr_recruitment.email_stage_final_interview')
+
+                # 5️⃣ Make Proposal (Final Selection Mail)
+                elif rec.stage_id.name == 'Make Proposal':
+                    if not rec.final_interview_remark:
+                        raise UserError("⚠ Please fill Final Interview Feedback before moving to Make Proposal.")
+                    template = self.env.ref('bxi_hr_recruitment.email_stage_contract_proposal')
+
+                # 6️⃣ Contract Proposal (Offer Letter Mail)
+                elif rec.stage_id.name == 'Contract Proposal':
+                    template = self.env.ref('bxi_hr_recruitment.email_stage_offer_letter')
+
+                #  SEND MAIL
                 if template:
                     template.send_mail(rec.id, force_send=True)
 
-                # Auto-generate offer letter when hired
-                if rec.stage_id.name == 'Hired':
-                    rec.offer_letter_generated = True
         return res
 
 
