@@ -14,13 +14,18 @@ class PLDashboard extends Component {
             customers: [],
             expenses: {},
             quarters: [],
-            currency: "USD",
+            currency: {
+                name: "USD",
+                symbol: "$",
+            },
             loaded: false,
         });
 
         const ctx = this.props.action.context || {};
-        this.financial_year = ctx.financial_year;
+
+        this.financial_year = ctx.financial_year || false;
         this.company_ids = ctx.company_ids || [];
+        this.currency_id = ctx.currency_id || false;
 
         onWillStart(async () => {
             if (!this.state.loaded) {
@@ -38,17 +43,24 @@ class PLDashboard extends Component {
             {
                 financial_year: this.financial_year,
                 company_ids: this.company_ids,
+                currency_id: this.currency_id,   // ✅ important
             }
         );
 
         this.state.customers = result.customers || [];
         this.state.expenses = result.expenses || {};
-        this.state.quarters = result.quarters || ["q1","q2","q3","q4"];
-        this.state.currency = result.currency || {symbol: "$"};
+        this.state.quarters = result.quarters || ["q1", "q2", "q3", "q4"];
+
+        // ✅ FIXED currency handling
+        this.state.currency = result.currency || {
+            name: "USD",
+            symbol: "$",
+        };
     }
 
     getQuarterLabel(q) {
         const fy = this.financial_year;
+
         if (!fy) return q.toUpperCase();
 
         const start = parseInt(fy);
