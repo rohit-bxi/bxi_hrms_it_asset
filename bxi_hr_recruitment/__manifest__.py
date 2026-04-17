@@ -5,7 +5,6 @@
     'author': 'Kriti',
     'category': 'HR',
     'depends': ['base','hr','hr_recruitment','website','mail'],
-    'data': [],
     'installable': True,
     'application': False,
     'data': [
@@ -15,8 +14,9 @@
         'views/master_hr_location.xml',
         'data/email_template.xml',
         'data/hr_job_sequence.xml',
+        'data/applicant_data_update_email.xml',
         'data/hr_recruitment_final_stage.xml',
-        'report/offer_letter_report.xml',
         'report/offer_letter_template.xml',
+        'report/offer_letter_report.xml',
     ],
 }

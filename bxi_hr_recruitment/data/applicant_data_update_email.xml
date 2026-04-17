@@ -1,0 +1,31 @@
+<odoo>
+    <data>
+        <record id="email_template_application_form" model="mail.template">
+            <field name="name">Qualification StageApplication Form Email</field>
+            <field name="model_id" ref="hr_recruitment.model_hr_applicant"/>
+            <field name="subject">Complete Your Application Form</field>
+            <field name="email_from">hrsupport@bxitech.com</field>
+
+            <field name="body_html"><![CDATA[
+                <p>Dear <b><t t-esc="object.partner_name"/></b>,</p>
+
+                <p>Please complete your application form by clicking below:</p>
+
+                <p>
+                    <a t-att-href="ctx.get('application_url')"
+                       style="background:#1f4e79;color:white;padding:10px 15px;text-decoration:none;border-radius:4px;">
+                       Fill Application Form
+                    </a>
+                </p>
+
+                <p>If button doesn't work, use below link:</p>
+
+                <p>
+                    <t t-esc="ctx.get('application_url')"/>
+                </p>
+
+                <p>Regards,<br/>HR Team</p>
+            ]]></field>
+        </record>
+    </data>
+</odoo>
