@@ -14,6 +14,8 @@
         'views/inherit_hr_job.xml',
         'views/master_hr_location.xml',
         'data/email_template.xml',
+        'data/hr_job_sequence.xml',
+        'data/hr_recruitment_final_stage.xml',
         'report/offer_letter_report.xml',
         'report/offer_letter_template.xml',
     ],
