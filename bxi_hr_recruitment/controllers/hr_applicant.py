@@ -1,9 +1,13 @@
 from odoo import http
 from odoo.http import request
+import base64
 
 
 class ApplicantCreation(http.Controller):
 
+    # =========================
+    # RESPONSE WRAPPER
+    # =========================
     def _response(self, status, message, data=None):
         return {
             "status": status,
@@ -11,6 +15,29 @@ class ApplicantCreation(http.Controller):
             "data": data or {}
         }
 
+    # =========================
+    # SAFE BASE64 DECODER
+    # =========================
+    def safe_b64decode(self, value):
+        if not value:
+            return None
+
+        try:
+            if "," in value:
+                value = value.split(",")[1]
+
+            missing_padding = len(value) % 4
+            if missing_padding:
+                value += "=" * (4 - missing_padding)
+
+            return base64.b64decode(value)
+
+        except Exception:
+            return None
+
+    # =========================
+    # CREATE APPLICANT
+    # =========================
     @http.route('/api/applicant/create', type='jsonrpc', auth='public', methods=['POST'], csrf=False)
     def create_applicant(self, **kwargs):
         try:
@@ -23,113 +50,120 @@ class ApplicantCreation(http.Controller):
             if not partner_name:
                 return self._response("error", "Applicant name is required")
 
-            job = request.env['hr.job'].sudo().browse(job_id)
+            job = request.env['hr.job'].sudo().browse(int(job_id)) if job_id else False
 
-            if not job.exists():
+            if job_id and not job.exists():
                 return self._response("error", "Invalid Job ID")
 
-            applicant_vals = {
+            applicant = request.env['hr.applicant'].sudo().create({
                 'partner_name': partner_name,
                 'email_from': email,
                 'partner_phone': phone,
-                'job_id': job_id,
-            }
-
-            applicant = request.env['hr.applicant'].sudo().create(applicant_vals)
+                'job_id': job.id if job else False,
+            })
 
             return self._response(
                 "success",
                 "Applicant created successfully",
-                {
-                    "applicant_id": applicant.id,
-                    "partner_name": applicant.partner_name
-                }
+                {"applicant_id": applicant.id}
             )
 
         except Exception as e:
             return self._response("error", str(e))
 
-    @http.route('/api/applicant/list', type='jsonrpc', auth='public', methods=['POST'], csrf=False)
-    def applicant_list(self, job_id=None):
+    # =========================
+    # SUBMIT / UPDATE APPLICATION
+    # =========================
+    @http.route('/api/application/submit', type='json', auth='public', methods=['POST'], csrf=False)
+    def submit_application(self, **kwargs):
         try:
-            if not job_id:
-                return {
-                    "status": "error",
-                    "message": "job_id is required"
-                }
-            job = request.env['hr.job'].sudo().browse(int(job_id))
-            if not job.exists():
-                return {
-                    "status": "error",
-                    "message": "Job position not found"
-                }
-            applicants = request.env['hr.applicant'].sudo().search([
-                ('job_id', '=', job.id)
-            ])
-            result = []
-            for rec in applicants:
-                result.append({
-                    "id": rec.id,
-                    "applicant_name": rec.partner_name,
-                    "email": rec.email_from,
-                    "phone": rec.partner_phone,
-                    "job_position": rec.job_id.name,
+            data = kwargs
+
+            odoo_id = data.get('odoo_id')
+            if not odoo_id:
+                return {"status": "error", "message": "Missing odoo_id"}
+
+            applicant = request.env['hr.applicant'].sudo().browse(int(odoo_id))
+
+            if not applicant.exists():
+                return {"status": "error", "message": "Invalid applicant"}
+
+            # =====================
+            # BASIC FIELDS
+            # =====================
+            applicant.write({
+                'partner_name': data.get('partner_name'),
+                'contact_number': data.get('contact_number'),
+                'email_from': data.get('email_from'),
+                'father_name': data.get('father_name'),
+                'mother_name': data.get('mother_name'),
+                'aadhar_number': data.get('aadhar_number'),
+                'pan_number': data.get('pan_number'),
+                'full_address': data.get('full_address'),
+                'joining_date': data.get('joining_date'),
+            })
+
+            # =====================
+            # SAFE ATTACHMENT CREATOR
+            # =====================
+            def create_attachment(file_obj):
+                if not file_obj or not file_obj.get('data'):
+                    return False
+
+                try:
+                    data_b64 = file_obj.get('data')
+
+                    return request.env['ir.attachment'].sudo().create({
+                        'name': file_obj.get('name') or 'file',
+                        'type': 'binary',
+                        'datas': data_b64,
+                        'res_model': 'hr.applicant',
+                        'res_id': applicant.id,
+                    }).id
+
+                except:
+                    return False
+
+            def m2m(file_obj):
+                attachment_id = create_attachment(file_obj)
+                if attachment_id:
+                    return [(4, attachment_id)]
+                return False
+
+            # =====================
+            # DOCUMENTS (FIXED FIELD NAMES)
+            # =====================
+            applicant.write({
+                'doc_10th_id': m2m(data.get('doc_10th')),
+                'doc_12th_id': m2m(data.get('doc_12th')),
+                'doc_graduation_id': m2m(data.get('doc_graduation')),
+                'doc_master_id': m2m(data.get('doc_master')),
+
+                'form_16_id': m2m(data.get('form_16')),
+                'bank_statement_id': m2m(data.get('bank_statement')),
+                'salary_slip_id': m2m(data.get('salary_slips')),
+                'photograph': m2m(data.get('photograph')),
+            })
+
+            # =====================
+            # EXPERIENCE
+            # =====================
+            for exp in data.get('experience', []):
+
+                request.env['hr.applicant.experience'].sudo().create({
+                    'applicant_id': applicant.id,
+                    'company_name': exp.get('company_name'),
+                    'years': exp.get('years'),
                 })
+
             return {
                 "status": "success",
-                "message": "Applicants fetched successfully",
-                "job_position": job.name,
-                "total_applicants": len(result),
-                "data": result
+                "message": "Application updated successfully",
+                "applicant_id": applicant.id
             }
+
         except Exception as e:
             return {
                 "status": "error",
                 "message": str(e)
             }
-
-    # @http.route('/api/recruitment/send_selection_notification', type='jsonrpc', auth='public', methods=['POST'], csrf=False)
-    # def send_selection_notification(self, **kwargs):
-    #     """API to send notification for selected candidates."""
-    #     try:
-    #         applicant_id = kwargs.get('applicant_id')
-    #
-    #         if not applicant_id:
-    #             return {
-    #                 "status": "error",
-    #                 "message": "applicant_id is required"
-    #             }
-    #
-    #         applicant = request.env['hr.applicant'].sudo().browse(applicant_id)
-    #
-    #         if not applicant.exists():
-    #             return {
-    #                 "status": "error",
-    #                 "message": "Applicant not found"
-    #             }
-    #
-    #         # Ensure candidate is selected
-    #         if not applicant.stage_id.hired_stage:
-    #             return {
-    #                 "status": "error",
-    #                 "message": "Notification can only be sent for selected candidates"
-    #             }
-    #
-    #         applicant._send_selection_notification()
-    #
-    #         return {
-    #             "status": "success",
-    #             "message": "Notification sent successfully",
-    #             "data": {
-    #                 "applicant_id": applicant.id,
-    #                 "candidate_name": applicant.partner_name or applicant.name,
-    #                 "job_position": applicant.job_id.name if applicant.job_id else "",
-    #                 "status": "selected"
-    #             }
-    #         }
-    #
-    #     except Exception as e:
-    #         return {
-    #             "status": "error",
-    #             "message": str(e)
-    #         }
