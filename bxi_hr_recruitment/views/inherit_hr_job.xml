@@ -13,6 +13,7 @@
             <xpath expr='//div[@name="recruitment_target"]'
                    position="after">
                 <field name="location_id"/>
+                <field name="requisition_id"/>
             </xpath>
         </field>
     </record>

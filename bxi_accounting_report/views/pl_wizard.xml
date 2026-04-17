@@ -30,7 +30,7 @@
     </record>
 
     <menuitem id="menu_custom_pl_report"
-              name="Custom P&amp;L Report"
+              name="BXI P&amp;L Report"
               parent="account.account_reports_legal_statements_menu"
               action="bxi_accounting_report.action_pl_report_wizard"
               sequence="10"/>
