@@ -16,21 +16,31 @@
         <field name="arch" type="xml">
 
             <xpath expr="//field[@name='categ_ids']" position="after">
-                <field name="first_interview_remark"
-                       placeholder="Enter feedback for First Interview"/>
-                <field name="second_interview_remark"
-                       placeholder="Enter feedback for Second Interview"/>
-                 <field name="final_interview_remark"
-                       placeholder="Enter feedback for Final Interview"/>
-            </xpath>
+                    <field name="stage_level" invisible="1"/>
 
-<!--            <xpath expr="//header" position="inside">-->
-<!--                <button name="action_send_selection_notification"-->
-<!--                        type="object"-->
-<!--                        string="Send Selection Notification"-->
-<!--                        class="oe_highlight"-->
-<!--                        invisible="not stage_id.hired_stage"/>-->
-<!--            </xpath>-->
+                    <!-- First -->
+                    <field name="first_interview_remark"
+                           invisible="stage_level &lt; 1"/>
+
+                    <!-- Second -->
+                    <field name="second_interview_remark"
+                           invisible="stage_level &lt; 2"/>
+
+                    <!-- Final -->
+                    <field name="final_interview_remark"
+                           invisible="stage_level &lt; 3"/>
+
+<!--                <field name="first_interview_remark"-->
+<!--                       invisible="stage_level &lt; 2"/>-->
+
+<!--                &lt;!&ndash; Second &ndash;&gt;-->
+<!--                <field name="second_interview_remark"-->
+<!--                       invisible="stage_level &lt; 3"/>-->
+
+<!--                &lt;!&ndash; Final &ndash;&gt;-->
+<!--                <field name="final_interview_remark"-->
+<!--                       invisible="stage_level &lt; 4"/>-->
+            </xpath>
 
             <xpath expr="//notebook" position="inside">
                 <page string="Proposal">
