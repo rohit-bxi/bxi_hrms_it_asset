@@ -288,8 +288,8 @@ class HrHire(models.Model):
         self.externals_form_token = token
 
         # ✅ FIXED URL (string values)
-        url = f"{base_url}?CJM_hired=1&app=16781&token=1b98ebf3dc38d1ede2186a983ebe2d78&odoo_id={self.id}"
-
+        # url = f"{base_url}?CJM_hired=1&app=16781&token=1b98ebf3dc38d1ede2186a983ebe2d78&odoo_id={self.id}"
+        url = f"{base_url}?CJM_hired=1&odoo_id={self.id}"
         # Send email
         template = self.env.ref('bxi_hr_recruitment.email_template_application_form')
         template.with_context(application_url=url).send_mail(self.id, force_send=True)
