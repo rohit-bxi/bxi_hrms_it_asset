@@ -10,6 +10,12 @@ class PLDashboard extends Component {
     setup() {
         this.orm = useService("orm");
 
+        const ctx = this.props.action.context || {};
+
+        this.financial_year = ctx.financial_year || false;
+        this.company_ids = ctx.company_ids || [];
+        this.currency_id = ctx.currency_id || false;
+
         this.state = useState({
             customers: [],
             expenses: {},
@@ -20,14 +26,6 @@ class PLDashboard extends Component {
             },
             loaded: false,
         });
-
-        const ctx = this.props.action.context || {};
-
-        this.financial_year = ctx.financial_year || false;
-        this.company_ids = ctx.company_ids || [];
-        this.state.currency = {
-            symbol: ctx.currency_symbol || "$",
-        };
 
         onWillStart(async () => {
             if (!this.state.loaded) {
@@ -45,14 +43,16 @@ class PLDashboard extends Component {
             {
                 financial_year: this.financial_year,
                 company_ids: this.company_ids,
-                currency_id: this.currency_id,   // ✅ important
+                currency_id: this.currency_id, 
             }
         );
-
         this.state.customers = result.customers || [];
         this.state.expenses = result.expenses || {};
         this.state.quarters = result.quarters || ["q1", "q2", "q3", "q4"];
 
+        if (result.currency) {
+            this.state.currency = result.currency;
+        }
     }
 
     getQuarterLabel(q) {
