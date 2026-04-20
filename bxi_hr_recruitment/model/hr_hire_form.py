@@ -1,4 +1,4 @@
-from odoo import fields, models
+from odoo import fields, models, api, _
 from odoo.exceptions import UserError
 import json
 import logging
@@ -12,10 +12,12 @@ class HrHire(models.Model):
     _inherit = 'hr.applicant'
     _description = "HR Applicant Extension for Offer Letter"
 
+    first_interview_id = fields.Many2one('hr.employee',string="First Interviewer")
+    second_interview_id = fields.Many2one('hr.employee',string="Second Interviewer")
+    final_interview_id = fields.Many2one('hr.employee',string="Final Interviewer")
     first_interview_remark = fields.Text(string="First Interview Remark")
     second_interview_remark = fields.Text(string="Second Interview Remark")
     final_interview_remark = fields.Text(string="Final Interview Remark")
-
 
     # OPTIONAL: prevent duplicate emails per stage
     stage_mail_sent_ids = fields.Many2many(
@@ -106,6 +108,36 @@ class HrHire(models.Model):
     offer_letter_attachment_id = fields.Many2one('ir.attachment', string="Offer Letter Attachment")
     externals_form_token = fields.Char("External Form Token")
 
+    revenue_type = fields.Selection([
+        ('revenue', 'Revenue'),
+        ('simple', 'Simple'),
+        ('nonrevenue', 'Non Revenue'),
+    ], string="Type", default='revenue', tracking=True)
+    # Basic Info
+    band = fields.Char("Band")
+
+    # Monthly Components
+    basic_salary = fields.Float("Basic Salary")
+    flexible_allowance = fields.Float("Flexible Allowance", readonly=1, force_save="1")
+
+    monthly_total = fields.Float(compute="_compute_salary", store=True, tracking=True)
+    annual_fixed = fields.Float(compute="_compute_salary", store=True, tracking=True)
+
+    # Retirals
+    pf = fields.Float("Provident Fund", default=21600.0, tracking=True)
+    insurance = fields.Float("Medical Insurance", default=50000.0, tracking=True)
+    nps = fields.Float("NPS", default=15000, tracking=True)
+
+    retiral_total = fields.Float(compute="_compute_salary", store=True, tracking=True)
+
+    # Variable
+    org_bonus = fields.Float("Org Bonus", compute="_compute_bonus", tracking=True)
+    performance_bonus = fields.Float("Performance Bonus", compute="_compute_bonus", tracking=True)
+
+    variable_total = fields.Float(compute="_compute_salary", store=True, tracking=True)
+
+    # Final CTC
+    ctc_total = fields.Float(compute="_compute_salary", store=True, tracking=True)
 
     def create_attachment(self, name, data, res_model, res_id):
         if not data:
@@ -149,7 +181,6 @@ class HrHire(models.Model):
 
         report = self.env.ref('bxi_hr_recruitment.action_report_offer_letter')
 
-        # ✅ CORRECT CALL
         pdf_content, _ = report._render_qweb_pdf(report.id, res_ids=[self.id])
 
         attachment = self.env['ir.attachment'].create({
@@ -186,22 +217,17 @@ class HrHire(models.Model):
 
 
     def write(self, vals):
-
         if 'stage_id' in vals:
-
             new_stage = self.env['hr.recruitment.stage'].browse(vals.get('stage_id'))
             for rec in self:
-                # 3️⃣ Second Interview
                 if new_stage.name == 'Second Interview':
                     if not rec.first_interview_remark:
                         raise UserError("⚠ Please fill First Interview Feedback before moving to Second Interview.")
 
-                # 4️⃣ Final Interview
                 elif new_stage.name == 'Final Interview':
                     if not rec.second_interview_remark:
                         raise UserError("⚠ Please fill Second Interview Feedback before moving to Final Interview.")
 
-                # 5️⃣ Make Proposal
                 elif new_stage.name == 'Make Proposal':
                     if not rec.final_interview_remark:
                         raise UserError("⚠ Please fill Final Interview Feedback before moving to Make Proposal.")
@@ -223,27 +249,21 @@ class HrHire(models.Model):
                 if old_stage and rec.stage_id.sequence <= old_stage.sequence:
                     continue
 
-                # 1️⃣ Qualification
                 if rec.stage_id.name == 'Qualification':
                     template = self.env.ref('bxi_hr_recruitment.email_stage_qualification')
 
-                # 2️⃣ First Interview
                 elif rec.stage_id.name == 'First Interview':
                     template = self.env.ref('bxi_hr_recruitment.email_stage_first_interview')
 
-                # 3️⃣ Second Interview
                 elif rec.stage_id.name == 'Second Interview':
                     template = self.env.ref('bxi_hr_recruitment.email_stage_second_interview')
 
-                # 4️⃣ Final Interview
                 elif rec.stage_id.name == 'Final Interview':
                     template = self.env.ref('bxi_hr_recruitment.email_stage_final_interview')
 
-                # 5️⃣ Make Proposal
                 elif rec.stage_id.name == 'Make Proposal':
                     template = self.env.ref('bxi_hr_recruitment.email_stage_contract_proposal')
 
-                # 6️⃣ Contract Proposal
                 elif rec.stage_id.name == 'Contract Proposal':
                     template = self.env.ref('bxi_hr_recruitment.email_stage_offer_letter')
 
@@ -275,6 +295,56 @@ class HrHire(models.Model):
         template.with_context(application_url=url).send_mail(self.id, force_send=True)
 
         return True
+
+    @api.onchange('basic_salary')
+    def onchange_basic_salary(self):
+        for data in self:
+            if data.basic_salary:
+                data.flexible_allowance = data.basic_salary * 0.70
+
+    @api.depends('annual_fixed', 'retiral_total')
+    def _compute_bonus(self):
+        for rec in self:
+            if rec.revenue_type in ['revenue','simple']:
+                rec.org_bonus = (rec.annual_fixed + rec.retiral_total) * 0.10
+
+                rec.performance_bonus = (
+                    rec.annual_fixed + rec.retiral_total + rec.org_bonus
+                ) * 0.10
+            else:
+                rec.org_bonus = (rec.annual_fixed + rec.retiral_total) * 0.25
+
+                rec.performance_bonus = 0.00
+
+    @api.depends(
+        'basic_salary', 'flexible_allowance',
+        'pf', 'insurance', 'nps',
+        'performance_bonus', 'org_bonus'
+    )
+    def _compute_salary(self):
+        for rec in self:
+
+            # Monthly Total
+            rec.monthly_total = rec.basic_salary + rec.flexible_allowance
+
+            # Annual Fixed
+            rec.annual_fixed = rec.monthly_total * 12
+
+            # Retirals
+            rec.retiral_total = rec.pf + rec.insurance + rec.nps
+
+            # Variable
+            rec.variable_total = rec.performance_bonus + rec.org_bonus
+
+            # Final CTC
+            rec.ctc_total = rec.annual_fixed + rec.retiral_total + rec.variable_total
+
+    @api.onchange('performance_bonus')
+    def onchange_performance_bonus(self):
+        for data in self:
+            if data.performance_bonus:
+                data.variable_total = data.performance_bonus + data.org_bonus
+                data.ctc_total = data.annual_fixed + data.retiral_total + data.variable_total
 
 
 class HrApplicantExperience(models.Model):
