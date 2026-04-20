@@ -15,6 +15,14 @@ class HrHire(models.Model):
     final_interview_remark = fields.Text(string="Final Interview Remark")
 
 
+    # OPTIONAL: prevent duplicate emails per stage
+    stage_mail_sent_ids = fields.Many2many(
+        'hr.recruitment.stage',
+        string="Sent Stage Emails"
+    )
+
+
+
     # frontend_webhook_url = fields.Char(
     #     string="Frontend Webhook URL",
     #     help="Webhook URL to notify the frontend when a candidate is selected."
@@ -59,6 +67,21 @@ class HrHire(models.Model):
         'applicant_id',
         string="Experience"
     )
+    stage_level = fields.Integer(compute="_compute_stage_level")
+
+    def _compute_stage_level(self):
+        for rec in self:
+            if rec.stage_id:
+                if rec.stage_id.name == 'First Interview':
+                    rec.stage_level = 1
+                elif rec.stage_id.name == 'Second Interview':
+                    rec.stage_level = 2
+                elif rec.stage_id.name == 'Final Interview':
+                    rec.stage_level = 3
+                else:
+                    rec.stage_level = 0
+            else:
+                rec.stage_level = 0
 
     # def _send_selection_notification(self):
     #     """Send notification to frontend for selected candidates."""
@@ -134,7 +157,109 @@ class HrHire(models.Model):
         ).report_action(self)
 
     # SEND EMAIL ON STAGE CHANGE
+    # def write(self, vals):
+    #
+    #     # =========================
+    #     # VALIDATION BEFORE STAGE CHANGE
+    #     # =========================
+    #     if 'stage_id' in vals:
+    #
+    #         new_stage = self.env['hr.recruitment.stage'].browse(vals.get('stage_id'))
+    #
+    #         for rec in self:
+    #
+    #             if new_stage.name == 'Second Interview':
+    #                 if not rec.first_interview_remark:
+    #                     raise UserError(
+    #                         "⚠ Please fill First Interview Feedback before moving to Second Interview."
+    #                     )
+    #
+    #             elif new_stage.name == 'Final Interview':
+    #                 if not rec.second_interview_remark:
+    #                     raise UserError(
+    #                         "⚠ Please fill Second Interview Feedback before moving to Final Interview."
+    #                     )
+    #
+    #             elif new_stage.name == 'Make Proposal':
+    #                 if not rec.final_interview_remark:
+    #                     raise UserError(
+    #                         "⚠ Please fill Final Interview Feedback before moving to Make Proposal."
+    #                     )
+    #
+    #     # =========================
+    #     # STORE OLD STAGE BEFORE WRITE
+    #     # =========================
+    #     old_stages = {rec.id: rec.stage_id.id for rec in self}
+    #
+    #     res = super().write(vals)
+    #
+    #     # =========================
+    #     # SEND EMAIL ONLY ON VALID FORWARD MOVE
+    #     # =========================
+    #     if 'stage_id' in vals:
+    #
+    #         for rec in self:
+    #
+    #             old_stage_id = old_stages.get(rec.id)
+    #             old_stage = self.env['hr.recruitment.stage'].browse(old_stage_id)
+    #
+    #             # ❌ skip backward or same stage moves
+    #             if old_stage and rec.stage_id.sequence <= old_stage.sequence:
+    #                 continue
+    #
+    #             # ❌ prevent duplicate email for same stage
+    #             if rec.stage_id in rec.stage_mail_sent_ids:
+    #                 continue
+    #
+    #             template = None
+    #
+    #             if rec.stage_id.name == 'Qualification':
+    #                 template = self.env.ref('bxi_hr_recruitment.email_stage_qualification')
+    #
+    #             elif rec.stage_id.name == 'First Interview':
+    #                 template = self.env.ref('bxi_hr_recruitment.email_stage_first_interview')
+    #
+    #             elif rec.stage_id.name == 'Second Interview':
+    #                 template = self.env.ref('bxi_hr_recruitment.email_stage_second_interview')
+    #
+    #             elif rec.stage_id.name == 'Final Interview':
+    #                 template = self.env.ref('bxi_hr_recruitment.email_stage_final_interview')
+    #
+    #             elif rec.stage_id.name == 'Make Proposal':
+    #                 template = self.env.ref('bxi_hr_recruitment.email_stage_contract_proposal')
+    #
+    #             elif rec.stage_id.name == 'Contract Proposal':
+    #                 template = self.env.ref('bxi_hr_recruitment.email_stage_offer_letter')
+    #
+    #             if template:
+    #                 template.send_mail(rec.id, force_send=True)
+    #
+    #                 # mark email sent
+    #                 rec.stage_mail_sent_ids = [(4, rec.stage_id.id)]
+    #
+    #     return res
     def write(self, vals):
+
+        if 'stage_id' in vals:
+
+            new_stage = self.env['hr.recruitment.stage'].browse(vals.get('stage_id'))
+            for rec in self:
+                # 3️⃣ Second Interview
+                if new_stage.name == 'Second Interview':
+                    if not rec.first_interview_remark:
+                        raise UserError("⚠ Please fill First Interview Feedback before moving to Second Interview.")
+
+                # 4️⃣ Final Interview
+                elif new_stage.name == 'Final Interview':
+                    if not rec.second_interview_remark:
+                        raise UserError("⚠ Please fill Second Interview Feedback before moving to Final Interview.")
+
+                # 5️⃣ Make Proposal
+                elif new_stage.name == 'Make Proposal':
+                    if not rec.final_interview_remark:
+                        raise UserError("⚠ Please fill Final Interview Feedback before moving to Make Proposal.")
+
+        #  STORE OLD STAGES
         old_stages = {rec.id: rec.stage_id.id for rec in self}
 
         res = super().write(vals)
@@ -145,11 +270,9 @@ class HrHire(models.Model):
 
                 template = None
 
-                #  STEP 2: GET OLD STAGE PROPERLY
                 old_stage_id = old_stages.get(rec.id)
                 old_stage = self.env['hr.recruitment.stage'].browse(old_stage_id)
 
-                #  STOP MAIL IF MOVING BACKWARD
                 if old_stage and rec.stage_id.sequence <= old_stage.sequence:
                     continue
 
@@ -163,27 +286,20 @@ class HrHire(models.Model):
 
                 # 3️⃣ Second Interview
                 elif rec.stage_id.name == 'Second Interview':
-                    if not rec.first_interview_remark:
-                        raise UserError("⚠ Please fill First Interview Feedback before moving to Second Interview.")
                     template = self.env.ref('bxi_hr_recruitment.email_stage_second_interview')
 
                 # 4️⃣ Final Interview
                 elif rec.stage_id.name == 'Final Interview':
-                    if not rec.second_interview_remark:
-                        raise UserError("⚠ Please fill Second Interview Feedback before moving to Final Interview.")
                     template = self.env.ref('bxi_hr_recruitment.email_stage_final_interview')
 
-                # 5️⃣ Make Proposal (Final Selection Mail)
+                # 5️⃣ Make Proposal
                 elif rec.stage_id.name == 'Make Proposal':
-                    if not rec.final_interview_remark:
-                        raise UserError("⚠ Please fill Final Interview Feedback before moving to Make Proposal.")
                     template = self.env.ref('bxi_hr_recruitment.email_stage_contract_proposal')
 
-                # 6️⃣ Contract Proposal (Offer Letter Mail)
+                # 6️⃣ Contract Proposal
                 elif rec.stage_id.name == 'Contract Proposal':
                     template = self.env.ref('bxi_hr_recruitment.email_stage_offer_letter')
 
-                #  SEND MAIL
                 if template:
                     template.send_mail(rec.id, force_send=True)
 
