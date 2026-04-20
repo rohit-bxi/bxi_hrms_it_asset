@@ -13,25 +13,70 @@
                 <!-- INTERVIEW FEEDBACK -->
                 <!-- ===================== -->
                 <page string="Interview Feedback" invisible="stage_level &lt; 1">
-                    <group>
-                        <field name="stage_level" invisible="1"/>
+                    <field name="stage_level" invisible="1"/>
 
-                        <group string="Remarks">
-                            <field name="first_interview_remark"
-                                   placeholder="First interview feedback..."
+                    <group string="Remarks">
+                        <group string="First Interviewer Details">
+                            <field name="first_interview_id"
+                                   placeholder="First Interviewer..."
                                    invisible="stage_level &lt; 1"/>
-
-                            <field name="second_interview_remark"
-                                   placeholder="Second interview feedback..."
+                            <field name="first_interview_remark"
+                                   placeholder="First Interview feedback..."
+                                   invisible="stage_level &lt; 1"/>
+                        </group>
+                        <group string="Second Interviewer Details">
+                            <field name="second_interview_id"
+                                   placeholder="Second Interviewer..."
                                    invisible="stage_level &lt; 2"/>
-
+                            <field name="second_interview_remark"
+                                   placeholder="Second Interview feedback..."
+                                   invisible="stage_level &lt; 2"/>
+                        </group>
+                        <group string="Final Interviewer Details">
+                            <field name="final_interview_id"
+                                   placeholder="Final Interviewer..."
+                                   invisible="stage_level &lt; 3"/>
                             <field name="final_interview_remark"
-                                   placeholder="Final interview feedback..."
+                                   placeholder="Final Interview feedback..."
                                    invisible="stage_level &lt; 3"/>
                         </group>
                     </group>
                 </page>
+                <page string="Salary Calculation" invisible="stage_level &lt; 4">
 
+                    <group string="Calculator Type">
+                        <field name="revenue_type" widget="radio" options="{'horizontal': true}"/>
+                    </group>
+
+                    <group string="Employee Info" col="2">
+                        <field name="band"/>
+                    </group>
+
+                    <group string="Monthly Components" col="2">
+                        <field name="basic_salary"/>
+                        <field name="flexible_allowance"/>
+                        <field name="monthly_total" readonly="1"/>
+                        <field name="annual_fixed" readonly="1"/>
+                    </group>
+
+                    <group string="Retirals and Benefits" col="2">
+                        <field name="pf"/>
+                        <field name="insurance"/>
+                        <field name="nps"/>
+                        <field name="retiral_total" readonly="1"/>
+                    </group>
+
+                    <group string="Variable Components" col="2">
+                        <field name="org_bonus"/>
+                        <field name="performance_bonus"/>
+                        <field name="variable_total" readonly="1"/>
+                    </group>
+
+                    <group string="Final CTC">
+                        <field name="ctc_total" readonly="1" class="oe_highlight"/>
+                    </group>
+
+                </page>
                 <!-- ===================== -->
                 <!-- PROPOSAL / OFFER -->
                 <!-- ===================== -->
