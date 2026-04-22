@@ -1,4 +1,3 @@
-
 from odoo import http
 from odoo.http import request , Controller, route
 
@@ -66,6 +65,7 @@ class HrJobAPI(http.Controller):
                         "message": "Invalid job_id. It must be an integer."
                     }
             else:
+                #  Apply status filter only when job_id is not provided
                 if status:
                     status = str(status).lower().strip()
 

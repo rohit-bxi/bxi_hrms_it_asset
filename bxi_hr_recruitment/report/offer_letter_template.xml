@@ -217,12 +217,13 @@
                             COMPENSATION PLAN
                         </h3>
 
+                        <!-- ================= HEADER ================= -->
                         <table style="width:100%; border-collapse: collapse;" border="1">
                             <tr>
                                 <td>
                                     <strong>Band</strong>
                                 </td>
-                                <td>6.2</td>
+                                <t t-esc="o.band"/>
                                 <td>
                                     <strong>Skill Category</strong>
                                 </td>
@@ -242,83 +243,123 @@
                                 <td>
                                     <strong>City</strong>
                                 </td>
-                                <td colspan="3"></td>
+                                <td colspan="3">
+                                    <t t-esc="o.company_id.city or ''"/>
+                                </td>
                             </tr>
                         </table>
 
                         <br/>
 
-                        <h4 style="background:#d9e1f2; padding:5px;">Monthly Components (in INR)</h4>
+                        <!-- ================= MONTHLY ================= -->
+                        <h4 style="background:#d9e1f2; padding:5px;">
+                            Monthly Components (in INR)
+                        </h4>
 
                         <table style="width:100%; border-collapse: collapse;" border="1">
                             <tr>
                                 <td>Basic Salary</td>
-                                <td>26000</td>
+                                <td>
+                                    <t t-esc="o.basic_salary"
+                                       t-options='{"widget": "monetary", "display_currency": o.company_id.currency_id}'/>
+                                </td>
                             </tr>
                             <tr>
                                 <td>Flexible Allowance</td>
-                                <td>18200</td>
+                                <td>
+                                    <t t-esc="o.flexible_allowance"
+                                       t-options='{"widget": "monetary", "display_currency": o.company_id.currency_id}'/>
+                                </td>
                             </tr>
                             <tr>
                                 <td>
                                     <strong>Total Monthly</strong>
                                 </td>
                                 <td>
-                                    <strong>44200</strong>
+                                    <strong>
+                                        <t t-esc="o.monthly_total"
+                                           t-options='{"widget": "monetary", "display_currency": o.company_id.currency_id}'/>
+                                    </strong>
                                 </td>
                             </tr>
                             <tr>
                                 <td>Total Monthly Components Annualized</td>
-                                <td>530400</td>
+                                <td>
+                                    <t t-esc="o.annual_fixed"
+                                       t-options='{"widget": "monetary", "display_currency": o.company_id.currency_id}'/>
+                                </td>
                             </tr>
                         </table>
 
                         <br/>
 
-                        <h4 style="background:#d9e1f2; padding:5px;">Retirals &amp; Other Benefits (in INR)</h4>
+                        <!-- ================= RETIRALS ================= -->
+                        <h4 style="background:#d9e1f2; padding:5px;">
+                            Retirals &amp; Other Benefits (in INR)
+                        </h4>
 
                         <table style="width:100%; border-collapse: collapse;" border="1">
                             <tr>
                                 <td>Provident Fund</td>
-                                <td>21600</td>
+                                <td>
+                                    <t t-esc="o.pf"
+                                       t-options='{"widget": "monetary", "display_currency": o.company_id.currency_id}'/>
+                                </td>
                             </tr>
                             <tr>
                                 <td>Medical Insurance Premium</td>
-                                <td>25000</td>
+                                <td>
+                                    <t t-esc="o.insurance"
+                                       t-options='{"widget": "monetary", "display_currency": o.company_id.currency_id}'/>
+                                </td>
                             </tr>
                             <tr>
                                 <td>Gratuity</td>
-                                <td>15000</td>
+                                <td>
+                                    <t t-esc="o.nps"
+                                       t-options='{"widget": "monetary", "display_currency": o.company_id.currency_id}'/>
+                                </td>
                             </tr>
                             <tr>
                                 <td>
                                     <strong>Total Retirals</strong>
                                 </td>
                                 <td>
-                                    <strong>61600</strong>
+                                    <strong>
+                                        <t t-esc="o.retiral_total"
+                                           t-options='{"widget": "monetary", "display_currency": o.company_id.currency_id}'/>
+                                    </strong>
                                 </td>
                             </tr>
                         </table>
 
                         <br/>
 
+                        <!-- ================= VARIABLE + CTC ================= -->
                         <table style="width:100%; border-collapse: collapse;" border="1">
                             <tr>
                                 <td>Total Variable Components</td>
-                                <td>129570</td>
+                                <td>
+                                    <t t-esc="o.variable_total"
+                                       t-options='{"widget": "monetary", "display_currency": o.company_id.currency_id}'/>
+                                </td>
                             </tr>
                             <tr>
                                 <td>
                                     <strong>Cost to Company</strong>
                                 </td>
                                 <td>
-                                    <strong>592000</strong>
+                                    <strong>
+                                        <t t-esc="o.ctc_total"
+                                           t-options='{"widget": "monetary", "display_currency": o.company_id.currency_id}'/>
+                                    </strong>
                                 </td>
                             </tr>
                         </table>
-                         <br/>
 
-                        <!-- SOCIAL SECURITY -->
+                        <br/>
+
+                        <!-- ================= SOCIAL SECURITY ================= -->
                         <table style="width:100%; border-collapse: collapse;" border="1">
                             <tr style="background:#d9d9d9;">
                                 <td>
@@ -1972,5 +2013,6 @@
                 </t>
             </t>
         </t>
+
     </template>
 </odoo>
