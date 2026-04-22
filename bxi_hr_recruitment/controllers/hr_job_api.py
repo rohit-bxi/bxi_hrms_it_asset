@@ -81,24 +81,83 @@ class HrJobAPI(http.Controller):
                             "message": "Invalid status. Use published, unpublished or all"
                         }
 
-            # 🔹 Fetch job records
-            jobs = request.env['hr.job'].sudo().search_read(
-                domain,
-                [
-                    'id',
-                    'name',
-                    'sequence',
-                    'no_of_recruitment',
-                    'description',
-                    'requirements',
-                    'website_published'
-                ]
-            )
+            # 🔹 Fetch base job data
+            jobs = request.env['hr.job'].sudo().search(domain)
+
+            result = []
+
+            for job in jobs:
+
+                # 🔹 Location names
+                location_names = job.location_ids.mapped('name') if job.location_ids else []
+
+                # 🔹 Department
+                department = job.department_id.name if job.department_id else ""
+
+                # 🔹 Hiring Manager (user_id or custom field)
+                hiring_manager = job.user_id.name if hasattr(job, 'user_id') and job.user_id else ""
+
+                # 🔹 Recruiter Assigned (if custom field exists)
+                recruiter = ""
+                if hasattr(job, 'recruiter_id') and job.recruiter_id:
+                    recruiter = job.recruiter_id.name
+
+                # 🔹 Candidates (hr.applicant linked to job)
+                applicants = request.env['hr.applicant'].sudo().search([
+                    ('job_id', '=', job.id)
+                ])
+
+                candidate_names = applicants.mapped('partner_name') if applicants else []
+                candidates_selected = len(applicants.filtered(lambda a: a.stage_id and a.stage_id.fold))
+
+                # 🔹 Build response
+                result.append({
+                    "id": job.id,
+                    "name": job.name,
+                    "sequence": job.sequence,
+                    "description": job.description,
+                    "requirements": job.requirements,
+                    "website_published": job.website_published,
+
+                    # 🔹 Custom fields
+                    "location_type": job.location_type,
+                    "employee_category": job.employee_category or "",
+
+                    # 🔹 Job Details (mapped / computed)
+                    "location": location_names,
+                    "job_location": location_names,
+                    "department": department,
+                    "hiring_manager": hiring_manager,
+                    "recruiter_assigned": recruiter,
+
+                    # 🔹 Open positions
+                    "open_positions": job.no_of_recruitment,
+
+                    # 🔹 Requisition ID (if exists in your system)
+                    "requisition_id": getattr(job, 'requisition_id', ""),
+
+                    # 🔹 Experience (custom field assumed)
+                    "experience": getattr(job, 'experience', ""),
+
+                    # 🔹 Job Type (custom or selection field assumed)
+                    "job_type": getattr(job, 'job_type', ""),
+
+                    # 🔹 Salary (if exists)
+                    "salary": getattr(job, 'salary', ""),
+
+                    # 🔹 Billed / Unbilled (custom assumption)
+                    "billed_unbilled": getattr(job, 'billed_unbilled', ""),
+
+                    # 🔹 Candidates
+                    "number_of_openings": job.no_of_recruitment,
+                    "candidates_selected": candidates_selected,
+                    "candidates_name": candidate_names
+                })
 
             return {
                 "status": 200,
-                "count": len(jobs),
-                "data": jobs
+                "count": len(result),
+                "data": result
             }
 
         except Exception as e:

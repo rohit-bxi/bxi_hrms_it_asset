@@ -1,4 +1,4 @@
-/* PAGE + FONT (PDF looks like serif) */
+/* PAGE */
 .spark-invoice {
   font-family: "Times New Roman", Times, serif;
   font-size: 12px;
@@ -10,183 +10,60 @@
 }
 
 /* HEADER */
-.spk-header {
-  border: 1px solid #3a3a3a;
-  border-bottom: none;
-}
-
-.spk-gstin-line {
-  padding: 6px 8px;
-  font-size: 12px;
-}
-.spk-label { font-weight: bold; }
-
 .spk-title {
   text-align: center;
   font-weight: bold;
   font-size: 16px;
-  padding: 4px 0 6px 0;
-}
-
-.spk-company-bar {
-  background: #0b2f5b; /* dark blue like PDF */
+  padding: 6px 0;
+  background: #0b2f5b;
   color: #fff;
-  text-align: center;
-  font-weight: bold;
-  padding: 6px 8px;
-  font-size: 14px;
 }
 
-.spk-company-address {
-  text-align: center;
-  padding: 6px 12px 8px 12px;
-  border-top: 1px solid #3a3a3a;
-}
-
-/* META BOX (right side) */
-.spk-meta {
-  width: 40%;
-  margin-left: auto;
-  border-collapse: collapse;
+.spk-border {
   border: 1px solid #3a3a3a;
-  border-top: none;
-}
-.spk-meta td {
-  border: 1px solid #3a3a3a;
-  padding: 6px 8px;
-}
-.spk-meta-label {
-  width: 45%;
-  font-weight: bold;
-  text-align: center;
-}
-.spk-meta-value {
-  width: 55%;
-  text-align: right;
 }
 
-/* BILL / SHIP */
-.spk-billship {
+.spk-cell {
+  padding: 6px;
+}
+
+/* TABLE */
+.spk-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 6px;
 }
-.spk-box {
-  border: 1px solid #3a3a3a;
-  vertical-align: top;
-  padding: 8px 10px;
-  width: 50%;
-}
-.spk-box-title {
-  font-weight: bold;
-  color: #0b2f5b;
-  text-decoration: underline;
-  margin-bottom: 6px;
-}
-.spk-row { margin: 2px 0; }
-.spk-field-label { font-weight: bold; }
 
-/* ITEMS TABLE */
-.spk-items {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-}
-.spk-items th {
+.spk-table th {
   background: #0b2f5b;
   color: #fff;
   border: 1px solid #3a3a3a;
-  padding: 6px 6px;
-  font-weight: bold;
+  padding: 6px;
   text-align: center;
-  font-size: 12px;
 }
-.spk-items td {
-  border: 1px solid #3a3a3a;
-  padding: 6px 6px;
-  vertical-align: top;
-}
-.spk-items td.desc { font-weight: bold; }
-.spk-blank td { height: 18px; }
 
-/* COLUMN ALIGNMENTS */
+.spk-table td {
+  border: 1px solid #3a3a3a;
+  padding: 6px;
+}
+
+/* ALIGN */
 .center { text-align: center; }
 .right { text-align: right; }
 
-.c-sn { width: 6%; }
-.c-desc { width: 38%; }
-.c-sac { width: 10%; }
-.c-my { width: 12%; }
-.c-qty { width: 10%; }
-.c-unit { width: 12%; }
-.c-total { width: 12%; }
-
-/* TOTALS (right block, no outer table around page) */
-.spk-totals {
-  width: 40%;
-  margin-left: auto;
-  border-collapse: collapse;
-  margin-top: 8px;
-}
-.spk-totals td {
-  padding: 4px 6px;
-}
-.spk-totals .lbl {
+/* TOTALS */
+.spk-total-label {
   text-align: right;
   font-weight: bold;
-  border-bottom: 1px solid #3a3a3a;
-}
-.spk-totals .val {
-  text-align: right;
-  font-weight: bold;
-  border-bottom: 1px solid #3a3a3a;
-}
-.spk-total-tax .lbl,
-.spk-total-tax .val {
-  border-top: 1px solid #3a3a3a;
-}
-.spk-invoice-value .lbl,
-.spk-invoice-value .val {
-  border-top: 1px solid #3a3a3a;
-  font-size: 13px;
 }
 
-/* WORDS */
-.spk-words {
+.spk-total-value {
+  text-align: right;
+  font-weight: bold;
+}
+
+/* FOOTER BOX */
+.spk-footer-box {
   border: 1px solid #3a3a3a;
-  border-top: none;
-  padding: 6px 8px;
-  margin-top: 8px;
-}
-.spk-words-label { font-weight: bold; }
-
-/* FOOTER */
-.spk-footer {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 8px;
-}
-.spk-foot-box {
-  width: 50%;
-  border: 1px solid #3a3a3a;
-  padding: 10px 10px;
-  vertical-align: top;
-  height: 90px;
-}
-.spk-for {
-  margin-top: 10px;
-  font-weight: bold;
-}
-.spk-sign {
-  margin-top: 28px;
-}
-.spk-bank-title {
-  font-weight: bold;
-  text-align: center;
-  margin-bottom: 6px;
-  text-decoration: underline;
-}
-.spk-terms {
-  margin-top: 18px;
-  text-align: right;
+  padding: 10px;
+  height: 100px;
 }
