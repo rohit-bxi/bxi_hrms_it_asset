@@ -2,12 +2,11 @@ import base64
 import hashlib
 
 from odoo import fields, models
+from odoo import api
 from odoo.exceptions import UserError
 import json
 import logging
 import requests
-
-from odoo.odoo import api
 
 _logger = logging.getLogger(__name__)
 
