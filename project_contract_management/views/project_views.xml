@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_project_form_contract" model="ir.ui.view">
+        <field name="name">project.contract.info</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.edit_project"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//notebook" position="inside">
+
+                <page string="Contract Info">
+
+                    <group string="Contract Details">
+                        <group>
+                            <field name="contract_start_date"/>
+                            <field name="contract_end_date"/>
+                            <field name="contract_tenure" readonly="1"/>
+                            <field name="contract_amount"/>
+                            <field name="currency_id"/>
+                        </group>
+
+                        <group>
+                            <field name="contract_type"/>
+                            <field name="billing_cycle"/>
+                            <field name="contract_status"/>
+                            <field name="client_id"/>
+                        </group>
+                    </group>
+
+                    <group string="Contract Documents">
+                        <field name="contract_attachment_ids" widget="many2many_binary"/>
+                    </group>
+
+                    <button name="action_generate_quarters"
+                            type="object"
+                            string="Generate Quarterly Breakdown"
+                            class="btn-primary"/>
+
+                    <field name="contract_quarter_ids">
+                        <list editable="bottom">
+                            <field name="year"/>
+                            <field name="quarter"/>
+                            <field name="amount"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+
+        </field>
+    </record>
+
+</odoo>

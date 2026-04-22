@@ -48,18 +48,58 @@ class HrEmployee(models.Model):
 
     def get_employee_earning(self):
         for data in self:
-            data.employee_ctc = data.wage
+            data.employee_ctc = (data.wage)*12
+
+    # def _compute_monthly_tds_new_regime(self, annual_ctc):
+    #     if not annual_ctc:
+    #         return 0.0
+
+    #     STANDARD_DEDUCTION = 75000.0
+    #     taxable_income = max(annual_ctc - STANDARD_DEDUCTION, 0.0)
+
+    #     if taxable_income <= 1200000:
+    #         return 0.0
+
+    #     slabs = [
+    #         (400000, 0.00),
+    #         (800000, 0.05),
+    #         (1200000, 0.10),
+    #         (1600000, 0.15),
+    #         (2000000, 0.20),
+    #         (2400000, 0.25),
+    #         (float("inf"), 0.30),
+    #     ]
+
+    #     tax = 0.0
+    #     prev = 0.0
+
+    #     for limit, rate in slabs:
+    #         if taxable_income <= prev:
+    #             break
+    #         amount = min(taxable_income, limit) - prev
+    #         tax += amount * rate
+    #         prev = limit
+
+    #     tax = tax * 1.04
+
+    #     monthly_tds = tax / 12.0
+    #     return round(monthly_tds, 2)
 
     def _compute_monthly_tds_new_regime(self, annual_ctc):
+
         if not annual_ctc:
             return 0.0
 
         STANDARD_DEDUCTION = 75000.0
+
+        # Calculate taxable income
         taxable_income = max(annual_ctc - STANDARD_DEDUCTION, 0.0)
 
+        # Section 87A Rebate: No tax if taxable income is up to ₹12,00,000
         if taxable_income <= 1200000:
             return 0.0
 
+        # New Tax Regime Slabs (FY 2025-26)
         slabs = [
             (400000, 0.00),
             (800000, 0.05),
@@ -71,20 +111,37 @@ class HrEmployee(models.Model):
         ]
 
         tax = 0.0
-        prev = 0.0
+        previous_limit = 0.0
 
+        # Calculate tax based on slabs
         for limit, rate in slabs:
-            if taxable_income <= prev:
+            if taxable_income > previous_limit:
+                taxable_amount = min(taxable_income, limit) - previous_limit
+                tax += taxable_amount * rate
+                previous_limit = limit
+            else:
                 break
-            amount = min(taxable_income, limit) - prev
-            tax += amount * rate
-            prev = limit
 
-        tax = tax * 1.04
+        # Apply surcharge if applicable
+        surcharge = 0.0
+        if taxable_income > 50000000:  # Above ₹5 Cr
+            surcharge = tax * 0.37
+        elif taxable_income > 20000000:  # Above ₹2 Cr
+            surcharge = tax * 0.25
+        elif taxable_income > 10000000:  # Above ₹1 Cr
+            surcharge = tax * 0.15
+        elif taxable_income > 5000000:  # Above ₹50 Lakh
+            surcharge = tax * 0.10
 
-        monthly_tds = tax / 12.0
+        tax += surcharge
 
-        return round(monthly_tds, 2)
+        # Apply Health & Education Cess (4%)
+        tax *= 1.04
+
+        annual_tax = round(tax, 2)
+        monthly_tds = round(annual_tax / 12.0, 2)
+
+        return monthly_tds
 
     def action_calculate_l10n_in_tds_new_regime(self):
         self.get_employee_earning()
