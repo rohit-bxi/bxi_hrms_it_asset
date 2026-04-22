@@ -1,6 +1,5 @@
 import base64
 import hashlib
-
 from odoo import fields, models
 from odoo import api
 from odoo.exceptions import UserError
@@ -201,21 +200,50 @@ class HrHire(models.Model):
         return {
             'type': 'ir.actions.act_url',
             'url': f'/web/content/{attachment.id}?download=true',
-            'target': 'new',
+            'target': 'self',
         }
 
 
     def action_view_offer_letter(self):
         self.ensure_one()
 
-        if not self.offer_letter_attachment_id:
-            raise UserError(_("Please generate the offer letter first."))
+        # Ensure latest values
+        self._compute_salary()
+        self._compute_bonus()
+
+        report = self.env.ref('bxi_hr_recruitment.action_report_offer_letter')
+
+        pdf_content, _ = report._render_qweb_pdf(report.id, res_ids=[self.id])
+
+        attachment = self.env['ir.attachment'].create({
+            'name': f'Offer Letter - {self.partner_name}.pdf',
+            'type': 'binary',
+            'datas': base64.b64encode(pdf_content),
+            'res_model': self._name,
+            'res_id': self.id,
+            'mimetype': 'application/pdf'
+        })
+
+        self.offer_letter_attachment_id = attachment.id
 
         return {
             'type': 'ir.actions.act_url',
-            'url': f'/web/content/{self.offer_letter_attachment_id.id}?download=false',
-            'target': 'new',
+            'url': f'/web/content/{attachment.id}?download=false',
+            'target': 'self',
         }
+
+
+    # def action_view_offer_letter(self):
+    #     self.ensure_one()
+    #
+    #     if not self.offer_letter_attachment_id:
+    #         raise UserError(_("Please generate the offer letter first."))
+    #
+    #     return {
+    #         'type': 'ir.actions.act_url',
+    #         'url': f'/web/content/{self.offer_letter_attachment_id.id}?download=false',
+    #         'target': 'new',
+    #     }
 
 
     def write(self, vals):
