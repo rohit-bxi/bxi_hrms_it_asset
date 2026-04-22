@@ -56,7 +56,6 @@ class CustomPLReport(models.Model):
         domain = [
             ('move_id.state', '=', 'posted'),
             ('journal_id.type', '=', 'bank'),
-            ('partner_id', '!=', False),
             ('debit', '>', 0),
             ('account_id', 'in', allowed_accounts),
         ]
@@ -82,9 +81,16 @@ class CustomPLReport(models.Model):
         })
 
         for line in bank_lines:
-
             partner = line.partner_id
-            customer = partner.name or 'N/A'
+            if partner:
+                customer = partner.name
+            else:
+                label = line.name or ''
+                if label:
+                    parts = label.split('/')
+                    customer = parts[-1].strip()
+                else:
+                    customer = 'N/A'
             salesperson = (
                 partner.user_id.name
                 if partner.user_id else 'N/A'
