@@ -1,3 +1,4 @@
+
 from odoo import http
 from odoo.http import request , Controller, route
 
@@ -164,65 +165,3 @@ class HrJobAPI(http.Controller):
                 "status": 500,
                 "message": str(e)
             }
-
-
-    # @http.route('/api/jobs', type='jsonrpc', auth='public', methods=['POST'], csrf=False)
-    # def get_job_positions(self, **kwargs):
-    #     try:
-    #         params = request.params or {}
-    #         status = params.get('status')
-    #         job_id = params.get('job_id')
-    #
-    #         domain = []
-    #
-    #         if job_id:
-    #             try:
-    #                 job_id = int(job_id)
-    #                 domain.append(('id', '=', job_id))
-    #             except (ValueError, TypeError):
-    #                 return {
-    #                     "status": 400,
-    #                     "message": "Invalid job_id. It must be an integer."
-    #                 }
-    #         else:
-    #             #  Apply status filter only when job_id is not provided
-    #             if status:
-    #                 status = str(status).lower().strip()
-    #
-    #                 if status == "published":
-    #                     domain.append(('website_published', '=', True))
-    #                 elif status == "unpublished":
-    #                     domain.append(('website_published', '=', False))
-    #                 elif status == "all":
-    #                     pass
-    #                 else:
-    #                     return {
-    #                         "status": 400,
-    #                         "message": "Invalid status. Use published, unpublished or all"
-    #                     }
-    #
-    #         # 🔹 Fetch job records
-    #         jobs = request.env['hr.job'].sudo().search_read(
-    #             domain,
-    #             [
-    #                 'id',
-    #                 'name',
-    #                 'sequence',
-    #                 'no_of_recruitment',
-    #                 'description',
-    #                 'requirements',
-    #                 'website_published'
-    #             ]
-    #         )
-    #
-    #         return {
-    #             "status": 200,
-    #             "count": len(jobs),
-    #             "data": jobs
-    #         }
-    #
-    #     except Exception as e:
-    #         return {
-    #             "status": 500,
-    #             "message": str(e)
-    #         }
