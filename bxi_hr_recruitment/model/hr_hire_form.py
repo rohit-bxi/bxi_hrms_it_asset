@@ -19,6 +19,14 @@ class HrHire(models.Model):
     first_interview_remark = fields.Text(string="First Interview Remark")
     second_interview_remark = fields.Text(string="Second Interview Remark")
     final_interview_remark = fields.Text(string="Final Interview Remark")
+    resume_file = fields.Binary(
+        string="Resume",
+        attachment=True
+    )
+
+    resume_filename = fields.Char(
+        string="File Name"
+    )
 
     # OPTIONAL: prevent duplicate emails per stage
     stage_mail_sent_ids = fields.Many2many(
@@ -207,14 +215,43 @@ class HrHire(models.Model):
     def action_view_offer_letter(self):
         self.ensure_one()
 
-        if not self.offer_letter_attachment_id:
-            raise UserError(_("Please generate the offer letter first."))
+        # Ensure latest values
+        self._compute_salary()
+        self._compute_bonus()
+
+        report = self.env.ref('bxi_hr_recruitment.action_report_offer_letter')
+
+        pdf_content, _ = report._render_qweb_pdf(report.id, res_ids=[self.id])
+
+        attachment = self.env['ir.attachment'].create({
+            'name': f'Offer Letter - {self.partner_name}.pdf',
+            'type': 'binary',
+            'datas': base64.b64encode(pdf_content),
+            'res_model': self._name,
+            'res_id': self.id,
+            'mimetype': 'application/pdf'
+        })
+
+        self.offer_letter_attachment_id = attachment.id
 
         return {
             'type': 'ir.actions.act_url',
-            'url': f'/web/content/{self.offer_letter_attachment_id.id}?download=false',
-            'target': 'new',
+            'url': f'/web/content/{attachment.id}?download=false',
+            'target': 'self',
         }
+
+
+    # def action_view_offer_letter(self):
+    #     self.ensure_one()
+    #
+    #     if not self.offer_letter_attachment_id:
+    #         raise UserError(_("Please generate the offer letter first."))
+    #
+    #     return {
+    #         'type': 'ir.actions.act_url',
+    #         'url': f'/web/content/{self.offer_letter_attachment_id.id}?download=false',
+    #         'target': 'new',
+    #     }
 
 
     def write(self, vals):
