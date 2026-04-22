@@ -18,14 +18,6 @@ class HrJob(models.Model):
         string="Employee Category"
     )
 
-    resume_file = fields.Binary(
-        string="Resume",
-        attachment=True
-    )
-
-    resume_filename = fields.Char(
-        string="File Name"
-    )
 
     @api.onchange('location_type')
     def _onchange_location_type(self):

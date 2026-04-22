@@ -19,6 +19,14 @@ class HrHire(models.Model):
     first_interview_remark = fields.Text(string="First Interview Remark")
     second_interview_remark = fields.Text(string="Second Interview Remark")
     final_interview_remark = fields.Text(string="Final Interview Remark")
+    resume_file = fields.Binary(
+        string="Resume",
+        attachment=True
+    )
+
+    resume_filename = fields.Char(
+        string="File Name"
+    )
 
     # OPTIONAL: prevent duplicate emails per stage
     stage_mail_sent_ids = fields.Many2many(
