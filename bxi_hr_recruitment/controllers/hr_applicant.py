@@ -1,9 +1,13 @@
 from odoo import http
 from odoo.http import request
+import base64
 
 
 class ApplicantCreation(http.Controller):
 
+    # =========================
+    # RESPONSE WRAPPER
+    # =========================
     def _response(self, status, message, data=None):
         return {
             "status": status,
@@ -11,6 +15,29 @@ class ApplicantCreation(http.Controller):
             "data": data or {}
         }
 
+    # =========================
+    # SAFE BASE64 DECODER
+    # =========================
+    def safe_b64decode(self, value):
+        if not value:
+            return None
+
+        try:
+            if "," in value:
+                value = value.split(",")[1]
+
+            missing_padding = len(value) % 4
+            if missing_padding:
+                value += "=" * (4 - missing_padding)
+
+            return base64.b64decode(value)
+
+        except Exception:
+            return None
+
+    # =========================
+    # CREATE APPLICANT
+    # =========================
     @http.route('/api/applicant/create', type='jsonrpc', auth='public', methods=['POST'], csrf=False)
     def create_applicant(self, **kwargs):
         try:
@@ -75,6 +102,7 @@ class ApplicantCreation(http.Controller):
                     "phone": rec.partner_phone,
                     "job_position": rec.job_id.name,
                 })
+
             return {
                 "status": "success",
                 "message": "Applicants fetched successfully",
@@ -82,54 +110,9 @@ class ApplicantCreation(http.Controller):
                 "total_applicants": len(result),
                 "data": result
             }
+
         except Exception as e:
             return {
                 "status": "error",
                 "message": str(e)
             }
-
-    # @http.route('/api/recruitment/send_selection_notification', type='jsonrpc', auth='public', methods=['POST'], csrf=False)
-    # def send_selection_notification(self, **kwargs):
-    #     """API to send notification for selected candidates."""
-    #     try:
-    #         applicant_id = kwargs.get('applicant_id')
-    #
-    #         if not applicant_id:
-    #             return {
-    #                 "status": "error",
-    #                 "message": "applicant_id is required"
-    #             }
-    #
-    #         applicant = request.env['hr.applicant'].sudo().browse(applicant_id)
-    #
-    #         if not applicant.exists():
-    #             return {
-    #                 "status": "error",
-    #                 "message": "Applicant not found"
-    #             }
-    #
-    #         # Ensure candidate is selected
-    #         if not applicant.stage_id.hired_stage:
-    #             return {
-    #                 "status": "error",
-    #                 "message": "Notification can only be sent for selected candidates"
-    #             }
-    #
-    #         applicant._send_selection_notification()
-    #
-    #         return {
-    #             "status": "success",
-    #             "message": "Notification sent successfully",
-    #             "data": {
-    #                 "applicant_id": applicant.id,
-    #                 "candidate_name": applicant.partner_name or applicant.name,
-    #                 "job_position": applicant.job_id.name if applicant.job_id else "",
-    #                 "status": "selected"
-    #             }
-    #         }
-    #
-    #     except Exception as e:
-    #         return {
-    #             "status": "error",
-    #             "message": str(e)
-    #         }

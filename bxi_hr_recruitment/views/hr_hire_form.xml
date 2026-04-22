@@ -1,47 +1,120 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- Recruitment Stage -->
-<!--    <record id="stage_make_proposal" model="hr.recruitment.stage">-->
-<!--        <field name="name">Make Proposal</field>-->
-<!--        <field name="sequence">5</field>-->
-<!--        <field name="fold">False</field>-->
-<!--    </record>-->
-
-    <!-- Applicant Form Inheritance -->
     <record id="view_hr_applicant_form_inherit_proposal" model="ir.ui.view">
-        <field name="name">hr.applicant.form.proposal</field>
+        <field name="name">hr.applicant.form.proposal.clean</field>
         <field name="model">hr.applicant</field>
         <field name="inherit_id" ref="hr_recruitment.hr_applicant_view_form"/>
         <field name="arch" type="xml">
 
-            <xpath expr="//field[@name='categ_ids']" position="after">
-                <field name="first_interview_remark"
-                       placeholder="Enter feedback for First Interview"/>
-                <field name="second_interview_remark"
-                       placeholder="Enter feedback for Second Interview"/>
-                 <field name="final_interview_remark"
-                       placeholder="Enter feedback for Final Interview"/>
-            </xpath>
-
-<!--            <xpath expr="//header" position="inside">-->
-<!--                <button name="action_send_selection_notification"-->
-<!--                        type="object"-->
-<!--                        string="Send Selection Notification"-->
-<!--                        class="oe_highlight"-->
-<!--                        invisible="not stage_id.hired_stage"/>-->
-<!--            </xpath>-->
-
             <xpath expr="//notebook" position="inside">
-                <page string="Proposal">
 
-                    <!-- Personal Details -->
-                    <group string="Personal Details">
-                        <group>
-                            <field name="partner_name" string="Full Name"/>
-                            <field name="contact_number"/>
-                            <field name="email_from" string="Email"/>
+                <!-- ===================== -->
+                <!-- INTERVIEW FEEDBACK -->
+                <!-- ===================== -->
+                <page string="Interview Feedback" invisible="stage_level &lt; 1">
+                    <field name="stage_level" invisible="1"/>
+
+                    <group string="Remarks">
+                        <group string="First Interviewer Details">
+                            <field name="first_interview_id"
+                                   placeholder="First Interviewer..."
+                                   invisible="stage_level &lt; 1"/>
+                            <field name="first_interview_remark"
+                                   placeholder="First Interview feedback..."
+                                   invisible="stage_level &lt; 1"/>
                         </group>
+                        <group string="Second Interviewer Details">
+                            <field name="second_interview_id"
+                                   placeholder="Second Interviewer..."
+                                   invisible="stage_level &lt; 2"/>
+                            <field name="second_interview_remark"
+                                   placeholder="Second Interview feedback..."
+                                   invisible="stage_level &lt; 2"/>
+                        </group>
+                        <group string="Final Interviewer Details">
+                            <field name="final_interview_id"
+                                   placeholder="Final Interviewer..."
+                                   invisible="stage_level &lt; 3"/>
+                            <field name="final_interview_remark"
+                                   placeholder="Final Interview feedback..."
+                                   invisible="stage_level &lt; 3"/>
+                        </group>
+                    </group>
+                </page>
+                <page string="Salary Calculation" invisible="stage_level &lt; 4">
+
+                    <group string="Calculator Type">
+                        <field name="revenue_type" widget="radio" options="{'horizontal': true}"/>
+                    </group>
+
+                    <group string="Employee Info" col="2">
+                        <field name="band"/>
+                    </group>
+
+                    <group string="Monthly Components" col="2">
+                        <field name="basic_salary"/>
+                        <field name="flexible_allowance"/>
+                        <field name="monthly_total" readonly="1"/>
+                        <field name="annual_fixed" readonly="1"/>
+                    </group>
+
+                    <group string="Retirals and Benefits" col="2">
+                        <field name="pf"/>
+                        <field name="insurance"/>
+                        <field name="nps"/>
+                        <field name="retiral_total" readonly="1"/>
+                    </group>
+
+                    <group string="Variable Components" col="2">
+                        <field name="org_bonus"/>
+                        <field name="performance_bonus"/>
+                        <field name="variable_total" readonly="1"/>
+                    </group>
+
+                    <group string="Final CTC">
+                        <field name="ctc_total" readonly="1" class="oe_highlight"/>
+                    </group>
+
+                </page>
+                <!-- ===================== -->
+                <!-- PROPOSAL / OFFER -->
+                <!-- ===================== -->
+                <page string="Proposal" invisible="stage_level &lt; 4">
+
+                    <!-- OFFER LETTER ACTIONS -->
+                    <group string="Offer Letter Actions" class="oe_button_box">
+
+                        <field name="offer_letter_attachment_id" invisible="1"/>
+
+                        <button name="action_send_application_form"
+                                type="object"
+                                string="Send Application Form"
+                                class="btn-primary"/>
+
+                        <button name="action_generate_offer_letter"
+                                type="object"
+                                string="Generate Offer Letter"
+                                class="btn-primary"
+                                invisible="offer_letter_attachment_id"/>
+
+                        <button name="action_view_offer_letter"
+                                type="object"
+                                string="View Offer Letter"
+                                class="btn-secondary"
+                                invisible="not offer_letter_attachment_id"/>
+                    </group>
+
+                    <!-- ===================== -->
+                    <!-- PERSONAL DETAILS -->
+                    <!-- ===================== -->
+                    <group string="Personal Information">
+                        <group>
+                            <field name="partner_name"/>
+                            <field name="contact_number"/>
+                            <field name="email_from"/>
+                        </group>
+
                         <group>
                             <field name="father_name"/>
                             <field name="mother_name"/>
@@ -50,57 +123,44 @@
                         </group>
                     </group>
 
-                    <!-- Address -->
-                    <group string="Full Address">
+                    <!-- ADDRESS -->
+                    <group string="Address and Joining">
                         <field name="full_address"/>
                         <field name="joining_date"/>
                     </group>
-                     <!-- Offer Letter Section -->
-                    <group string="Offer Letter">
-                        <field name="offer_letter_generated" invisible="1"/>
 
-                        <button name="action_generate_offer_letter"
-                                type="object"
-                                string="Generate Offer Letter"
-                                class="btn-primary"/>
-
-                        <button name="action_view_offer_letter"
-                                type="object"
-                                string="View Offer Letter"
-                                class="btn-secondary"
-                                invisible="not offer_letter_generated"/>
+                    <!-- ===================== -->
+                    <!-- DOCUMENTS -->
+                    <!-- ===================== -->
+                    <group string="Educational Documents">
+                        <field name="doc_10th_id" widget="many2many_binary"/>
+                        <field name="doc_12th_id" widget="many2many_binary"/>
+                        <field name="doc_graduation_id" widget="many2many_binary"/>
+                        <field name="doc_master_id" widget="many2many_binary"/>
                     </group>
 
-                    <!-- Document Upload -->
-                    <group string="Document Upload">
-                        <field name="doc_10th"/>
-                        <field name="doc_12th"/>
-                        <field name="doc_graduation"/>
-                        <field name="doc_master"/>
-                    </group>
-
-                    <!-- Other Documents -->
                     <group string="Other Documents">
-                        <field name="form_16"/>
-                        <field name="bank_statement"/>
-                        <field name="salary_slip"/>
-                        <field name="photograph" widget="image" class="oe_avatar"/>
+                        <field name="form_16_id" widget="many2many_binary"/>
+                        <field name="bank_statement_id" widget="many2many_binary"/>
+                        <field name="salary_slip_id" widget="many2many_binary"/>
+                        <field name="photograph" widget="many2many_binary"/>
                     </group>
 
-                    <!-- Experience -->
-                    <group string="Experience">
+                    <!-- ===================== -->
+                    <!-- EXPERIENCE -->
+                    <!-- ===================== -->
+                    <group string="Work Experience">
+
                         <field name="experience_ids"
                                context="{'default_applicant_id': id}"
                                mode="list,form"
                                nolabel="1">
 
-                            <!-- List View -->
                             <list string="Experience">
                                 <field name="company_name"/>
                                 <field name="years"/>
                             </list>
 
-                            <!-- Form View -->
                             <form string="Experience Details">
                                 <sheet>
                                     <group>
@@ -108,13 +168,17 @@
                                         <field name="company_name"/>
                                         <field name="years"/>
                                     </group>
+
                                     <group string="Documents" col="2">
                                         <field name="experience_certificate"
                                                filename="experience_certificate_filename"/>
+
                                         <field name="joining_letter"
                                                filename="joining_letter_filename"/>
+
                                         <field name="relieving_letter"
                                                filename="relieving_letter_filename"/>
+
                                         <field name="other_certificate"
                                                filename="other_certificate_filename"/>
                                     </group>
@@ -125,10 +189,10 @@
                     </group>
 
                 </page>
+
             </xpath>
 
         </field>
     </record>
 
 </odoo>
-

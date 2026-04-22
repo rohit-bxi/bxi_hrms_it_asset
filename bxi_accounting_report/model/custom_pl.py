@@ -7,8 +7,16 @@ class CustomPLReport(models.Model):
 
     @api.model
     def get_filtered_data(self, financial_year=None, quarters=None, company_ids=None, currency_id=None):
+
+        if company_ids:
+            self = self.with_context(
+                allowed_company_ids=company_ids,
+                company_id=company_ids[0]
+            )
+
         start_date = False
         end_date = False
+
         if financial_year:
             fy_start = int(financial_year)
             fy_end = fy_start + 1
@@ -32,26 +40,29 @@ class CustomPLReport(models.Model):
                 return 'q4'
             return None
 
-        domain = [
-            ('move_type', '=', 'out_invoice'),
-            ('state', '=', 'posted')
-        ]
-
-        if start_date and end_date:
-            domain += [
-                ('invoice_date', '>=', start_date),
-                ('invoice_date', '<=', end_date),
-            ]
-
-        invoices = self.env['account.move'].search(domain)
-
-        # ---------------- CURRENCY ----------------
         target_currency = (
             self.env['res.currency'].browse(currency_id)
             if currency_id else self.env.company.currency_id
         )
 
-        # ---------------- DATA STRUCTURE ----------------
+        domain = [
+            ('move_id.state', '=', 'posted'),
+            ('journal_id.type', '=', 'bank'),
+            ('partner_id', '!=', False),
+            ('debit', '>', 0),
+        ]
+
+        if company_ids:
+            domain.append(('move_id.company_id', 'in', company_ids))
+
+        if start_date and end_date:
+            domain += [
+                ('date', '>=', start_date),
+                ('date', '<=', end_date),
+            ]
+
+        bank_lines = self.env['account.move.line'].search(domain)
+
         customers = defaultdict(lambda: {
             'salespersons': {},
             'total_booking': 0,
@@ -61,26 +72,27 @@ class CustomPLReport(models.Model):
             'country': '',
         })
 
-        # ---------------- PROCESS INVOICES ----------------
-        for inv in invoices:
-            partner = inv.partner_id
-            customer = partner.name or 'N/A'
+        for line in bank_lines:
 
-            salesperson = inv.user_id.name or 'N/A'
-            q = get_quarter(inv.invoice_date)
+            partner = line.partner_id
+            customer = partner.name or 'N/A'
+            salesperson = (
+                partner.user_id.name
+                if partner.user_id else 'N/A'
+            )
+
+            q = get_quarter(line.date)
 
             cust = customers[customer]
 
-            # country
             if not cust['country']:
                 cust['country'] = partner.country_id.name or ''
 
-            # salesperson init
             if salesperson not in cust['salespersons']:
                 cust['salespersons'][salesperson] = {
                     'salesperson': salesperson,
-                    'products': set(),
-                    'booking': 0,  # always 0
+                    'products': '',
+                    'booking': 0,
                     'billing': 0,
                     'quarters_projected': defaultdict(float),
                     'quarters_actual': defaultdict(float),
@@ -88,47 +100,33 @@ class CustomPLReport(models.Model):
 
             sp = cust['salespersons'][salesperson]
 
-            # products
-            products = inv.invoice_line_ids.mapped('product_id.name')
-            sp['products'].update(products)
-
-            # ---------------- CURRENCY CONVERSION ----------------
-            company_currency = inv.company_id.currency_id
-            date = inv.invoice_date or fields.Date.today()
-
-            projected = company_currency._convert(
-                inv.amount_total,
-                target_currency,
-                inv.company_id,
-                date
-            )
+            company_currency = line.company_id.currency_id
+            date = line.date or fields.Date.today()
 
             actual = company_currency._convert(
-                inv.amount_total if inv.payment_state == 'paid' else 0,
+                line.debit,
                 target_currency,
-                inv.company_id,
+                line.company_id,
                 date
             )
 
-            # totals
             sp['billing'] += actual
             cust['total_billing'] += actual
 
             if q:
-                sp['quarters_projected'][q] += projected
                 sp['quarters_actual'][q] += actual
-
-                cust['quarters_projected'][q] += projected
                 cust['quarters_actual'][q] += actual
 
-        # ---------------- FORMAT RESULT ----------------
+                sp['quarters_projected'][q] += 0
+                cust['quarters_projected'][q] += 0
+
         result = []
+
         for cust_name, cust_data in customers.items():
 
             salespersons = []
             for sp in cust_data['salespersons'].values():
-                sp['products'] = ', '.join(sp['products'])
-                sp['booking'] = 0  # enforce again
+                sp['booking'] = 0
                 salespersons.append(sp)
 
             result.append({
@@ -141,17 +139,21 @@ class CustomPLReport(models.Model):
                 'quarters_actual': cust_data['quarters_actual'],
             })
 
-        # ---------------- EXPENSES ----------------
+        expense_domain = [
+            ('state', 'in', ['done', 'approved', 'post', 'posted'])
+        ]
+
+        if company_ids:
+            expense_domain.append(('company_id', 'in', company_ids))
+
+        expenses = self.env['hr.expense'].search(expense_domain)
+
         expenses_data = {
             'people': 0,
             'tools': 0,
             'travel': 0,
             'misc': 0
         }
-
-        expenses = self.env['hr.expense'].search([
-            ('state', 'in', ['done', 'approved', 'post', 'posted'])
-        ])
 
         for exp in expenses:
             name = (exp.name or '').lower()
@@ -165,7 +167,6 @@ class CustomPLReport(models.Model):
             else:
                 expenses_data['misc'] += exp.total_amount
 
-        # ---------------- FINAL RETURN ----------------
         return {
             'customers': result,
             'expenses': expenses_data,

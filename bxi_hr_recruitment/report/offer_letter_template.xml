@@ -48,6 +48,53 @@
 
                 <!-- ===================== PAGE 1 ===================== -->
                 <t t-call="web.external_layout">
+
+                    <!-- ===================== STYLES ===================== -->
+                    <style>
+                        .offer-body {
+                            font-family: "Times New Roman", Times, serif;
+                            font-size: 12pt;
+                            line-height: 1.8;
+                            text-align: justify;
+                            color: #000000;
+                        }
+                        .offer-title {
+                            text-align: center;
+                            font-size: 24pt;
+                            font-weight: bold;
+                            color: #1f4e79;
+                            letter-spacing: 1px;
+                            margin-bottom: 10px;
+                        }
+                        .offer-meta {
+                            font-size: 12pt;
+                            margin-bottom: 5px;
+                        }
+                        .doc-id {
+                            text-align: right;
+                            font-size: 11pt;
+                            margin-bottom: 10px;
+                        }
+                        .company-highlight {
+                            font-weight: bold;
+                            color: #1f4e79;
+                        }
+                        .signature {
+                            margin-top: 40px;
+                        }
+                        .legal-text {
+                            font-size: 10pt;
+                            color: #444444;
+                        }
+                        .page {
+                            page-break-after: always;
+                        }
+                        .page:last-child {
+                            page-break-after: auto;
+                        }
+                    </style>
+
+                    <!-- ===================== PAGE 1 ===================== -->
                     <div class="page offer-body">
 
                         <!-- Title -->
@@ -190,8 +237,304 @@
 
                     </div>
                 </t>
+                <!-- ===================== PAGE 3 ===================== -->
+                <t t-call="web.basic_layout">
+                    <div class="page offer-body">
 
+                        <h3 style="text-align:center; color:#1f4e79;">
+                            COMPENSATION PLAN
+                        </h3>
+
+                        <table style="width:100%; border-collapse: collapse;" border="1">
+                            <tr>
+                                <td>
+                                    <strong>Band</strong>
+                                </td>
+                                <td>6.2</td>
+                                <td>
+                                    <strong>Skill Category</strong>
+                                </td>
+                                <td>Developing, designing</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Entity</strong>
+                                </td>
+                                <td>Information Technology</td>
+                                <td>
+                                    <strong>Category</strong>
+                                </td>
+                                <td>Software</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>City</strong>
+                                </td>
+                                <td colspan="3"></td>
+                            </tr>
+                        </table>
+
+                        <br/>
+
+                        <h4 style="background:#d9e1f2; padding:5px;">Monthly Components (in INR)</h4>
+
+                        <table style="width:100%; border-collapse: collapse;" border="1">
+                            <tr>
+                                <td>Basic Salary</td>
+                                <td>26000</td>
+                            </tr>
+                            <tr>
+                                <td>Flexible Allowance</td>
+                                <td>18200</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Total Monthly</strong>
+                                </td>
+                                <td>
+                                    <strong>44200</strong>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Total Monthly Components Annualized</td>
+                                <td>530400</td>
+                            </tr>
+                        </table>
+
+                        <br/>
+
+                        <h4 style="background:#d9e1f2; padding:5px;">Retirals &amp; Other Benefits (in INR)</h4>
+
+                        <table style="width:100%; border-collapse: collapse;" border="1">
+                            <tr>
+                                <td>Provident Fund</td>
+                                <td>21600</td>
+                            </tr>
+                            <tr>
+                                <td>Medical Insurance Premium</td>
+                                <td>25000</td>
+                            </tr>
+                            <tr>
+                                <td>Gratuity</td>
+                                <td>15000</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Total Retirals</strong>
+                                </td>
+                                <td>
+                                    <strong>61600</strong>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <br/>
+
+                        <table style="width:100%; border-collapse: collapse;" border="1">
+                            <tr>
+                                <td>Total Variable Components</td>
+                                <td>129570</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Cost to Company</strong>
+                                </td>
+                                <td>
+                                    <strong>592000</strong>
+                                </td>
+                            </tr>
+                        </table>
+                         <br/>
+
+                        <!-- SOCIAL SECURITY -->
+                        <table style="width:100%; border-collapse: collapse;" border="1">
+                            <tr style="background:#d9d9d9;">
+                                <td>
+                                    <strong>** Social Security Scheme &amp; Health Benefits [As per Scheme]</strong>
+                                </td>
+                                <td>
+                                    <strong>Max Sub limit (per annum) INR</strong>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Hospitalization cost reimbursement limit</td>
+                                <td>500000</td>
+                            </tr>
+                            <tr>
+                                <td>Group Personal Accident</td>
+                                <td>2000000</td>
+                            </tr>
+                            <tr>
+                                <td>Group Term Life</td>
+                                <td>2000000</td>
+                            </tr>
+                        </table>
+
+                    </div>
+                </t>
+                <!-- ===================== PAGE 4 ===================== -->
+                <t t-call="web.basic_layout">
+                    <div class="page offer-body">
+
+                        <h3 style="text-align:center;">ANNEXURE II</h3>
+
+                        <p style="font-weight:bold; text-decoration: underline;">
+                            EXPLANATION OF COMPENSATION STRUCTURE AND EMPLOYEE BENEFITS
+                        </p>
+
+                        <p>
+                            To facilitate an easy understanding of your compensation structure (Cost to Company, CTC),
+                            the various components have been categorized under the following broad heads:
+                        </p>
+
+                        <p>
+                            1. Basic Salary
+                            <br/>
+                            2. Flexible Allowance
+                            <br/>
+                            3. Variable Pay
+                            <br/>
+                            4. Retirals &amp; Insurance Benefit
+                        </p>
+
+                        <p>
+                            The details for each component falling under these heads are explained as following:
+                        </p>
+
+                        <p>
+                            <strong>1. BASIC SALARY</strong>
+                        </p>
+
+                        <p>
+                            The Basic Salary is standard across organization and brought to a certain value of the CTC.
+                            Basic salary has an impact on various other components such as the PF contribution, Gratuity
+                            etc.
+                            and hence has to be balanced so as not to substantially reduce the employee take home
+                            salary.
+                        </p>
+
+                        <p>
+                            <strong>2. FLEXIBLE ALLOWANCE</strong>
+                        </p>
+
+                        <p>
+                            Flexible allowance enables you to design your own compensation structure by providing an
+                            access
+                            to various benefits provided in <strong>BXI Tech</strong>. You can declare and distribute
+                            Flexible
+                            allowance amount across the various components, adhering to the defined entitlements by
+                            logging
+                            onto the Flexible Compensation Portal. Any undeclared amount will be paid along with the
+                            monthly
+                            salary as Flexible Allowance.
+                        </p>
+
+                    </div>
+                </t>
+                <!-- ===================== PAGE 5 ===================== -->
+                <t t-call="web.basic_layout">
+                    <div class="page offer-body">
+
+                        <p>
+                            The components forming part of Flexible compensation plan are listed below:
+                        </p>
+
+                        <p>
+                            a. <strong>House Rent Allowance (HRA):</strong> House Rent Allowance caters to the rental
+                            expenses of the employee’s accommodation. The HRA can be declared maximum up to 50% of the
+                            Basic Salary and is paid monthly. You can declare either Company Leased Accommodation or
+                            House Rent Allowance for your compensation structure.
+                        </p>
+
+                        <p>
+                            b. <strong>Company Leased Accommodation (CLA):</strong> Company Leased Accommodation is to
+                            facilitate for you to find accommodation of their choice within the defined Company Leased
+                            Accommodation limits.
+                        </p>
+
+                        <p>
+                            c. <strong>Leave Travel Assistance (LTA):</strong> Leave Travel allowance enables you to
+                            claim
+                            your holiday travel expenses. Declaration in LTA is allowed up to the maximum entitlement
+                            applicable as per your band eligibility. The procedure for claim will be as per the existing
+                            LTA rules. By default, LTA would be treated as reimbursement.
+                        </p>
+
+                        <p>
+                            d. <strong>NPS Employer Contribution:</strong> A voluntary contribution pension system
+                            administered and regulated by the Pension Fund Regulatory and Development Authority (PFRDA).
+                            Declaration in NPS Employer Contribution is allowed from 0% to 10% of Annual Basic Salary.
+                            You will need to follow PRAN generation process in NPS portal, post which declaration can be
+                            made in Flexible compensation portal.
+                        </p>
+
+                        <p>
+                            e. <strong>Fuel and Car Maintenance charges reimbursements:</strong> You are entitled to
+                            reimbursement of fuel expenses and maintenance charges (w.r.t. repairs, spare parts, annual
+                            vehicle insurance etc.,) on your car up to per the maximum entitlements as per your band
+                            eligibility. For claiming this, you will have to submit original bills on a monthly basis or
+                            as and when you wish to get this amount reimbursed. By default, Fuel and Vehicle Maintenance
+                            would be treated as reimbursement.
+                        </p>
+
+                    </div>
+                </t>
+                <!-- ===================== PAGE 6 ===================== -->
+                <t t-call="web.basic_layout">
+                    <div class="page offer-body">
+
+                        <p>
+                            f. <strong>Car Lease Rental Reimbursement:</strong> We have an attractive Car Lease Scheme,
+                            according to which you can avail the following facilities:
+                        </p>
+
+                        <p style="margin-left:20px;">
+                            You can select the model of the car within the limit prescribed in the scheme
+                            <br/>
+                            A Third-Party vendor will help you with the processing of the papers and other formalities
+                            <br/>
+                            The lease value up to maximum limit as per your band wise entitlements in Flexible
+                            Compensation portal will be contributed towards the EMI
+                        </p>
+
+                        <p>
+                            By default, car lease rental will be paid as part of monthly salary and treated as a taxable
+                            component,
+                            unless lease value is finalized.
+                        </p>
+
+                        <p>
+                            g. <strong>Food Wallet:</strong> Food Wallet is a voluntary benefit and is applicable for
+                            payments related
+                            to food and non-alcoholic beverages only. Once enrolled, the benefit should be availed
+                            within
+                            <strong>BXI Tech</strong>
+                            Cafeterias or food joints outside BXI Tech campus which serves only food and
+                            non-alcoholic beverages. This Food Wallet cannot be used in any other outlet other than
+                            designated food outlet.
+                        </p>
+
+                        <p>
+                            h. <strong>Superannuation:</strong> Superannuation is a welfare scheme aimed to provide you
+                            social security
+                            post-retirement from your service. Contribution to Superannuation Fund can be made up to 15%
+                            of your basic
+                            salary with an upper ceiling of INR 1.50 Lacs.
+                        </p>
+
+                        <p>
+                            <strong>3. VARIABLE PAY</strong>
+                        </p>
+
+                        <p>
+                            The scope of “Variable Pay” in your compensation structure will be governed based on your
+                            “employee group” in <strong>BXI Tech</strong>.
+                        </p>
+
+                    </div>
+                </t>
             </t>
         </t>
+
     </template>
 </odoo>
