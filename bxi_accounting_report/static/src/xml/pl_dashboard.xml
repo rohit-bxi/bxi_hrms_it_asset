@@ -3,13 +3,29 @@
 
 <t t-name="bxi_accounting_report.PLTemplate" owl="1">
 
-<div style="overflow:auto; background:white; padding:10px;">
-
+<div style="
+    height: 93vh;
+    overflow: auto;
+    background: white;
+    padding: 10px;
+">
 <style>
 .header-dark {background:#0b3c4c; color:white;}
 .header-blue {background:#6fa8dc;}
 .portfolio {background:#7bdcb5; font-weight:bold;}
 .light {background:#f5f5c6;}
+
+thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+.wrap-cell {
+    width: 220px;
+    max-width: 220px;
+    white-space: normal;
+    word-break: break-all;
+}
 
 table { border-collapse: collapse; }
 td, th {
@@ -77,10 +93,13 @@ td, th {
         <tr>
             <td><t t-esc="sp.salesperson"/></td>
             <td><t t-esc="cust.country or ''"/></td>
-            <td><t t-esc="cust.customer"/></td>
-            <td><t t-esc="sp.products"/></td>
+            <td class="wrap-cell">
+                <t t-esc="cust.customer"/>
+            </td>
+            <td class="wrap-cell">
+                <t t-esc="sp.products"/>
+            </td>   
             <td></td>
-
             <td>0</td>
             <td><t t-esc="sp.billing"/></td>
 
