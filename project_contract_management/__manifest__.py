@@ -5,11 +5,19 @@
     "summary": "Manage Contracts with Quarterly Breakdown",
     "category": "Project",
     "author": "Your Company",
-    "depends": ["project"],
+    "depends": ['base', 'project', 'mail'],
     "data": [
         "security/ir.model.access.csv",
-        "views/project_views.xml",
+        'views/contract_stage.xml',
+        'views/contract_views.xml',
+        'views/menu.xml',
+
     ],
+    'assets': {
+        'web.assets_backend': [
+            'project_contract_management/static/src/css/contract_kanban.css',
+        ],
+    },
     'installable': True,
     'application': False,
     'auto_install': False,

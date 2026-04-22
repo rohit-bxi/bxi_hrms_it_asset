@@ -1,2 +1,2 @@
-from . import project
-from . import contract_quarter
+from . import contract_stages
+from . import contract

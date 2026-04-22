@@ -45,11 +45,20 @@ class CustomPLReport(models.Model):
             if currency_id else self.env.company.currency_id
         )
 
+        bank_accounts = self.env['account.account'].search([
+            ('name', '=', 'Bank'),
+        ])
+        outstanding_accounts = self.env['account.account'].search([
+            ('name', '=', 'Outstanding Receipts'),
+        ])
+        allowed_accounts = bank_accounts.ids + outstanding_accounts.ids
+
         domain = [
             ('move_id.state', '=', 'posted'),
             ('journal_id.type', '=', 'bank'),
             ('partner_id', '!=', False),
             ('debit', '>', 0),
+            ('account_id', 'in', allowed_accounts),
         ]
 
         if company_ids:
