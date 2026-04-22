@@ -18,6 +18,63 @@ class HrJob(models.Model):
         string="Employee Category"
     )
 
+    billed_unbilled = fields.Selection([
+        ('billed', 'Billed'),
+        ('unbilled', 'Unbilled')
+    ], string="Billed / Unbilled")
+
+    job_category = fields.Selection([
+        ('administration', 'Administration'),
+        ('alliances', 'Alliances and Partnerships'),
+        ('customer_support', 'Customer Support'),
+        ('data_analytics', 'Data & Analytics'),
+        ('design_creative', 'Design & Creative'),
+        ('development', 'Development'),
+        ('digital_marketing', 'Digital Marketing'),
+        ('engineering', 'Engineering (Software/Hardware)'),
+        ('executive_leadership', 'Executive Leadership'),
+        ('finance_accounting', 'Finance And Accounting'),
+        ('global_sales', 'Global Sales'),
+        ('hospitality', 'Hospitality'),
+        ('hr', 'Human Resources'),
+        ('inside_sales', 'Inside Sales'),
+        ('internship', 'Internship / Trainee'),
+        ('it', 'IT'),
+        ('legal', 'Legal & Compliance'),
+        ('marketing', 'Marketing'),
+        ('martech', 'Martech'),
+        ('new_business', 'New Business'),
+        ('nzeroone', 'nZeroOne'),
+        ('operations', 'Operations & Supply Chain'),
+        ('other', 'Other'),
+        ('practice', 'Practice'),
+        ('procurement', 'Procurement'),
+        ('product_management', 'Product Management'),
+        ('qa', 'Quality Assurance'),
+        ('rnd', 'Research & Development'),
+        ('sales_bd', 'Sales & Business Development'),
+        ('social_media', 'Social Media'),
+        ('talent_management', 'Talent Management'),
+        ('technology', 'Technology'),
+        ('training', 'Training & Development'),
+        ('mining_iot', 'Mining IoT Solutions'),
+    ], string="Job Category")
+
+    target_date = fields.Date(string="Target Date")
+    job_company_id = fields.Many2one('res.company', string="Job Platform")
+
+    status = fields.Selection([
+        ('open', 'Open'),
+        ('active', 'Active / Accepting Applications'),
+        ('on_hold', 'On Hold'),
+        ('closed', 'Closed'),
+        ('filled', 'Filled'),
+        ('cancelled', 'Cancelled'),
+        ('under_review', 'Under Review'),
+        ('interviewing', 'Interviewing'),
+        ('shortlisting', 'Shortlisting in Progress'),
+    ], string="Status", default='open')
+
 
     @api.onchange('location_type')
     def _onchange_location_type(self):
