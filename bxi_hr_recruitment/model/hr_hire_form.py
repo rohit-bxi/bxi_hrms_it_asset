@@ -1,12 +1,13 @@
-from odoo import fields, models, api, _
+import base64
+import hashlib
+from odoo import fields, models
+from odoo import api
 from odoo.exceptions import UserError
 import json
 import logging
 import requests
-import base64
-import hashlib
-_logger = logging.getLogger(__name__)
 
+_logger = logging.getLogger(__name__)
 
 class HrHire(models.Model):
     _inherit = 'hr.applicant'
