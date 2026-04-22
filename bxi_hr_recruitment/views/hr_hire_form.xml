@@ -137,6 +137,7 @@
                         <field name="doc_12th_id" widget="many2many_binary"/>
                         <field name="doc_graduation_id" widget="many2many_binary"/>
                         <field name="doc_master_id" widget="many2many_binary"/>
+                        <field name="resume_file" filename="resume_filename"/>
                     </group>
 
                     <group string="Other Documents">
