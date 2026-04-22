@@ -1,11 +1,52 @@
 <odoo>
     <template id="report_offer_letter">
 
+        <!-- Custom Styles to Match PDF -->
+        <style>
+            .offer-body {
+                font-family: "Times New Roman", Times, serif;
+                font-size: 12pt;
+                line-height: 1.8;
+                text-align: justify;
+                color: #000000;
+            }
+            .offer-title {
+                text-align: center;
+                font-size: 24pt;
+                font-weight: bold;
+                color: #1f4e79; /* Corporate Blue */
+                letter-spacing: 1px;
+                margin-bottom: 10px;
+            }
+            .offer-meta {
+                font-size: 12pt;
+                margin-bottom: 5px;
+            }
+            .doc-id {
+                text-align: right;
+                font-size: 11pt;
+                margin-bottom: 10px;
+            }
+            .company-highlight {
+                font-weight: bold;
+                color: #1f4e79;
+            }
+            .signature {
+                margin-top: 40px;
+            }
+            .legal-text {
+                font-size: 10pt;
+                color: #444444;
+            }
+        </style>
+
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="o">
 
+                <!-- Set Company -->
                 <t t-set="company" t-value="o.company_id or res_company"/>
 
+                <!-- ===================== PAGE 1 ===================== -->
                 <t t-call="web.external_layout">
 
                     <!-- ===================== STYLES ===================== -->
@@ -56,21 +97,24 @@
                     <!-- ===================== PAGE 1 ===================== -->
                     <div class="page offer-body">
 
-                        <div class="offer-title">OFFER LETTER</div>
+                        <!-- Title -->
+                        <div class="offer-title">
+                            OFFER LETTER
+                        </div>
 
-                        <!-- Offer Date -->
+                        <!-- Offer Release Date -->
                         <p class="offer-meta">
                             <strong>Offer Release Date:</strong>
-                            <t t-esc="o.create_date and o.create_date.strftime('%d-%m-%Y')"/>
+                            <t t-esc="o.create_date.strftime('%b %d, %Y') if o.create_date else ''"/>
                         </p>
 
-                        <!-- Candidate -->
+                        <!-- Candidate Details -->
                         <p class="offer-meta">
                             <t t-esc="o.partner_name"/><br/>
                             <t t-esc="o.partner_id.city if o.partner_id else ''"/>
                         </p>
 
-                        <!-- Doc ID -->
+                        <!-- Document ID -->
                         <p class="doc-id">
                             <strong>Document ID - </strong>
                             <t t-esc="o.id"/>
@@ -81,68 +125,413 @@
                             Dear <strong><t t-esc="o.partner_name"/></strong>,
                         </p>
 
-                        <!-- Para 1 -->
+                        <!-- Paragraph 1 -->
                         <p>
-                            Congratulations! With reference to your application and interview, we are pleased to inform you that you have been selected for employment in
+                            Congratulations! With reference to your application and subsequent interview with us for a
+                            career in our organization, we are pleased to inform you that you have been selected for
+                            employment in <span class="company-highlight">
+                                <t t-esc="company.name"/>
+                            </span>.
+                            (Herein referred as “<span class="company-highlight">
+                                <t t-esc="company.name"/>
+                            </span>” or “Company”) we are pleased to inform you that you have been selected for
+                            employment in our organization as
+                            <strong><t t-esc="o.job_id.name"/></strong>.
+                        </p>
+
+                        <!-- Paragraph 2 -->
+                        <p>
+                            In the coming year, keep aspiring for change and be known for your thoughts and your work;
+                            be the catalyst that this fast-changing world needs; keep sharpening your skills and
+                            investing in yourself; and last but not the least – keep your work and life in perfect
+                            balance, because that is the prerequisite for success.
+                        </p>
+
+                        <!-- Paragraph 3 -->
+                        <p>
+                            We take this opportunity to thank &amp; appreciate your decision to join
                             <span class="company-highlight">
                                 <t t-esc="company.name"/>
-                            </span>
-                            as <strong><t t-esc="o.job_id.name"/></strong>.
-                        </p>
-
-                        <!-- Para 2 -->
-                        <p>
-                            We encourage you to continuously enhance your skills, contribute meaningfully, and maintain a healthy work-life balance for long-term success.
-                        </p>
-
-                        <!-- Para 3 -->
-                        <p>
+                            </span>.
                             You are requested to join us on or before
                             <strong>
-                                <t t-esc="o.joining_date and o.joining_date.strftime('%d-%m-%Y')"/>
+                                <t t-esc="o.joining_date.strftime('%Y-%m-%d') if o.joining_date else ''"/>
                             </strong>.
                         </p>
 
-                        <!-- Para 4 -->
+                        <!-- Paragraph 4 -->
                         <p>
-                            You will be on probation for a period of 6 months. Your compensation structure is detailed in Annexure I, and general terms and conditions are outlined in Annexure III.
+                            You will be on probation for a period of 6 months from the date of your joining.
+                            Your compensation would be as outlined in a separate document (Annexure I) “Salary Structure”.
+                            The general terms and conditions governing your employment are outlined in Annexure III.
                         </p>
 
                     </div>
+                </t>
 
-                    <!-- ===================== PAGE 2 ===================== -->
+                <!-- ===================== PAGE 2 ===================== -->
+                <t t-call="web.basic_layout">
                     <div class="page offer-body">
 
+                        <!-- Paragraph 5 -->
                         <p>
-                            You are required to submit all necessary documents as per Annexure IV before your joining date to complete onboarding formalities.
+                            You would be required to furnish digital copies of the documents and other listed
+                            information in Annexure IV, before your joining date. Please note that the submission of
+                            all the documents is mandatory to facilitate joining, background verification / validation
+                            and appointment process at
+                            <span class="company-highlight">
+                                <t t-esc="company.name"/>
+                            </span>.
+                            Annexure II provides details on the various compensation components and selected benefits
+                            that we offer you as a part of the
+                            <span class="company-highlight">
+                                <t t-esc="company.name"/>
+                            </span> family.
+                        </p>
+
+                        <!-- Paragraph 6 -->
+                        <p>
+                            This offer will be valid subject to successful clearance of your pre-employment background
+                            verification check conducted by
+                            <span class="company-highlight">
+                                <t t-esc="company.name"/>
+                            </span>.
+                            Your written consent and requisite copies of documents is necessary to complete the
+                            pre-employment check. You are requested to complete the submission of requisite documents
+                            for pre-employment background check within two business days from the date of acceptance of
+                            our offer of employment.
                         </p>
 
                         <p>
-                            This offer is subject to successful background verification. You are required to submit relevant documents within two business days.
+                            Your cooperation is solicited in this regard to enable us complete the necessary
+                            pre-employment check on time and enable you on-board us.
                         </p>
 
+                        <!-- Paragraph 7 -->
                         <p>
-                            Any change in joining date must be communicated at least one week in advance.
+                            Any change in the date of joining needs to be communicated to the concerned recruiter at
+                            least one week in advance.
                         </p>
 
+                        <!-- Paragraph 8 -->
                         <p>
-                            We look forward to a mutually beneficial and successful association. Welcome aboard!
+                            Looking ahead, we see exciting times – we look up to you to provide impetus in accomplishing
+                            our mutual endeavor of being the best in the business of IT Services. Welcome to our
+                            Organization! We look forward to a mutually fruitful association.
                         </p>
 
                         <!-- Signature -->
                         <div class="signature">
                             <p>
-                                <strong>For <t t-esc="company.name"/></strong>
+                                <strong>For <t t-esc="company.name"/></strong>,
                             </p>
                         </div>
 
-                        <!-- Legal -->
+                        <!-- Legal Note -->
                         <p class="legal-text">
-                            This is a system-generated document and is legally valid without a physical signature.
+                            This is system generated Letter/Contract. Agreeing to the Offer and its terms and
+                            conditions in the workflow is as good as signing of physical contract/letter on mutual
+                            agreement between us. It has all legal binding as per the law, if mutual trust is breached
+                            at any point of time.
                         </p>
 
                     </div>
+                </t>
+                <!-- ===================== PAGE 3 ===================== -->
+                <t t-call="web.basic_layout">
+                    <div class="page offer-body">
 
+                        <h3 style="text-align:center; color:#1f4e79;">
+                            COMPENSATION PLAN
+                        </h3>
+
+                        <table style="width:100%; border-collapse: collapse;" border="1">
+                            <tr>
+                                <td>
+                                    <strong>Band</strong>
+                                </td>
+                                <td>6.2</td>
+                                <td>
+                                    <strong>Skill Category</strong>
+                                </td>
+                                <td>Developing, designing</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Entity</strong>
+                                </td>
+                                <td>Information Technology</td>
+                                <td>
+                                    <strong>Category</strong>
+                                </td>
+                                <td>Software</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>City</strong>
+                                </td>
+                                <td colspan="3"></td>
+                            </tr>
+                        </table>
+
+                        <br/>
+
+                        <h4 style="background:#d9e1f2; padding:5px;">Monthly Components (in INR)</h4>
+
+                        <table style="width:100%; border-collapse: collapse;" border="1">
+                            <tr>
+                                <td>Basic Salary</td>
+                                <td>26000</td>
+                            </tr>
+                            <tr>
+                                <td>Flexible Allowance</td>
+                                <td>18200</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Total Monthly</strong>
+                                </td>
+                                <td>
+                                    <strong>44200</strong>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Total Monthly Components Annualized</td>
+                                <td>530400</td>
+                            </tr>
+                        </table>
+
+                        <br/>
+
+                        <h4 style="background:#d9e1f2; padding:5px;">Retirals &amp; Other Benefits (in INR)</h4>
+
+                        <table style="width:100%; border-collapse: collapse;" border="1">
+                            <tr>
+                                <td>Provident Fund</td>
+                                <td>21600</td>
+                            </tr>
+                            <tr>
+                                <td>Medical Insurance Premium</td>
+                                <td>25000</td>
+                            </tr>
+                            <tr>
+                                <td>Gratuity</td>
+                                <td>15000</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Total Retirals</strong>
+                                </td>
+                                <td>
+                                    <strong>61600</strong>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <br/>
+
+                        <table style="width:100%; border-collapse: collapse;" border="1">
+                            <tr>
+                                <td>Total Variable Components</td>
+                                <td>129570</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Cost to Company</strong>
+                                </td>
+                                <td>
+                                    <strong>592000</strong>
+                                </td>
+                            </tr>
+                        </table>
+                         <br/>
+
+                        <!-- SOCIAL SECURITY -->
+                        <table style="width:100%; border-collapse: collapse;" border="1">
+                            <tr style="background:#d9d9d9;">
+                                <td>
+                                    <strong>** Social Security Scheme &amp; Health Benefits [As per Scheme]</strong>
+                                </td>
+                                <td>
+                                    <strong>Max Sub limit (per annum) INR</strong>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Hospitalization cost reimbursement limit</td>
+                                <td>500000</td>
+                            </tr>
+                            <tr>
+                                <td>Group Personal Accident</td>
+                                <td>2000000</td>
+                            </tr>
+                            <tr>
+                                <td>Group Term Life</td>
+                                <td>2000000</td>
+                            </tr>
+                        </table>
+
+                    </div>
+                </t>
+                <!-- ===================== PAGE 4 ===================== -->
+                <t t-call="web.basic_layout">
+                    <div class="page offer-body">
+
+                        <h3 style="text-align:center;">ANNEXURE II</h3>
+
+                        <p style="font-weight:bold; text-decoration: underline;">
+                            EXPLANATION OF COMPENSATION STRUCTURE AND EMPLOYEE BENEFITS
+                        </p>
+
+                        <p>
+                            To facilitate an easy understanding of your compensation structure (Cost to Company, CTC),
+                            the various components have been categorized under the following broad heads:
+                        </p>
+
+                        <p>
+                            1. Basic Salary
+                            <br/>
+                            2. Flexible Allowance
+                            <br/>
+                            3. Variable Pay
+                            <br/>
+                            4. Retirals &amp; Insurance Benefit
+                        </p>
+
+                        <p>
+                            The details for each component falling under these heads are explained as following:
+                        </p>
+
+                        <p>
+                            <strong>1. BASIC SALARY</strong>
+                        </p>
+
+                        <p>
+                            The Basic Salary is standard across organization and brought to a certain value of the CTC.
+                            Basic salary has an impact on various other components such as the PF contribution, Gratuity
+                            etc.
+                            and hence has to be balanced so as not to substantially reduce the employee take home
+                            salary.
+                        </p>
+
+                        <p>
+                            <strong>2. FLEXIBLE ALLOWANCE</strong>
+                        </p>
+
+                        <p>
+                            Flexible allowance enables you to design your own compensation structure by providing an
+                            access
+                            to various benefits provided in <strong>BXI Tech</strong>. You can declare and distribute
+                            Flexible
+                            allowance amount across the various components, adhering to the defined entitlements by
+                            logging
+                            onto the Flexible Compensation Portal. Any undeclared amount will be paid along with the
+                            monthly
+                            salary as Flexible Allowance.
+                        </p>
+
+                    </div>
+                </t>
+                <!-- ===================== PAGE 5 ===================== -->
+                <t t-call="web.basic_layout">
+                    <div class="page offer-body">
+
+                        <p>
+                            The components forming part of Flexible compensation plan are listed below:
+                        </p>
+
+                        <p>
+                            a. <strong>House Rent Allowance (HRA):</strong> House Rent Allowance caters to the rental
+                            expenses of the employee’s accommodation. The HRA can be declared maximum up to 50% of the
+                            Basic Salary and is paid monthly. You can declare either Company Leased Accommodation or
+                            House Rent Allowance for your compensation structure.
+                        </p>
+
+                        <p>
+                            b. <strong>Company Leased Accommodation (CLA):</strong> Company Leased Accommodation is to
+                            facilitate for you to find accommodation of their choice within the defined Company Leased
+                            Accommodation limits.
+                        </p>
+
+                        <p>
+                            c. <strong>Leave Travel Assistance (LTA):</strong> Leave Travel allowance enables you to
+                            claim
+                            your holiday travel expenses. Declaration in LTA is allowed up to the maximum entitlement
+                            applicable as per your band eligibility. The procedure for claim will be as per the existing
+                            LTA rules. By default, LTA would be treated as reimbursement.
+                        </p>
+
+                        <p>
+                            d. <strong>NPS Employer Contribution:</strong> A voluntary contribution pension system
+                            administered and regulated by the Pension Fund Regulatory and Development Authority (PFRDA).
+                            Declaration in NPS Employer Contribution is allowed from 0% to 10% of Annual Basic Salary.
+                            You will need to follow PRAN generation process in NPS portal, post which declaration can be
+                            made in Flexible compensation portal.
+                        </p>
+
+                        <p>
+                            e. <strong>Fuel and Car Maintenance charges reimbursements:</strong> You are entitled to
+                            reimbursement of fuel expenses and maintenance charges (w.r.t. repairs, spare parts, annual
+                            vehicle insurance etc.,) on your car up to per the maximum entitlements as per your band
+                            eligibility. For claiming this, you will have to submit original bills on a monthly basis or
+                            as and when you wish to get this amount reimbursed. By default, Fuel and Vehicle Maintenance
+                            would be treated as reimbursement.
+                        </p>
+
+                    </div>
+                </t>
+                <!-- ===================== PAGE 6 ===================== -->
+                <t t-call="web.basic_layout">
+                    <div class="page offer-body">
+
+                        <p>
+                            f. <strong>Car Lease Rental Reimbursement:</strong> We have an attractive Car Lease Scheme,
+                            according to which you can avail the following facilities:
+                        </p>
+
+                        <p style="margin-left:20px;">
+                            You can select the model of the car within the limit prescribed in the scheme
+                            <br/>
+                            A Third-Party vendor will help you with the processing of the papers and other formalities
+                            <br/>
+                            The lease value up to maximum limit as per your band wise entitlements in Flexible
+                            Compensation portal will be contributed towards the EMI
+                        </p>
+
+                        <p>
+                            By default, car lease rental will be paid as part of monthly salary and treated as a taxable
+                            component,
+                            unless lease value is finalized.
+                        </p>
+
+                        <p>
+                            g. <strong>Food Wallet:</strong> Food Wallet is a voluntary benefit and is applicable for
+                            payments related
+                            to food and non-alcoholic beverages only. Once enrolled, the benefit should be availed
+                            within
+                            <strong>BXI Tech</strong>
+                            Cafeterias or food joints outside BXI Tech campus which serves only food and
+                            non-alcoholic beverages. This Food Wallet cannot be used in any other outlet other than
+                            designated food outlet.
+                        </p>
+
+                        <p>
+                            h. <strong>Superannuation:</strong> Superannuation is a welfare scheme aimed to provide you
+                            social security
+                            post-retirement from your service. Contribution to Superannuation Fund can be made up to 15%
+                            of your basic
+                            salary with an upper ceiling of INR 1.50 Lacs.
+                        </p>
+
+                        <p>
+                            <strong>3. VARIABLE PAY</strong>
+                        </p>
+
+                        <p>
+                            The scope of “Variable Pay” in your compensation structure will be governed based on your
+                            “employee group” in <strong>BXI Tech</strong>.
+                        </p>
+
+                    </div>
                 </t>
             </t>
         </t>
