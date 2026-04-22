@@ -95,8 +95,8 @@
                         <button name="action_generate_offer_letter"
                                 type="object"
                                 string="Generate Offer Letter"
-                                class="btn-primary"
-                                invisible="offer_letter_attachment_id"/>
+                                class="btn-primary"/>
+<!--                                invisible="offer_letter_attachment_id"/>-->
 
                         <button name="action_view_offer_letter"
                                 type="object"
