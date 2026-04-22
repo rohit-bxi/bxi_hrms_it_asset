@@ -274,7 +274,7 @@
 
                         Invoice Value in Words:
 
-                        <span t-esc="o.amount_total_in_words"/>
+                        <span t-esc="o.currency_id.amount_to_text(o.amount_total)"/>
 
                     </div>
 
