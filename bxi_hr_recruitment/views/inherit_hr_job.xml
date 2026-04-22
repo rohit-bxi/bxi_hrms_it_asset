@@ -17,6 +17,7 @@
                            widget="many2many_tags"
                            invisible="location_type == 'all'"/>
                 <field name="employee_category"/>
+                <field name="resume_file" filename="resume_filename"/>
                 <field name="requisition_id"/>
             </xpath>
         </field>
@@ -24,3 +25,5 @@
     </data>
 
 </odoo>
+
+
