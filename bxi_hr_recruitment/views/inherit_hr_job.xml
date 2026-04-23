@@ -17,6 +17,9 @@
                            widget="many2many_tags"
                            invisible="location_type == 'all'"/>
                 <field name="employee_category"/>
+                    <field name="min_experience"/>
+                    <field name="max_experience"/>
+                <field name="salary"/>
                 <field name="requisition_id"/>
                 <field name="billed_unbilled"/>
                 <field name="job_category"/>
