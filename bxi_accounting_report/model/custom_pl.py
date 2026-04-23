@@ -135,6 +135,19 @@ class CustomPLReport(models.Model):
                 sp['quarters_projected'][q] += 0
                 cust['quarters_projected'][q] += 0
 
+        for cust_data in customers.values():
+            cust_data['total_billing'] = target_currency.round(cust_data['total_billing'])
+            for q in cust_data['quarters_actual']:
+                cust_data['quarters_actual'][q] = target_currency.round(
+                    cust_data['quarters_actual'][q]
+                )
+            for sp in cust_data['salespersons'].values():
+                sp['billing'] = target_currency.round(sp['billing'])
+                for q in sp['quarters_actual']:
+                    sp['quarters_actual'][q] = target_currency.round(
+                        sp['quarters_actual'][q]
+                    )        
+
         result = []
 
         for cust_name, cust_data in customers.items():
