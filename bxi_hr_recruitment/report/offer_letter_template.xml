@@ -223,7 +223,9 @@
                                 <td>
                                     <strong>Band</strong>
                                 </td>
-                                <t t-esc="o.band"/>
+                                <td>
+                                    <t t-esc="o.band or '-'"/>
+                                </td>
                                 <td>
                                     <strong>Skill Category</strong>
                                 </td>

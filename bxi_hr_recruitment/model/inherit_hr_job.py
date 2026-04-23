@@ -63,6 +63,10 @@ class HrJob(models.Model):
     target_date = fields.Date(string="Target Date")
     job_company_id = fields.Many2one('res.company', string="Job Platform")
 
+    salary = fields.Char(string="Salary")
+    min_experience = fields.Float(string="Min Experience (Years)")
+    max_experience = fields.Float(string="Max Experience (Years)")
+
     status = fields.Selection([
         ('open', 'Open'),
         ('active', 'Active / Accepting Applications'),
@@ -74,6 +78,7 @@ class HrJob(models.Model):
         ('interviewing', 'Interviewing'),
         ('shortlisting', 'Shortlisting in Progress'),
     ], string="Status", default='open')
+
 
 
     @api.onchange('location_type')

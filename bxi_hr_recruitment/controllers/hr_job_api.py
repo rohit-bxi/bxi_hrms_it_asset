@@ -98,17 +98,7 @@ class HrJobAPI(http.Controller):
                 hiring_manager = job.user_id.name if hasattr(job, 'user_id') and job.user_id else ""
 
                 # 🔹 Recruiter Assigned (if custom field exists)
-                recruiter = ""
-                if hasattr(job, 'recruiter_id') and job.recruiter_id:
-                    recruiter = job.recruiter_id.name
-
-                # 🔹 Candidates (hr.applicant linked to job)
-                applicants = request.env['hr.applicant'].sudo().search([
-                    ('job_id', '=', job.id)
-                ])
-
-                candidate_names = applicants.mapped('partner_name') if applicants else []
-                candidates_selected = len(applicants.filtered(lambda a: a.stage_id and a.stage_id.fold))
+                recruiter = job.user_id.name if job.user_id else ""
 
                 # 🔹 Build response
                 result.append({
@@ -116,7 +106,7 @@ class HrJobAPI(http.Controller):
                     "name": job.name,
                     "sequence": job.sequence,
                     "description": job.description,
-                    "requirements": job.requirements,
+                    # "requirements": job.requirements,
                     "website_published": job.website_published,
 
                     # 🔹 Custom fields
@@ -137,21 +127,18 @@ class HrJobAPI(http.Controller):
                     "requisition_id": getattr(job, 'requisition_id', ""),
 
                     # 🔹 Experience (custom field assumed)
-                    "experience": getattr(job, 'experience', ""),
+                    "experience": f"{job.min_experience or 0} - {job.max_experience or 0} Years",
+                    "salary": job.salary or "",
 
                     # 🔹 Job Type (custom or selection field assumed)
-                    "job_type": getattr(job, 'job_type', ""),
-
-                    # 🔹 Salary (if exists)
-                    "salary": getattr(job, 'salary', ""),
+                    "job_type": dict(job._fields['job_category'].selection).get(job.job_category,
+                                                                                "") if job.job_category else "",
 
                     # 🔹 Billed / Unbilled (custom assumption)
                     "billed_unbilled": getattr(job, 'billed_unbilled', ""),
 
                     # 🔹 Candidates
                     "number_of_openings": job.no_of_recruitment,
-                    "candidates_selected": candidates_selected,
-                    "candidates_name": candidate_names
                 })
 
             return {
