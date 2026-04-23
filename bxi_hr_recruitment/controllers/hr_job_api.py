@@ -99,6 +99,8 @@ class HrJobAPI(http.Controller):
 
                 # 🔹 Recruiter Assigned (if custom field exists)
                 recruiter = job.user_id.name if job.user_id else ""
+                target_date = job.target_date and job.target_date.strftime('%Y-%m-%d') or ""
+
 
                 # 🔹 Build response
                 result.append({
@@ -129,6 +131,7 @@ class HrJobAPI(http.Controller):
                     # 🔹 Experience (custom field assumed)
                     "experience": f"{job.min_experience or 0} - {job.max_experience or 0} Years",
                     "salary": job.salary or "",
+                    "target_date": target_date,
 
                     # 🔹 Job Type (custom or selection field assumed)
                     "job_type": dict(job._fields['job_category'].selection).get(job.job_category,
