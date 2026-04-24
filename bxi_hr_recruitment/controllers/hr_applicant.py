@@ -1,6 +1,8 @@
 from odoo import http
 from odoo.http import request
 import base64
+import datetime
+
 
 
 class ApplicantCreation(http.Controller):
@@ -47,6 +49,9 @@ class ApplicantCreation(http.Controller):
             phone = kwargs.get('partner_phone')
             job_id = kwargs.get('job_id')
 
+            resume_file = kwargs.get('resume_file')
+
+
             if not partner_name:
                 return self._response("error", "Applicant name is required")
 
@@ -61,6 +66,16 @@ class ApplicantCreation(http.Controller):
                 'partner_phone': phone,
                 'job_id': job_id,
             }
+
+            # -----------------------------
+            #  ADD RESUME (IMPORTANT BLOCK)
+            # -----------------------------
+            if resume_file:
+                applicant_vals.update({
+                    'resume_file': resume_file,
+
+                    'resume_filename': f"Resume_{partner_name}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
+                })
 
             applicant = request.env['hr.applicant'].sudo().create(applicant_vals)
 

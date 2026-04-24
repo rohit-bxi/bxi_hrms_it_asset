@@ -223,7 +223,9 @@
                                 <td>
                                     <strong>Band</strong>
                                 </td>
-                                <t t-esc="o.band"/>
+                                <td>
+                                    <t t-esc="o.band or '-'"/>
+                                </td>
                                 <td>
                                     <strong>Skill Category</strong>
                                 </td>
@@ -1956,18 +1958,18 @@
                         </p>
 
                         <!-- OPTIONAL EMPLOYEE ACCEPTANCE -->
-                        <p style="margin-top:50px;">
-                            <strong>Accepted By:</strong>
-                        </p>
+<!--                        <p style="margin-top:50px;">-->
+<!--                            <strong>Accepted By:</strong>-->
+<!--                        </p>-->
 
                         <p style="margin-top:30px;">
-                            Name: ___________________________
-                            <br/>
-                            <br/>
+<!--                            Name: ___________________________-->
+<!--                            <br/>-->
+<!--                            <br/>-->
                             Signature: ________________________
-                            <br/>
-                            <br/>
-                            Date: ____________________________
+<!--                            <br/>-->
+<!--                            <br/>-->
+<!--                            Date: ____________________________-->
                         </p>
 
                     </div>
