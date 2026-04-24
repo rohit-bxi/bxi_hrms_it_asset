@@ -67,8 +67,7 @@
 
                 <!-- ===================== PAGE 1 ===================== -->
                 <t t-call="web.external_layout">
-                    <div class="page offer-body">
-
+<div class="page" style="page-break-after: always; padding-bottom:120px;">
                         <!-- Title -->
                         <div class="offer-title">
                             OFFER LETTER
@@ -142,9 +141,8 @@
                 </t>
 
                 <!-- ===================== PAGE 2 ===================== -->
-                <t t-call="web.basic_layout">
-                    <div class="page offer-body">
-
+                <t t-call="web.external_layout">
+<div class="page" style="page-break-after: always; padding-bottom:120px;">
                         <!-- Paragraph 5 -->
                         <p>
                             You would be required to furnish digital copies of the documents and other listed
@@ -210,9 +208,8 @@
                     </div>
                 </t>
                 <!-- ===================== PAGE 3 ===================== -->
-                <t t-call="web.basic_layout">
-                    <div class="page offer-body">
-
+                <t t-call="web.external_layout">
+<div class="page" style="page-break-after: always; padding-bottom:120px;">
                         <h3 style="text-align:center; color:#1f4e79;">
                             COMPENSATION PLAN
                         </h3>
@@ -388,9 +385,8 @@
                     </div>
                 </t>
                 <!-- ===================== PAGE 4 ===================== -->
-                <t t-call="web.basic_layout">
-                    <div class="page offer-body">
-
+                <t t-call="web.external_layout">
+<div class="page" style="page-break-after: always; padding-bottom:120px;">
                         <h3 style="text-align:center;">ANNEXURE II</h3>
 
                         <p style="font-weight:bold; text-decoration: underline;">
@@ -447,9 +443,8 @@
                     </div>
                 </t>
                 <!-- ===================== PAGE 5 ===================== -->
-                <t t-call="web.basic_layout">
-                    <div class="page offer-body">
-
+                <t t-call="web.external_layout">
+<div class="page" style="page-break-after: always; padding-bottom:120px;">
                         <p>
                             The components forming part of Flexible compensation plan are listed below:
                         </p>
@@ -495,9 +490,8 @@
                     </div>
                 </t>
                 <!-- ===================== PAGE 6 ===================== -->
-                <t t-call="web.basic_layout">
-                    <div class="page offer-body">
-
+                <t t-call="web.external_layout">
+                    <div class="page" style="page-break-after: always; padding-bottom:120px;"> 
                         <p>
                             f. <strong>Car Lease Rental Reimbursement:</strong> We have an attractive Car Lease Scheme,
                             according to which you can avail the following facilities:
@@ -550,9 +544,8 @@
                 </t>
 
                 <!-- ===================== PAGE 7 ===================== -->
-                <t t-call="web.basic_layout">
-                    <div class="page offer-body">
-
+                <t t-call="web.external_layout">
+<div class="page" style="page-break-after: always; padding-bottom:120px;">
                         <p>
                             a. <strong>Performance Bonus (PB):</strong> Performance Bonus (PB) is payable in accordance
                             with the Company Bonus Policy
@@ -607,9 +600,8 @@
 
 
                 <!-- ===================== PAGE 8 ===================== -->
-                <t t-call="web.basic_layout">
-                    <div class="page offer-body">
-
+                <t t-call="web.external_layout">
+<div class="page" style="page-break-after: always; padding-bottom:120px;">
                         <p>
                             b. <strong>Coverage under ESI:</strong> The employee will be covered under Employee State
                             Insurance Scheme in accordance
@@ -663,9 +655,8 @@
 
 
                 <!-- ===================== PAGE 9 ===================== -->
-                <t t-call="web.basic_layout">
-                    <div class="page offer-body">
-
+                <t t-call="web.external_layout">
+<div class="page" style="page-break-after: always; padding-bottom:120px;">
                         <p>
                             5. <strong>Term Life Insurance (including EDLI):</strong> You will be covered under Term
                             Life Insurance which provides a safety net
@@ -726,9 +717,8 @@
                     </div>
                 </t>
                 <!-- ===================== PAGE 10 ===================== -->
-                <t t-call="web.basic_layout">
-                    <div class="page offer-body">
-
+                <t t-call="web.external_layout">
+<div class="page" style="page-break-after: always; padding-bottom:120px;">
                         <p>
                             The fitness testing (and accompanying results) will not lead to any subjective,
                             discriminatory or unethical actions.
@@ -783,9 +773,8 @@
                     </div>
                 </t>
                 <!-- ===================== PAGE 11 ===================== -->
-                <t t-call="web.basic_layout">
-                    <div class="page offer-body">
-
+                <t t-call="web.external_layout">
+<div class="page" style="page-break-after: always; padding-bottom:120px;">
                         <p>
                             You may also be required to sign other Agreements with the Company, as the Company may
                             decide from time to time,
@@ -844,9 +833,8 @@
                 </t>
                 <!-- ===================== PAGE 12 ===================== -->
 
-                <t t-call="web.basic_layout">
-                    <div class="page offer-body">
-
+                <t t-call="web.external_layout">
+<div class="page" style="page-break-after: always; padding-bottom:120px;">
                         <h5>BACKGROUND VERIFICATION</h5>
 
                         <p>
@@ -911,9 +899,8 @@
                 </t>
                 <!-- ===================== PAGE 13 ===================== -->
 
-                <t t-call="web.basic_layout">
-                    <div class="page offer-body">
-
+                <t t-call="web.external_layout">
+<div class="page" style="page-break-after: always; padding-bottom:120px;">
                         <h5>14. CORRECTNESS OF DETAILS FURNISHED</h5>
 
                         <p>
@@ -965,9 +952,8 @@
                     </div>
                 </t>
                 <!-- ===================== PAGE 14 ===================== -->
-                <t t-call="web.basic_layout">
-                    <div class="page offer-body">
-
+                <t t-call="web.external_layout">
+<div class="page" style="page-break-after: always; padding-bottom:120px;">
                         <!-- POINT 16 CONTENT -->
                         <p>
                             <strong>16. Other Rules and Regulations of the Company:</strong>
@@ -1065,9 +1051,8 @@
                 </t>
 
                 <!-- ===================== PAGE 15 ===================== -->
-                <t t-call="web.basic_layout">
-                    <div class="page offer-body">
-
+                <t t-call="web.external_layout">
+<div class="page" style="page-break-after: always; padding-bottom:120px;">
                         <!-- ADDITIONAL DOCUMENTS -->
                         <p style="font-weight:bold; margin-top:10px;">
                             Additional Documents (To be submitted on request - Only if required)
@@ -1112,9 +1097,8 @@
                     </div>
                 </t>
                 <!-- ===================== PAGE 16 ===================== -->
-                <t t-call="web.basic_layout">
-                    <div class="page offer-body">
-
+                <t t-call="web.external_layout">
+<div class="page" style="page-break-after: always; padding-bottom:120px;">
                         <!-- TOP NOTE -->
                         <p>
                             Additional document can be requested to clear background verification therefore to avoid
@@ -1221,9 +1205,8 @@
                     </div>
                 </t>
                 <!-- ===================== PAGE 17 ===================== -->
-                <t t-call="web.basic_layout">
-                    <div class="page offer-body">
-
+                <t t-call="web.external_layout">
+<div class="page" style="page-break-after: always; padding-bottom:120px;">
                         <!-- CONTINUED BULLETS -->
                         <ul style="margin-left:20px;">
                             <li style="margin-bottom:6px;">
@@ -1314,9 +1297,8 @@
                     </div>
                 </t>
                 <!-- ===================== PAGE 18 ===================== -->
-                <t t-call="web.basic_layout">
-                    <div class="page offer-body">
-
+                <t t-call="web.external_layout">
+<div class="page" style="page-break-after: always; padding-bottom:120px;">
                         <!-- RELOCATION EXPENSE -->
                         <p>
                             <strong>Relocation Expenses:</strong>
@@ -1386,9 +1368,8 @@
                     </div>
                 </t>
                 <!-- ===================== PAGE 19 ===================== -->
-                <t t-call="web.basic_layout">
-                    <div class="page offer-body">
-
+                <t t-call="web.external_layout">
+<div class="page" style="page-break-after: always; padding-bottom:120px;">
                         <!-- CONTINUATION: CONFIDENTIAL INFORMATION -->
                         <p>
                             Subsidiaries or affiliates (collectively “Company Parties”), to which I have been privy to
@@ -1464,9 +1445,8 @@
                     </div>
                 </t>
                 <!-- ===================== PAGE 20 ===================== -->
-                <t t-call="web.basic_layout">
-                    <div class="page offer-body">
-
+                <t t-call="web.external_layout">
+<div class="page" style="page-break-after: always; padding-bottom:120px;">
                         <!-- CONTINUATION: THIRD PARTY INFO -->
                         <p>
                             Hold all such confidential or proprietary information in the strictest confidence and agree
@@ -1535,9 +1515,8 @@
                     </div>
                 </t>
                 <!-- ===================== PAGE 21 ===================== -->
-                <t t-call="web.basic_layout">
-                    <div class="page offer-body">
-
+                <t t-call="web.external_layout">
+<div class="page" style="page-break-after: always; padding-bottom:120px;">
                         <!-- CONTINUATION: ASSIGNMENT -->
                         <p>
                             Reduced to practice during the period of my employment with the Company
@@ -1605,9 +1584,8 @@
                     </div>
                 </t>
                 <!-- ===================== PAGE 22 ===================== -->
-                <t t-call="web.basic_layout">
-                    <div class="page offer-body">
-
+                <t t-call="web.external_layout">
+<div class="page" style="page-break-after: always; padding-bottom:120px;">
                         <!-- CONTINUATION: PATENT CLAUSE -->
                         <p>
                             Incapacity or for any other reason to fail to secure my signature to apply for or to pursue
@@ -1684,9 +1662,8 @@
                     </div>
                 </t>
                 <!-- ===================== PAGE 23 ===================== -->
-                <t t-call="web.basic_layout">
-                    <div class="page offer-body">
-
+                <t t-call="web.external_layout">
+<div class="page" style="page-break-after: always; padding-bottom:120px;">
                         <!-- CONTINUATION: RETURNING DOCUMENTS -->
                         <p>
                             Pursuant to my employment with the Company or otherwise belonging to the Company,
@@ -1750,9 +1727,8 @@
                     </div>
                 </t>
                 <!-- ===================== PAGE 24 ===================== -->
-                <t t-call="web.basic_layout">
-                    <div class="page offer-body">
-
+                <t t-call="web.external_layout">
+<div class="page" style="page-break-after: always; padding-bottom:120px;">
                         <!-- SIMILAR SERVICES DEFINITION -->
                         <ul style="margin-left:20px;">
                             <li style="margin-bottom:6px;">
@@ -1825,9 +1801,8 @@
                     </div>
                 </t>
                 <!-- ===================== PAGE 25 ===================== -->
-                <t t-call="web.basic_layout">
-                    <div class="page offer-body">
-
+                <t t-call="web.external_layout">
+<div class="page" style="page-break-after: always; padding-bottom:120px;">
                         <!-- CONTINUATION: PROTECTION OF SYSTEMS -->
                         <p>
                             Customer’s work and computer environment and, as such, I undertake not to incorporate into
@@ -1897,9 +1872,8 @@
                     </div>
                 </t>
                 <!-- ===================== PAGE 26 ===================== -->
-                <t t-call="web.basic_layout">
-                    <div class="page offer-body">
-
+                <t t-call="web.external_layout">
+<div class="page" style="page-break-after: always; padding-bottom:120px;">
                         <!-- 10 CONTINUED -->
                         <p>
                             I represent that my performance of all the terms of my employment agreement and this
@@ -1975,9 +1949,8 @@
                     </div>
                 </t>
                 <!-- ===================== PAGE 27 ===================== -->
-                <t t-call="web.basic_layout">
-                    <div class="page offer-body">
-
+                <t t-call="web.external_layout">
+<div class="page" style="page-break-after: always; padding-bottom:120px;">
                         <!-- BORDER CONTAINER -->
                         <div style="
             border: 2px solid #000000;
@@ -2017,4 +1990,42 @@
         </t>
 
     </template>
+
+
+    <template id="custom_external_footer" inherit_id="web.external_layout_standard">
+
+    <!-- Replace full footer container -->
+    <xpath expr="//div[contains(@class,'o_footer')]" position="replace">
+
+        <div class="o_footer" style="font-size:9px; width:100%;">
+
+            <div style="background:#1f2a44; color:white; padding:10px 20px;">
+
+                <!-- LEFT -->
+                <div style="float:left; width:60%;">
+                    <strong><t t-esc="company.name"/></strong><br/>
+                    <t t-esc="company.street or ''"/>
+                    <t t-if="company.street2">, <t t-esc="company.street2"/></t><br/>
+                    <t t-esc="company.city or ''"/>
+                    <t t-if="company.state_id">, <t t-esc="company.state_id.name"/></t>
+                    <t t-if="company.zip"> - <t t-esc="company.zip"/></t><br/>
+                    <t t-esc="company.country_id.name or ''"/>
+                </div>
+
+                <!-- RIGHT -->
+                <div style="float:right; width:35%; text-align:right;">
+                    CIN: <t t-esc="company.company_registry or 'N/A'"/><br/>
+                    Email: <t t-esc="company.email or ''"/><br/>
+                    Phone: <t t-esc="company.phone or ''"/>
+                </div>
+
+                <div style="clear:both;"></div>
+
+            </div>
+
+        </div>
+
+    </xpath>
+
+</template>
 </odoo>

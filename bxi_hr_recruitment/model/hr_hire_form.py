@@ -1,6 +1,6 @@
 import base64
 import hashlib
-from odoo import fields, models
+from odoo import fields, models, _
 from odoo import api
 from odoo.exceptions import UserError
 import json
@@ -304,8 +304,10 @@ class HrHire(models.Model):
 
         report = self.env.ref('bxi_hr_recruitment.action_report_offer_letter')
 
-        pdf_content, _ = report._render_qweb_pdf(report.id, res_ids=[self.id])
-
+        pdf_content, _ = report._render_qweb_pdf(
+            'bxi_hr_recruitment.action_report_offer_letter',
+            res_ids=[self.id]
+        )
         attachment = self.env['ir.attachment'].create({
             'name': f'Offer Letter - {self.partner_name}.pdf',
             'type': 'binary',
