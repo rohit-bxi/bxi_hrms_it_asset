@@ -4,7 +4,7 @@
     'summary': 'API for creating job positions',
     'author': 'Kriti',
     'category': 'HR',
-    'depends': ['base','hr','hr_recruitment','website','mail'],
+    'depends': ['base','hr','hr_recruitment','website','mail','sign','sign_itsme'],
     'installable': True,
     'application': False,
     'data': [
