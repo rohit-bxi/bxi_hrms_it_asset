@@ -195,6 +195,17 @@
                     </group>
 
                 </page>
+                <page string="Offer Approval" invisible="stage_level &lt; 4">
+
+                    <group string="Offer Letter Details">
+
+                        <field name="reporting_manager_id"/>
+                        <field name="hr_user_id"/>
+                        <field name="sign_request_id" readonly="1"/>
+
+                    </group>
+
+                </page>
 
             </xpath>
 
