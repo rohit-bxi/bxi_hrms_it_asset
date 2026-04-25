@@ -45,31 +45,22 @@ class CustomPLReport(models.Model):
             if currency_id else self.env.company.currency_id
         )
 
-        bank_accounts = self.env['account.account'].search([
-            ('name', '=', 'Bank'),
-        ])
-        outstanding_accounts = self.env['account.account'].search([
-            ('name', '=', 'Outstanding Receipts'),
-        ])
-        allowed_accounts = bank_accounts.ids + outstanding_accounts.ids
-
-        domain = [
-            ('move_id.state', '=', 'posted'),
-            ('journal_id.type', '=', 'bank'),
-            ('debit', '>', 0),
-            ('account_id', 'in', allowed_accounts),
+        invoices_domain = [
+            ('move_type', '=', 'out_invoice'),
+            ('state', '=', 'posted'),
+            ('payment_state', 'in', ['paid', 'in_payment']),
         ]
 
         if company_ids:
-            domain.append(('move_id.company_id', 'in', company_ids))
+            invoices_domain.append(('company_id', 'in', company_ids))
 
         if start_date and end_date:
-            domain += [
-                ('date', '>=', start_date),
-                ('date', '<=', end_date),
+            invoices_domain += [
+                ('invoice_date', '>=', start_date),
+                ('invoice_date', '<=', end_date),
             ]
 
-        bank_lines = self.env['account.move.line'].search(domain)
+        invoices = self.env['account.move'].search(invoices_domain)
 
         customers = defaultdict(lambda: {
             'salespersons': {},
@@ -80,23 +71,11 @@ class CustomPLReport(models.Model):
             'country': '',
         })
 
-        for line in bank_lines:
-            partner = line.partner_id
-            if partner:
-                customer = partner.name
-            else:
-                label = line.name or ''
-                if label:
-                    parts = label.split('/')
-                    customer = parts[-1].strip()
-                else:
-                    customer = 'N/A'
-            salesperson = (
-                partner.user_id.name
-                if partner.user_id else 'N/A'
-            )
-
-            q = get_quarter(line.date)
+        for inv in invoices:
+            partner = inv.partner_id
+            customer = partner.name if partner else 'N/A'
+            salesperson = inv.user_id.name or 'N/A'
+            q = get_quarter(inv.invoice_date)
 
             cust = customers[customer]
 
@@ -115,22 +94,22 @@ class CustomPLReport(models.Model):
 
             sp = cust['salespersons'][salesperson]
 
-            company_currency = line.company_id.currency_id
-            date = line.date or fields.Date.today()
+            company_currency = inv.company_id.currency_id
+            date = inv.invoice_date or fields.Date.today()
 
-            actual = company_currency._convert(
-                line.debit,
+            amount = company_currency._convert(
+                inv.amount_total,
                 target_currency,
-                line.company_id,
+                inv.company_id,
                 date
             )
 
-            sp['billing'] += actual
-            cust['total_billing'] += actual
+            sp['billing'] += amount
+            cust['total_billing'] += amount
 
             if q:
-                sp['quarters_actual'][q] += actual
-                cust['quarters_actual'][q] += actual
+                sp['quarters_actual'][q] += amount
+                cust['quarters_actual'][q] += amount
 
                 sp['quarters_projected'][q] += 0
                 cust['quarters_projected'][q] += 0
