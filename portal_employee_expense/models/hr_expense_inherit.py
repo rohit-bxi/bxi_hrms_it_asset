@@ -88,10 +88,10 @@ class HrExpense(models.Model):
         email_to = False
         if self.state == 'hr_approval':
             template = self.env.ref('portal_employee_expense.email_template_hr')
-            email_to = 'shekhawatritika2001@gmail.com'
+            email_to = 'hr@bxitech.com'
         elif self.state == 'finance_approval':
             template = self.env.ref('portal_employee_expense.email_template_finance')
-            email_to = 'shekhawatritika2001@gmail.com'
+            email_to = 'fso@bxiventure.com'
         if not template or not email_to:
             return
         template.send_mail(
