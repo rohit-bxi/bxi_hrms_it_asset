@@ -91,26 +91,50 @@ class ApplicantCreation(http.Controller):
         except Exception as e:
             return self._response("error", str(e))
 
-    # =========================
-    # SUBMIT / UPDATE APPLICATION
-    # =========================
-    @http.route('/api/application/submit', type='json', auth='public', methods=['POST'], csrf=False)
+
+    @http.route(
+        '/api/application/submit',
+        type='http',
+        auth='public',
+        methods=['POST'],
+        csrf=False
+    )
     def submit_application(self, **kwargs):
         try:
-            data = kwargs
+            # =====================================================
+            # GET BASIC DATA
+            # =====================================================
+
+            # If frontend sends JSON string inside form-data
+            # key name = data
+            raw_data = kwargs.get('data')
+
+            if raw_data:
+                data = json.loads(raw_data)
+            else:
+                # fallback if fields sent directly
+                data = kwargs
 
             odoo_id = data.get('odoo_id')
+
             if not odoo_id:
-                return {"status": "error", "message": "Missing odoo_id"}
+                return request.make_response(json.dumps({
+                    "status": "error",
+                    "message": "Missing odoo_id"
+                }), headers=[('Content-Type', 'application/json')])
 
             applicant = request.env['hr.applicant'].sudo().browse(int(odoo_id))
 
             if not applicant.exists():
-                return {"status": "error", "message": "Invalid applicant"}
+                return request.make_response(json.dumps({
+                    "status": "error",
+                    "message": "Invalid applicant"
+                }), headers=[('Content-Type', 'application/json')])
 
-            # =====================
-            # BASIC FIELDS
-            # =====================
+            # =====================================================
+            # BASIC FIELDS UPDATE
+            # =====================================================
+
             applicant.write({
                 'partner_name': data.get('partner_name'),
                 'contact_number': data.get('contact_number'),
@@ -123,70 +147,80 @@ class ApplicantCreation(http.Controller):
                 'joining_date': data.get('joining_date'),
             })
 
-            # =====================
-            # SAFE ATTACHMENT CREATOR
-            # =====================
-            def create_attachment(file_obj):
-                if not file_obj or not file_obj.get('data'):
-                    return False
+            # =====================================================
+            # FILE FIELD MAPPING
+            # =====================================================
 
-                try:
-                    data_b64 = file_obj.get('data')
+            file_field_map = {
+                'doc_10th': 'doc_10th_id',
+                'doc_12th': 'doc_12th_id',
+                'doc_graduation': 'doc_graduation_id',
+                'doc_master': 'doc_master_id',
+                'form_16': 'form_16_id',
+                'bank_statement': 'bank_statement_id',
+                'salary_slips': 'salary_slip_id',
+                'photograph': 'photograph',
+            }
 
-                    return request.env['ir.attachment'].sudo().create({
-                        'name': file_obj.get('name') or 'file',
+            update_vals = {}
+
+            # =====================================================
+            # HANDLE FILE UPLOADS (multipart/form-data)
+            # =====================================================
+
+            for input_name, field_name in file_field_map.items():
+                uploaded_file = request.httprequest.files.get(input_name)
+
+                if uploaded_file:
+                    attachment = request.env['ir.attachment'].sudo().create({
+                        'name': uploaded_file.filename,
                         'type': 'binary',
-                        'datas': data_b64,
+                        'datas': base64.b64encode(uploaded_file.read()),
                         'res_model': 'hr.applicant',
                         'res_id': applicant.id,
-                    }).id
+                    })
 
-                except:
-                    return False
+                    update_vals[field_name] = [(4, attachment.id)]
 
-            def m2m(file_obj):
-                attachment_id = create_attachment(file_obj)
-                if attachment_id:
-                    return [(4, attachment_id)]
-                return False
+            if update_vals:
+                applicant.write(update_vals)
 
-            # =====================
-            # DOCUMENTS (FIXED FIELD NAMES)
-            # =====================
-            applicant.write({
-                'doc_10th_id': m2m(data.get('doc_10th')),
-                'doc_12th_id': m2m(data.get('doc_12th')),
-                'doc_graduation_id': m2m(data.get('doc_graduation')),
-                'doc_master_id': m2m(data.get('doc_master')),
-
-                'form_16_id': m2m(data.get('form_16')),
-                'bank_statement_id': m2m(data.get('bank_statement')),
-                'salary_slip_id': m2m(data.get('salary_slips')),
-                'photograph': m2m(data.get('photograph')),
-            })
-
-            # =====================
+            # =====================================================
             # EXPERIENCE
-            # =====================
-            for exp in data.get('experience', []):
+            # =====================================================
 
-                request.env['hr.applicant.experience'].sudo().create({
+            experience_data = data.get('experience', [])
+
+            if isinstance(experience_data, str):
+                experience_data = json.loads(experience_data)
+
+            exp_vals = []
+
+            for exp in experience_data:
+                exp_vals.append({
                     'applicant_id': applicant.id,
                     'company_name': exp.get('company_name'),
                     'years': exp.get('years'),
                 })
 
-            return {
+            if exp_vals:
+                request.env['hr.applicant.experience'].sudo().create(exp_vals)
+
+            # =====================================================
+            # SUCCESS RESPONSE
+            # =====================================================
+
+            return request.make_response(json.dumps({
                 "status": "success",
                 "message": "Application updated successfully",
                 "applicant_id": applicant.id
-            }
+            }), headers=[('Content-Type', 'application/json')])
 
         except Exception as e:
-            return {
+            return request.make_response(json.dumps({
                 "status": "error",
                 "message": str(e)
-            }
+            }), headers=[('Content-Type', 'application/json')])
 
     @http.route('/api/applicant/list', type='jsonrpc', auth='public', methods=['POST'], csrf=False)
     def applicant_list(self, job_id=None):
