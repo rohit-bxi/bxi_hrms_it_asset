@@ -1996,7 +1996,10 @@
 
     <!-- Replace full footer container -->
     <xpath expr="//div[contains(@class,'o_footer')]" position="replace">
-
+        <div style="margin-top:10px; text-align:right;">
+            <strong style="color:#1e90ff; font-weight:bold; text-decoration:underline;">Employee Signature</strong>
+            <div style="height:30px; border-bottom:1px solid black; width:200px; margin-left:auto;"></div>
+        </div>
         <div class="o_footer" style="font-size:9px; width:100%;">
 
             <div style="background:#1f2a44; color:white; padding:10px 20px;">
