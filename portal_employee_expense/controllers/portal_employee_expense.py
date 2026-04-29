@@ -85,3 +85,20 @@ class EmployeePortalExpense(http.Controller):
                 expense.state = 'hr_approval'
 
         return request.redirect('/my/employee-expenses')
+
+
+    @http.route(
+        '/payment/callback',
+        type='http',
+        auth='public',
+        methods=['POST'],
+        csrf=False
+    )
+    def payment_callback(self, **post):
+        # bank sends response here
+        reference = post.get('reference')
+        status = post.get('status')
+
+        # update payment transaction here
+
+        return "OK"
