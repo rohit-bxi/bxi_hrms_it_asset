@@ -7,6 +7,7 @@ import json
 import logging
 import requests
 from odoo.exceptions import UserError
+import uuid
 
 
 _logger = logging.getLogger(__name__)
@@ -155,6 +156,38 @@ class HrHire(models.Model):
     # Final CTC
     ctc_total = fields.Float(compute="_compute_salary", store=True, tracking=True)
 
+    location_ids = fields.Many2one(
+        'hr.location',
+        string="Job Location"
+    )
+    offer_letter_id = fields.Char(
+        string="Document ID",
+        readonly=True,
+        copy=False
+    )
+    def _generate_offer_letter_id(self):
+        BASE = "66c277d4-e4a-42fb-8a41-10488f7d59b67"
+        self.env.cr.execute("""
+            SELECT offer_letter_id
+            FROM hr_applicant
+            WHERE offer_letter_id IS NOT NULL
+            ORDER BY id DESC
+            LIMIT 1
+            FOR UPDATE
+        """)
+        row = self.env.cr.fetchone()
+
+        if not row or not row[0]:
+            return BASE
+
+        last_id = row[0]
+        parts = last_id.split('-')
+        last_hex = parts[-1]
+        new_int = int(last_hex, 16) + 1
+        new_hex = format(new_int, 'x').zfill(len(last_hex))
+        parts[-1] = new_hex
+        return '-'.join(parts)
+
     def create_attachment(self, name, data, res_model, res_id):
         if not data:
             return False
@@ -191,6 +224,9 @@ class HrHire(models.Model):
     # ---------------------------------------------------------
     def action_generate_offer_letter(self):
         self.ensure_one()
+        for rec in self:
+            if not rec.offer_letter_id:
+                rec.offer_letter_id = rec._generate_offer_letter_id()
 
         if not self.partner_name:
             raise UserError("Please enter Full Name.")
