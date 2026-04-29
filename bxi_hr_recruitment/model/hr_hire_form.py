@@ -47,7 +47,7 @@ class HrHire(models.Model):
     contact_number = fields.Char("Contact Number")
     aadhar_number = fields.Char("Aadhar Number")
     pan_number = fields.Char("PAN Number")
-    full_address = fields.Text("Full Address")
+    full_address = fields.Char("Full Address")
     joining_date = fields.Date(string="Joining Date")
 
     # Documents
