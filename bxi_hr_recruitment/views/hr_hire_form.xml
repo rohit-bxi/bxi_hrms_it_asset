@@ -132,6 +132,7 @@
                     <!-- ADDRESS -->
                     <group string="Address and Joining">
                         <field name="full_address"/>
+                        <field name="location_ids"/>
                         <field name="joining_date"/>
                     </group>
 

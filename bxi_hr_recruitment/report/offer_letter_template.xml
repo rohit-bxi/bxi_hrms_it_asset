@@ -61,41 +61,66 @@
 
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="o">
-
-                <!-- Set Company -->
+            <div style="background:#1f2a44; color:white; padding:10px 20px;">
+                <style>
+                    * {
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                </style>
                 <t t-set="company" t-value="o.company_id or res_company"/>
+                <div style="
+                    width: 100%;
+                    height: 120px;
+                    background: linear-gradient(90deg, #081f4d 0%, #1f3f8a 50%, #3c6edc 100%);
+                    display: flex;
+                    align-items: center;
+                    padding: 0 30px;
+                ">
+                    <t t-if="company.logo">
+                        <img t-att-src="'data:image/png;base64,%s' % company.logo"
+                            style="height: 65px;"/>
+                    </t>
+                </div>
+            </div>
 
                 <!-- ===================== PAGE 1 ===================== -->
                 <t t-call="web.external_layout">
 <div class="page" style="page-break-after: always; padding-bottom:120px;">
                         <!-- Title -->
-                        <div class="offer-title">
+                        <div class="offer-title"
+                            style="text-align: center; font-weight: bold; font-size: 32px; color: #1e90ff;">
                             OFFER LETTER
                         </div>
-
                         <!-- Offer Release Date -->
-                        <p class="offer-meta">
+                        <t t-set="datetime" t-value="datetime"/>
+
+                        <p class="offer-meta" style="margin-top: 20px;">
                             <strong>Offer Release Date:</strong>
-                            <t t-esc="o.create_date.strftime('%b %d, %Y') if o.create_date else ''"/>
+                            <t t-esc="datetime.datetime.now().strftime('%b %d, %Y')"/>
                         </p>
 
                         <!-- Candidate Details -->
-                        <p class="offer-meta">
-                            <t t-esc="o.partner_name"/><br/>
-                            <t t-esc="o.partner_id.city if o.partner_id else ''"/>
-                        </p>
+                      <table style="width: 100%;">
+                            <tr>
+                                <!-- LEFT: Candidate Details -->
+                                <td style="text-align: left; vertical-align: top;">
+                                    <t t-esc="o.partner_name"/><br/>
+                                    <t t-esc="o.full_address"/>
+                                </td>
 
-                        <!-- Document ID -->
-                        <p class="doc-id">
-                            <strong>Document ID - </strong>
-                            <t t-esc="o.id"/>
-                        </p>
+                                <!-- RIGHT: Document ID -->
+                                <td style="text-align: right; vertical-align: top;">
+                                    <strong>Document ID - </strong>
+                                    <t t-esc="o.offer_letter_id"/>
+                                </td>
+                            </tr>
+                        </table>
 
                         <!-- Greeting -->
-                        <p>
+                       <p style="margin-top: 20px;">
                             Dear <strong><t t-esc="o.partner_name"/></strong>,
                         </p>
-
                         <!-- Paragraph 1 -->
                         <p>
                             Congratulations! With reference to your application and subsequent interview with us for a
@@ -108,6 +133,8 @@
                             </span>” or “Company”) we are pleased to inform you that you have been selected for
                             employment in our organization as
                             <strong><t t-esc="o.job_id.name"/></strong>.
+                            You will be reporting directly to
+                            <strong><t t-esc="o.reporting_manager_id.name"/></strong>.
                         </p>
 
                         <!-- Paragraph 2 -->
@@ -704,7 +731,7 @@
                         </p>
 
                         <p>
-                            1. <strong>Location:</strong> Your joining location will be ________.
+                            1. <strong>Location:</strong> Your joining location will be <t t-esc="o.location_ids.name"/>.
                         </p>
 
                         <p>
@@ -1922,6 +1949,8 @@
                             <strong>Pallavi Paliwal</strong>
                             <br/>
                             <span style="font-weight:bold;">Chief People Officer</span>
+                            <br/>
+                             Signature: ________________________
                         </p>
 
                         <!-- CLOSING NOTE -->
@@ -1936,15 +1965,15 @@
 <!--                            <strong>Accepted By:</strong>-->
 <!--                        </p>-->
 
-                        <p style="margin-top:30px;">
+                        <!-- <p style="margin-top:30px;"> -->
 <!--                            Name: ___________________________-->
 <!--                            <br/>-->
 <!--                            <br/>-->
-                            Signature: ________________________
+                            <!-- Signature: ________________________ -->
 <!--                            <br/>-->
 <!--                            <br/>-->
 <!--                            Date: ____________________________-->
-                        </p>
+                        <!-- </p> -->
 
                     </div>
                 </t>
