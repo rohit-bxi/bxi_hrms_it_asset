@@ -48,6 +48,7 @@ class ApplicantCreation(http.Controller):
             email = kwargs.get('email_from')
             phone = kwargs.get('partner_phone')
             job_id = kwargs.get('job_id')
+            cover_letter=kwargs.get('cover_letter')
 
             resume_file = kwargs.get('resume_file')
 
@@ -65,6 +66,7 @@ class ApplicantCreation(http.Controller):
                 'email_from': email,
                 'partner_phone': phone,
                 'job_id': job_id,
+                'cover_letter': cover_letter
             }
 
             # -----------------------------
