@@ -97,32 +97,39 @@ class CustomPLReport(models.Model):
             company_currency = inv.company_id.currency_id
             date = inv.invoice_date or fields.Date.today()
 
-            amount = target_currency.round(
-                company_currency._convert(
-                    inv.amount_total,
-                    target_currency,
-                    inv.company_id,
-                    date
-                )
-            )
+            amount = target_currency.round(inv.amount_total)
 
-            sp['billing'] += amount
-            cust['total_billing'] += amount
+            sp['billing'] = target_currency.round(sp['billing'] + amount)
+            cust['total_billing'] = target_currency.round(cust['total_billing'] + amount)
 
             if q:
-                sp['quarters_actual'][q] += amount
-                cust['quarters_actual'][q] += amount
-
-                sp['quarters_projected'][q] += 0
-                cust['quarters_projected'][q] += 0
+                sp['quarters_actual'][q] = target_currency.round(
+                    sp['quarters_actual'][q] + amount
+                )
+                cust['quarters_actual'][q] = target_currency.round(
+                    cust['quarters_actual'][q] + amount
+                )
 
         result = []
 
         for cust_name, cust_data in customers.items():
 
+            cust_data['total_billing'] = target_currency.round(cust_data['total_billing'])
+
+            for q in cust_data['quarters_actual']:
+                cust_data['quarters_actual'][q] = target_currency.round(
+                    cust_data['quarters_actual'][q]
+                )
+
             salespersons = []
             for sp in cust_data['salespersons'].values():
                 sp['booking'] = 0
+                sp['billing'] = target_currency.round(sp['billing'])
+
+                for q in sp['quarters_actual']:
+                    sp['quarters_actual'][q] = target_currency.round(
+                        sp['quarters_actual'][q]
+                    )
                 salespersons.append(sp)
 
             result.append({
