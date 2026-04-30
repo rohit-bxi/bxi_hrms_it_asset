@@ -34,7 +34,7 @@ class PLReportWizard(models.TransientModel):
             'context': {
                 'financial_year': self.financial_year,
                 'company_ids': self.company_ids.ids,
-                'currency': self.currency_id.id,
+                'currency_id': self.currency_id.id,
                 'currency_symbol': self.currency_id.symbol,
             }
         }
