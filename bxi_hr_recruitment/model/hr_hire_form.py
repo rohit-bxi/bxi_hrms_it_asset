@@ -1,12 +1,13 @@
 import base64
 import hashlib
-from odoo import fields, models
+from odoo import fields, models, _
 from odoo import api
 from odoo.exceptions import UserError
 import json
 import logging
 import requests
 from odoo.exceptions import UserError
+import uuid
 
 
 _logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ class HrHire(models.Model):
         string="Resume",
         attachment=True
     )
-
+    cover_letter = fields.Text(String="Cover Letter")
     resume_filename = fields.Char(
         string="File Name"
     )
@@ -46,7 +47,7 @@ class HrHire(models.Model):
     contact_number = fields.Char("Contact Number")
     aadhar_number = fields.Char("Aadhar Number")
     pan_number = fields.Char("PAN Number")
-    full_address = fields.Text("Full Address")
+    full_address = fields.Char("Full Address")
     joining_date = fields.Date(string="Joining Date")
 
     # Documents
@@ -155,6 +156,38 @@ class HrHire(models.Model):
     # Final CTC
     ctc_total = fields.Float(compute="_compute_salary", store=True, tracking=True)
 
+    location_ids = fields.Many2one(
+        'hr.location',
+        string="Job Location"
+    )
+    offer_letter_id = fields.Char(
+        string="Document ID",
+        readonly=True,
+        copy=False
+    )
+    def _generate_offer_letter_id(self):
+        BASE = "66c277d4-e4a-42fb-8a41-10488f7d59b67"
+        self.env.cr.execute("""
+            SELECT offer_letter_id
+            FROM hr_applicant
+            WHERE offer_letter_id IS NOT NULL
+            ORDER BY id DESC
+            LIMIT 1
+            FOR UPDATE
+        """)
+        row = self.env.cr.fetchone()
+
+        if not row or not row[0]:
+            return BASE
+
+        last_id = row[0]
+        parts = last_id.split('-')
+        last_hex = parts[-1]
+        new_int = int(last_hex, 16) + 1
+        new_hex = format(new_int, 'x').zfill(len(last_hex))
+        parts[-1] = new_hex
+        return '-'.join(parts)
+
     def create_attachment(self, name, data, res_model, res_id):
         if not data:
             return False
@@ -191,74 +224,29 @@ class HrHire(models.Model):
     # ---------------------------------------------------------
     def action_generate_offer_letter(self):
         self.ensure_one()
+        for rec in self:
+            if not rec.offer_letter_id:
+                rec.offer_letter_id = rec._generate_offer_letter_id()
 
         if not self.partner_name:
-            raise UserError(_("Please enter Full Name."))
+            raise UserError("Please enter Full Name.")
 
         report = self.env.ref('bxi_hr_recruitment.action_report_offer_letter')
-        pdf_content, dummy = report._render_qweb_pdf(report.id, res_ids=[self.id])
+
+        pdf_content, _ = report._render_qweb_pdf(
+            'bxi_hr_recruitment.action_report_offer_letter',
+            res_ids=[self.id]
+        )
 
         attachment = self.env['ir.attachment'].create({
             'name': f'Offer Letter - {self.partner_name}.pdf',
-            'type': 'binary',
             'datas': base64.b64encode(pdf_content),
             'res_model': self._name,
             'res_id': self.id,
             'mimetype': 'application/pdf',
         })
 
-        self.write({
-            'offer_letter_attachment_id': attachment.id
-        })
-
-        # =========================================================
-        # SIGN FLOW
-        # =========================================================
-
-        reporting_user = self.reporting_manager_id
-        if not reporting_user or not reporting_user.partner_id:
-            raise UserError(_("Please select Reporting Manager with valid partner"))
-
-        sign_template = self.env['sign.template'].search([], limit=1)
-        if not sign_template:
-            raise UserError(_("Please create a Sign Template first"))
-
-        if not sign_template.sign_item_ids:
-            raise UserError(_("Please configure roles in Sign Template"))
-
-        role = sign_template.sign_item_ids[0].responsible_id
-        if not role:
-            raise UserError(_("No role found in Sign Template"))
-
-        # 🔥 FIX STARTS HERE
-        sign_template.write({'document_ids': [(5, 0, 0)]})
-
-        sign_document = self.env['sign.document'].sudo().create({
-            'template_id': sign_template.id,
-            'attachment_id': attachment.id,
-            'name': attachment.name,
-        })
-
-        sign_template.write({
-            'document_ids': [(4, sign_document.id)]
-        })
-        # 🔥 FIX ENDS HERE
-
-        sign_request = self.env['sign.request'].sudo().create({
-            'template_id': sign_template.id,
-            'reference': f'Offer Letter - {self.partner_name}',
-            'attachment_ids': [(6, 0, [attachment.id])],
-            'request_item_ids': [(0, 0, {
-                'partner_id': reporting_user.partner_id.id,
-                'role_id': role.id,
-            })]
-        })
-
-        sign_request.send_signature_accesses()  # ✅ correct method
-
-        self.write({
-            'sign_request_id': sign_request.id
-        })
+        self.offer_letter_attachment_id = attachment.id
 
         return {
             'type': 'ir.actions.act_url',
@@ -304,8 +292,10 @@ class HrHire(models.Model):
 
         report = self.env.ref('bxi_hr_recruitment.action_report_offer_letter')
 
-        pdf_content, _ = report._render_qweb_pdf(report.id, res_ids=[self.id])
-
+        pdf_content, _ = report._render_qweb_pdf(
+            'bxi_hr_recruitment.action_report_offer_letter',
+            res_ids=[self.id]
+        )
         attachment = self.env['ir.attachment'].create({
             'name': f'Offer Letter - {self.partner_name}.pdf',
             'type': 'binary',
