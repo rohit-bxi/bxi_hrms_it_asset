@@ -8,6 +8,7 @@
         <field name="arch" type="xml">
 
             <xpath expr="//field[@name='email_from']" position="after">
+                 <field name="cover_letter"/>
                 <field name="resume_file" filename="resume_filename"/>
             </xpath>
 
@@ -117,6 +118,7 @@
                             <field name="partner_name"/>
                             <field name="contact_number"/>
                             <field name="email_from"/>
+                            <field name="cover_letter"/>
                             <field name="resume_file" filename="resume_filename"/>
 
                         </group>
@@ -132,6 +134,7 @@
                     <!-- ADDRESS -->
                     <group string="Address and Joining">
                         <field name="full_address"/>
+                        <field name="location_ids"/>
                         <field name="joining_date"/>
                     </group>
 
