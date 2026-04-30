@@ -97,11 +97,13 @@ class CustomPLReport(models.Model):
             company_currency = inv.company_id.currency_id
             date = inv.invoice_date or fields.Date.today()
 
-            amount = company_currency._convert(
-                inv.amount_total,
-                target_currency,
-                inv.company_id,
-                date
+            amount = target_currency.round(
+                company_currency._convert(
+                    inv.amount_total,
+                    target_currency,
+                    inv.company_id,
+                    date
+                )
             )
 
             sp['billing'] += amount
