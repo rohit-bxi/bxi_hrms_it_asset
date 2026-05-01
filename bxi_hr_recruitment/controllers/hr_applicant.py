@@ -2,7 +2,7 @@ from odoo import http
 from odoo.http import request
 import base64
 import datetime
-
+import json
 
 
 class ApplicantCreation(http.Controller):
@@ -222,7 +222,7 @@ class ApplicantCreation(http.Controller):
                 "status": "error",
                 "message": str(e)
             }), headers=[('Content-Type', 'application/json')])
-            
+
 
     @http.route('/api/applicant/list', type='jsonrpc', auth='public', methods=['POST'], csrf=False)
     def applicant_list(self, job_id=None):
