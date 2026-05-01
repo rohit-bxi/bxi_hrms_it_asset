@@ -118,6 +118,8 @@ class ApplicantCreation(http.Controller):
 
             odoo_id = data.get('odoo_id')
 
+            print("ODOO ID +++++++++++++++++++++++", odoo_id)
+
             if not odoo_id:
                 return request.make_response(json.dumps({
                     "status": "error",
@@ -125,6 +127,8 @@ class ApplicantCreation(http.Controller):
                 }), headers=[('Content-Type', 'application/json')])
 
             applicant = request.env['hr.applicant'].sudo().browse(int(odoo_id))
+
+            print("applicant +++++++++++++++++++++++", applicant)
 
             if not applicant.exists():
                 return request.make_response(json.dumps({
@@ -162,6 +166,8 @@ class ApplicantCreation(http.Controller):
                 'salary_slips': 'salary_slip_id',
                 'photograph': 'photograph',
             }
+
+            print("file_field_map +++++++++++++++++++++++", file_field_map)
 
             update_vals = {}
 
