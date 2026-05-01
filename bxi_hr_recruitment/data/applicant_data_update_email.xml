@@ -10,7 +10,7 @@
         <p>Dear <b><t t-esc="object.partner_name"/></b>,</p>
 
         <p>
-            We are pleased to inform you that you have successfully completed the final round of the selection process.
+            We are pleased to inform you that you have successfully completed the selection process.
         </p>
 
         <p>
