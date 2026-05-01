@@ -116,6 +116,8 @@ class ApplicantCreation(http.Controller):
                 # fallback if fields sent directly
                 data = kwargs
 
+            print("DATA +++++++++++++++++++++++++++++++", data)
+
             odoo_id = data.get('odoo_id')
 
             print("ODOO ID +++++++++++++++++++++++", odoo_id)
