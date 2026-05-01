@@ -143,12 +143,12 @@
                />
     </div>
 
-    <div class="col-md-3">
+    <!-- <div class="col-md-3">
         <label>Non-Resident</label><br/>
         <input type="checkbox" name="is_non_resident"
                t-att-checked="employee.is_non_resident"
                />
-    </div>
+    </div> -->
 
     <div class="col-md-3">
         <label>Passport No</label>
