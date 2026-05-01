@@ -7,25 +7,43 @@
             <field name="email_from">hrsupport@bxitech.com</field>
 
             <field name="body_html"><![CDATA[
-                <p>Dear <b><t t-esc="object.partner_name"/></b>,</p>
+        <p>Dear <b><t t-esc="object.partner_name"/></b>,</p>
 
-                <p>Please complete your application form by clicking below:</p>
+        <p>
+            We are pleased to inform you that you have successfully completed the final round of the selection process.
+        </p>
 
-                <p>
-                    <a t-att-href="ctx.get('application_url')"
-                       style="background:#1f4e79;color:white;padding:10px 15px;text-decoration:none;border-radius:4px;">
-                       Fill Application Form
-                    </a>
-                </p>
+        <p>
+            As the next step, we require some documentation to proceed with your onboarding process. Kindly complete the application form and upload the required documents using the link below.
+        </p>
 
-                <p>If button doesn't work, use below link:</p>
+        <p>
+            Please ensure that all details and documents are submitted accurately at your earliest convenience to avoid any delays.
+        </p>
 
-                <p>
-                    <t t-esc="ctx.get('application_url')"/>
-                </p>
+        <p>
+            If you have any questions or face any issues while submitting the form, please feel free to contact us.
+        </p>
 
-                <p>Regards,<br/>HR Team</p>
-            ]]></field>
+        <p>
+            <a t-att-href="ctx.get('application_url')"
+            style="background-color:#1f4e79;color:#ffffff;padding:10px 15px;text-decoration:none;border-radius:4px;display:inline-block;">
+            Fill Application Form
+            </a>
+        </p>
+
+        <p>If the button does not work, you can use the link below:</p>
+
+        <p>
+            <t t-esc="ctx.get('application_url')"/>
+        </p>
+
+        <p>
+            We look forward to moving ahead with you.
+        </p>
+
+        <p>Regards,<br/>HR Team</p>
+    ]]></field>
         </record>
     </data>
 </odoo>
