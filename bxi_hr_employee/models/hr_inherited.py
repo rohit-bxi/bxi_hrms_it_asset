@@ -45,6 +45,7 @@ class HrEmployee(models.Model):
     )
     company_code = fields.Char(string="Company Code")
     employee_ctc = fields.Float(string="Employee Earning (Annual)")
+    date_of_joining = fields.Date(string="Date Of Joining")
 
     def get_employee_earning(self):
         for data in self:

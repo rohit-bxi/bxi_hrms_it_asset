@@ -142,19 +142,6 @@
             <strong><t t-esc="object.job_id.name"/></strong>.
         </p>
 
-        <p>
-            We are pleased to share your <b>official job offer</b>.
-        </p>
-
-        <ul>
-            <li>Job Role & Responsibilities</li>
-            <li>Salary Package</li>
-            <li>Company Policies</li>
-            <li>Joining Details</li>
-        </ul>
-
-        <p>Please review and confirm your acceptance.</p>
-
         <p>Best Regards,<br/>HR Team</p>
     ]]></field>
         </record>
