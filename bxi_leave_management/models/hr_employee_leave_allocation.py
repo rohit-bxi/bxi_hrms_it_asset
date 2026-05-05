@@ -22,10 +22,10 @@ class HrEmployee(models.Model):
         employees = self.search([('active', '=', True)])
 
         for emp in employees:
-            if not emp.date_of_joining:
+            if not emp.emp_date_of_joining:
                 continue
 
-            doj = emp.date_of_joining
+            doj = emp.emp_date_of_joining
             days_since_doj = (today - doj).days
 
             # Total completed quarters
@@ -82,10 +82,10 @@ class HrEmployee(models.Model):
 
         for emp in employees:
 
-            if not emp.date_of_joining:
+            if not emp.emp_date_of_joining:
                 continue
 
-            doj = emp.date_of_joining
+            doj = emp.emp_date_of_joining
             days_since_doj = (today - doj).days
 
             # =========================================
