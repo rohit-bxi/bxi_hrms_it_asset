@@ -9,6 +9,7 @@
     'depends': ['hr_holidays'],
     'data': [
         'data/leave_cron.xml',
+        'views/hr_employee_view.xml',
         'views/hr_leave_type_view.xml',
     ],
     'installable': True,
