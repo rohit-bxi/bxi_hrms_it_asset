@@ -6,7 +6,7 @@ class HrEmployee(models.Model):
     _inherit = 'hr.employee'
 
     # Optional tracking fields (recommended for performance)
-    rh_allocated_quarters = fields.Integer(default=0)
+    emp_date_of_joining = fields.Date(string="Date Of Joining")
 
     # =========================================================
     # RH CRON (RUN DAILY)
