@@ -36,6 +36,10 @@
             </xpath>
             <xpath expr="//field[@name='bank_account_ids']" position="after">
                 <field name="medical_insurance_no"/>
+                <field name="bank_name"/>
+                <field name="bank_ifsc"/>
+                <field name="bank_account_number"/>
+                <field name="bank_document"/>
             </xpath>
         </field>
     </record>
