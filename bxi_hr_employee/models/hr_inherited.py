@@ -18,7 +18,7 @@ class HrEmployee(models.Model):
     bank_ifsc = fields.Char(string="IFSC Code")
     bank_document = fields.Binary(string="Cancelled Cheque/Passbook Front Page")  
     bank_account_number = fields.Char(string="Bank Acoount Number")
-    bank_name = fields.Many2one('res.bank',string="Bank Name")
+    bank_name = fields.Char(string="Bank Name")
     nps_contribution = fields.Monetary(
         string="NPS Contribution",
         help="Employee NPS contribution amount",
