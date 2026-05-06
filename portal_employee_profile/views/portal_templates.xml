@@ -51,6 +51,12 @@
                                         t-att-value="employee.lang"
                                     />
                                 </div>
+                                <div class="col-md-6">
+                                        <label>Medical Insurance No</label>
+                                        <input name="medical_insurance_no" class="form-control"
+                                            t-att-value="employee.medical_insurance_no"
+                                        />
+                                    </div>
                             </div>
                             <h5 class="section-title mt-4">Professional Information</h5>
                             <div class="row g-3">
@@ -73,7 +79,7 @@
                                 <div class="col-md-6">
                                     <label>Role Band</label>
                                     <input name="role_band" class="form-control"
-                                        t-att-value="employee.role_band" />
+                                        t-att-value="employee.role_band" readonly="1"/>
                                 </div>
                                 <div class="col-md-6">
                                     <label>Department</label>
@@ -98,17 +104,10 @@
                             </div>
                             <h5 class="section-title mt-4">Bank Details</h5>
                             <div class="row g-3">
-                                <div class="col-md-4">
-                                    <label>Bank Account Number</label>
-                                    <select name="bank_name" class="form-control">
-                                        <option value="">Select Bank Name</option>
-                                        <t t-foreach="bank_name" t-as="b">
-                                            <option t-att-value="b.id"
-                                                t-att-selected="employee.bank_name and b.id == employee.bank_name.id">
-                                                <t t-esc="b.name" />
-                                            </option>
-                                        </t>
-                                    </select>
+                                <div class="col-md-6">
+                                    <label>Enter Bank Name</label>
+                                    <input name="bank_name" class="form-control"
+                                        t-att-value="employee.bank_name"/>
                                 </div>
                                 <div class="col-md-6">
                                     <label>Bank Account Number</label>
@@ -266,12 +265,6 @@
                                         <input name="l10n_in_pan" type="text" class="form-control"
                                             t-att-value="employee.l10n_in_pan"
                                             required="1"
-                                        />
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label>Medical Insurance No</label>
-                                        <input name="medical_insurance_no" class="form-control"
-                                            t-att-value="employee.medical_insurance_no"
                                         />
                                     </div>
                                 </div>

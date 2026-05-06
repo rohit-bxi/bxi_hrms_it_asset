@@ -12,14 +12,12 @@ class EmployeePortal(http.Controller):
     def employee_profile(self, **kw):
         employee = self._get_employee()
         countries = request.env['res.country'].sudo().search([])
-        bank_name = request.env['res.bank'].sudo().search([])
 
         return request.render(
             'portal_employee_profile.portal_employee_profile',
             {
                 'employee': employee,
                 'countries':countries,
-                'bank_name':bank_name
             }
         )
 
@@ -119,6 +117,9 @@ class EmployeePortal(http.Controller):
             vals['medical_insurance_no'] = post.get('medical_insurance_no')
         if post.get('bank_ifsc'):
             vals['bank_ifsc'] = post.get('bank_ifsc')
+        if post.get('bank_name'):
+            vals['bank_name'] = post.get('bank_name')
+
         if post.get('bank_account_number'):
             vals['bank_account_number'] = post.get('bank_account_number')
         
