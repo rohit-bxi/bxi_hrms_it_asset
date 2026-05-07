@@ -17,6 +17,7 @@
                 <field name="onsite_offshore"/>
                 <field name="emp_category"/>
                 <field name="emp_skill_category"/>
+                
             </xpath>
             <xpath expr="//field[@name='resource_calendar_id']" position="after">
                 <label for="nps_contribution"/>
@@ -35,6 +36,10 @@
             </xpath>
             <xpath expr="//field[@name='bank_account_ids']" position="after">
                 <field name="medical_insurance_no"/>
+                <field name="bank_name"/>
+                <field name="bank_ifsc"/>
+                <field name="bank_account_number"/>
+                <field name="bank_document"/>
             </xpath>
         </field>
     </record>

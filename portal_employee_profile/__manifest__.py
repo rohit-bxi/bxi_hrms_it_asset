@@ -11,6 +11,8 @@
         'hr',
         'portal',
         'website',
+        'l10n_in_hr_payroll',
+        'bxi_hr_employee',
     ],
     'data': [
         'views/portal_menu.xml',
