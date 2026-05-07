@@ -15,6 +15,10 @@ class HrEmployee(models.Model):
     emp_skill_category = fields.Char(string="EMP Skill Category")
     manager_emp_code = fields.Char(string="Manager EMP Code")
     medical_insurance_no = fields.Char(string="Medical Insurance No.")
+    bank_ifsc = fields.Char(string="IFSC Code")
+    bank_document = fields.Binary(string="Cancelled Cheque/Passbook Front Page")  
+    bank_account_number = fields.Char(string="Bank Acoount Number")
+    bank_name = fields.Char(string="Bank Name")
     nps_contribution = fields.Monetary(
         string="NPS Contribution",
         help="Employee NPS contribution amount",
