@@ -141,11 +141,21 @@ class ProjectContract(models.Model):
         Stage = self.env['project.contract.stage']
         return Stage.search([], order=order or 'sequence, id')
 
-    @api.model
-    def create(self, vals):
-        if not vals.get('stage_id'):
-            vals['stage_id'] = self.env['project.contract.stage'].search([], limit=1).id
-        return super().create(vals)
+    @api.model_create_multi
+    def create(self, vals_list):
+
+        stage = self.env['project.contract.stage'].search(
+            [],
+            order='sequence asc',
+            limit=1
+        )
+
+        for vals in vals_list:
+
+            if not vals.get('stage_id') and stage:
+                vals['stage_id'] = stage.id
+
+        return super().create(vals_list)
 
     @api.depends('project_ids', 'client_ids')
     def _compute_counts(self):
