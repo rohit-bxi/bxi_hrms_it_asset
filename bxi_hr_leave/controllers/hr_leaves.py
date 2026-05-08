@@ -9,7 +9,7 @@ class HrLeaveAPI(http.Controller):
     def apply_leave(self, **data):
 
         employee_email = data.get('employee_email')
-        x_time_off_code = data.get('x_time_off_code')
+        time_off_code = data.get('time_off_code')
         date_from = data.get('date_from')
         date_to = data.get('date_to')
         reason = data.get('reason')
@@ -20,10 +20,10 @@ class HrLeaveAPI(http.Controller):
                 'error': 'employee_email is required'
             }
 
-        if not x_time_off_code:
+        if not time_off_code:
             return {
                 'status': 'failed',
-                'error': 'x_time_off_code is required'
+                'error': 'time_off_code is required'
             }
 
         if not date_from or not date_to:
@@ -61,7 +61,7 @@ class HrLeaveAPI(http.Controller):
                 'error': 'Employee not found'
             }
         leave_type = request.env['hr.leave.type'].sudo().search([
-            ('x_time_off_code', '=', x_time_off_code)
+            ('time_off_code', '=', time_off_code)
         ], limit=1)
 
         if not leave_type:
@@ -181,7 +181,7 @@ class HrLeaveAPI(http.Controller):
             remaining = allocated - used
             result.append({
                 "leave_type": leave_type.name,
-                "time_off_code": leave_type.x_time_off_code,
+                "time_off_code": leave_type.time_off_code,
                 "allocated": round(allocated, 2),
                 "used": round(used, 2),
                 "remaining": round(remaining, 2)
@@ -213,7 +213,7 @@ class HrLeaveAPI(http.Controller):
         for leave in leaves:
             result.append({
                 'leave_type': leave.holiday_status_id.name,
-                'time_off_code': leave.holiday_status_id.x_time_off_code,
+                'time_off_code': leave.holiday_status_id.time_off_code,
                 'date_from': str(leave.request_date_from) if leave.request_date_from else False,
                 'date_to': str(leave.request_date_to) if leave.request_date_to else False,
                 'days': abs(round(leave.number_of_days, 2)),
@@ -231,7 +231,7 @@ class HrLeaveAPI(http.Controller):
     @http.route('/api/leave/update',type='json',auth='public',methods=['POST'],csrf=False)
     def update_leave(self, **kwargs):
         employee_email = kwargs.get('employee_email')
-        x_time_off_code = kwargs.get('x_time_off_code')
+        time_off_code = kwargs.get('time_off_code')
 
         request_date_from = kwargs.get('request_date_from')
         request_date_to = kwargs.get('request_date_to')
@@ -247,10 +247,10 @@ class HrLeaveAPI(http.Controller):
                 "message": "employee_email is required"
             }
 
-        if not x_time_off_code:
+        if not time_off_code:
             return {
                 "status": "error",
-                "message": "x_time_off_code is required"
+                "message": "time_off_code is required"
             }
 
         if not request_date_from:
@@ -321,7 +321,7 @@ class HrLeaveAPI(http.Controller):
             }
 
         leave_type = request.env['hr.leave.type'].sudo().search([
-            ('x_time_off_code', '=', x_time_off_code)
+            ('time_off_code', '=', time_off_code)
         ], limit=1)
 
         if not leave_type:
@@ -425,7 +425,7 @@ class HrLeaveAPI(http.Controller):
             "employee_name": employee.name,
             "employee_email": employee.work_email,
             "leave_type": leave_type.name,
-            "x_time_off_code": leave_type.x_time_off_code,
+            "time_off_code": leave_type.time_off_code,
             "updated_request_date_from": str(leave.request_date_from),
             "updated_request_date_to": str(leave.request_date_to),
             "updated_date_from": str(leave.date_from),
@@ -438,7 +438,7 @@ class HrLeaveAPI(http.Controller):
     @http.route('/api/leave/action',type='json',auth='public',methods=['POST'],csrf=False)
     def leave_action(self, **kwargs):
         employee_email = kwargs.get('employee_email')
-        x_time_off_code = kwargs.get('x_time_off_code')
+        time_off_code = kwargs.get('time_off_code')
 
         request_date_from = kwargs.get('request_date_from')
         request_date_to = kwargs.get('request_date_to')
@@ -451,10 +451,10 @@ class HrLeaveAPI(http.Controller):
                 "message": "employee_email is required"
             }
 
-        if not x_time_off_code:
+        if not time_off_code:
             return {
                 "status": "error",
-                "message": "x_time_off_code is required"
+                "message": "time_off_code is required"
             }
 
         if not request_date_from:
@@ -505,7 +505,7 @@ class HrLeaveAPI(http.Controller):
             }
 
         leave_type = request.env['hr.leave.type'].sudo().search([
-            ('x_time_off_code', '=', x_time_off_code)
+            ('time_off_code', '=', time_off_code)
         ], limit=1)
 
         if not leave_type:
@@ -593,7 +593,7 @@ class HrLeaveAPI(http.Controller):
             "employee_name": leave.employee_id.name,
             "employee_email": leave.employee_id.work_email,
             "leave_type": leave.holiday_status_id.name,
-            "x_time_off_code": leave.holiday_status_id.x_time_off_code,
+            "time_off_code": leave.holiday_status_id.time_off_code,
             "request_date_from": str(leave.request_date_from),
             "request_date_to": str(leave.request_date_to),
             "state": leave.state,
