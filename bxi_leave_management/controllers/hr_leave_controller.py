@@ -7,104 +7,124 @@ class HrLeaveAPI(http.Controller):
 
     @http.route('/leave/apply',type='json',auth='public',methods=['POST'],csrf=False)
     def apply_leave(self, **data):
-
-        employee_email = data.get('employee_email')
-        time_off_code = data.get('time_off_code')
-        date_from = data.get('date_from')
-        date_to = data.get('date_to')
-        reason = data.get('reason')
-
-        if not employee_email:
-            return {
-                'status': 'failed',
-                'error': 'employee_email is required'
-            }
-
-        if not time_off_code:
-            return {
-                'status': 'failed',
-                'error': 'time_off_code is required'
-            }
-
-        if not date_from or not date_to:
-            return {
-                'status': 'failed',
-                'error': 'date_from and date_to are required'
-            }
-
         try:
+            employee_email = data.get('employee_email')
+            time_off_code = data.get('time_off_code')
+            date_from = data.get('date_from')
+            date_to = data.get('date_to')
+            reason = data.get('reason')
+            if not employee_email:
+                return {
+                    'status': 'failed',
+                    'error': 'employee_email is required'
+                }
+            if not time_off_code:
+                return {
+                    'status': 'failed',
+                    'error': 'time_off_code is required'
+                }
+            if not date_from:
+                return {
+                    'status': 'failed',
+                    'error': 'date_from is required'
+                }
+            if not date_to:
+                return {
+                    'status': 'failed',
+                    'error': 'date_to is required'
+                }
+            try:
+                request_date_from = datetime.strptime(
+                    date_from,
+                    '%Y-%m-%d'
+                ).date()
 
-            request_date_from = datetime.strptime(
-                date_from,
-                '%Y-%m-%d'
-            ).date()
+                request_date_to = datetime.strptime(
+                    date_to,
+                    '%Y-%m-%d'
+                ).date()
 
-            request_date_to = datetime.strptime(
-                date_to,
-                '%Y-%m-%d'
-            ).date()
-
-        except Exception as e:
-
-            return {
-                'status': 'failed',
-                'error': str(e)
-            }
-        employee = request.env['hr.employee'].sudo().search([
-            ('work_email', '=', employee_email)
-        ], limit=1)
-
-        if not employee:
-
-            return {
-                'status': 'failed',
-                'error': 'Employee not found'
-            }
-        leave_type = request.env['hr.leave.type'].sudo().search([
-            ('time_off_code', '=', time_off_code)
-        ], limit=1)
-
-        if not leave_type:
-
-            return {
-                'status': 'failed',
-                'error': 'Invalid leave type'
-            }
-        overlap_leave = request.env['hr.leave'].sudo().search([
-            ('employee_id', '=', employee.id),
-            ('state', 'not in', ['cancel', 'refuse']),
-            ('request_date_from', '<=', request_date_to),
-            ('request_date_to', '>=', request_date_from),
-        ], limit=1)
-
-        if overlap_leave:
-
-            return {
-                'status': 'failed',
-                'error': (
-                    f'Overlapping leave exists from '
-                    f'{overlap_leave.request_date_from} '
-                    f'to '
-                    f'{overlap_leave.request_date_to}'
-                )
-            }
-        datetime_from = datetime.combine(
-            request_date_from,
-            time.min
-        )
-
-        datetime_to = datetime.combine(
-            request_date_to,
-            time.max
-        )
-
-        try:
-            leave = request.env['hr.leave'].sudo().with_context(
-                leave_skip_state_check=True,
-                tracking_disable=True,
-                mail_create_nosubscribe=True,
-                mail_notrack=True,
-            ).create({
+            except Exception:
+                return {
+                    'status': 'failed',
+                    'error': 'Invalid date format. Use YYYY-MM-DD'
+                }
+            if request_date_from > request_date_to:
+                return {
+                    'status': 'failed',
+                    'error': 'date_to cannot be before date_from'
+                }
+            employee = request.env[
+                'hr.employee'
+            ].sudo().search([
+                ('work_email', '=', employee_email)
+            ], limit=1)
+            if not employee:
+                return {
+                    'status': 'failed',
+                    'error': 'Employee not found'
+                }
+            if not employee.resource_calendar_id:
+                return {
+                    'status': 'failed',
+                    'error': (
+                        'Employee working schedule is not configured'
+                    )
+                }
+            leave_type = request.env[
+                'hr.leave.type'
+            ].sudo().search([
+                ('time_off_code', '=', time_off_code)
+            ], limit=1)
+            if not leave_type:
+                return {
+                    'status': 'failed',
+                    'error': 'Invalid leave type'
+                }
+            overlap_leave = request.env[
+                'hr.leave'
+            ].sudo().search([
+                ('employee_id', '=', employee.id),
+                ('state', 'not in', ['cancel', 'refuse']),
+                ('request_date_from', '<=', request_date_to),
+                ('request_date_to', '>=', request_date_from),
+            ], limit=1)
+            if overlap_leave:
+                return {
+                    'status': 'failed',
+                    'error': (
+                        f'Overlapping leave already exists '
+                        f'from {overlap_leave.request_date_from} '
+                        f'to {overlap_leave.request_date_to}'
+                    )
+                }
+            remaining_leaves = leave_type.with_context(
+                employee_id=employee.id
+            ).virtual_remaining_leaves
+            requested_days = (
+                request_date_to - request_date_from
+            ).days + 1
+            if (
+                not leave_type.allows_negative
+                and requested_days > remaining_leaves
+            ):
+                return {
+                    'status': 'failed',
+                    'error': (
+                        f'Insufficient leave balance. '
+                        f'Available: {remaining_leaves} day(s), '
+                        f'Requested: {requested_days} day(s)'
+                    )
+                }
+            datetime_from = datetime.combine(
+                request_date_from,
+                time(9, 0, 0)
+            )
+            datetime_to = datetime.combine(
+                request_date_to,
+                time(18, 0, 0)
+            )
+            leave_vals = {
                 'employee_id': employee.id,
                 'holiday_status_id': leave_type.id,
                 'request_date_from': request_date_from,
@@ -112,31 +132,41 @@ class HrLeaveAPI(http.Controller):
                 'date_from': datetime_from,
                 'date_to': datetime_to,
                 'name': reason or 'Leave Request',
-                'private_name': reason or 'Leave Request',
-            })
-            request.env.cr.execute("""
-                UPDATE hr_leave
-                SET state = 'confirm'
-                WHERE id = %s
-            """, (leave.id,))
-
-            request.env.cr.commit()
-            leave.invalidate_recordset()
-            leave = request.env['hr.leave'].sudo().browse(leave.id)
+            }
+            leave = request.env[
+                'hr.leave'
+            ].sudo().create(leave_vals)
+            if hasattr(leave, 'action_submit'):
+                leave.action_submit()
+            elif hasattr(leave, 'action_confirm'):
+                leave.action_confirm()
+            try:
+                if hasattr(leave, 'action_approve'):
+                    leave.action_approve()
+                elif hasattr(leave, 'action_validate'):
+                    leave.action_validate()
+            except Exception:
+                pass
             return {
                 'status': 'success',
                 'message': 'Leave applied successfully',
-                'leave_id': leave.id,
                 'employee': employee.name,
                 'employee_email': employee.work_email,
                 'leave_type': leave_type.name,
-                'request_date_from': str(leave.request_date_from),
-                'request_date_to': str(leave.request_date_to),
-                'state': leave.state,
+                'request_date_from': str(
+                    leave.request_date_from
+                ),
+                'request_date_to': str(
+                    leave.request_date_to
+                ),
                 'number_of_days': leave.number_of_days,
-                'reason': leave.private_name
+                'reason': leave.name
             }
+
         except Exception as e:
+
+            request.env.cr.rollback()
+
             return {
                 'status': 'failed',
                 'error': str(e)
