@@ -1,7 +1,6 @@
 from odoo import http
 from odoo.http import request
 from odoo.exceptions import AccessError
-import base64
 
 
 
@@ -12,15 +11,18 @@ class EmployeePortalExpense(http.Controller):
         user = request.env.user
         Expense = request.env['hr.expense'].sudo()
 
-        employee = request.env['hr.employee'].sudo().search([
-            ('user_id', '=', user.id)
-        ], limit=1)
+        if user.has_group('base.group_user'):
+            expenses = Expense.search([])
+        else:
+            employee = request.env['hr.employee'].sudo().search([
+                ('user_id', '=', user.id)
+            ], limit=1)
 
-        expenses = []
-        if employee:
-            expenses = Expense.search([
-                ('employee_id', '=', employee.id)
-            ])
+            expenses = []
+            if employee:
+                expenses = Expense.search([
+                    ('employee_id', '=', employee.id)
+                ])
         values = {
             'expenses': expenses,
         }
@@ -45,13 +47,11 @@ class EmployeePortalExpense(http.Controller):
 
         # Handle form submission (POST)
         form = request.httprequest.form
-        files = request.httprequest.files.getlist('receipt[]')
 
         names = form.getlist('name[]')
         product_ids = form.getlist('product_id[]')
         dates = form.getlist('date[]')
-        amounts = form.getlist('total_amount[]')
-        # amounts = form.getlist('amount[]')
+        amounts = form.getlist('amount[]')
 
         for name, product, date, amount in zip(names, product_ids, dates, amounts):
 
@@ -64,41 +64,13 @@ class EmployeePortalExpense(http.Controller):
                 'name': name,
                 'date': date,
                 'product_id': product_id,
-                # 'total_amount': float(amount or 0),
-                'total_amount': float(amount) if amount else 0.0,
+                'total_amount': float(amount or 0),
                 'employee_id': employee.id,
-            })
-            # (SAVE MULTIPLE FILES)
-            for file in files:
-                if file and file.filename:
-                    file_content = file.read()
-                    if file_content:
-                        request.env['ir.attachment'].sudo().create({
-                            'name': file.filename,
-                            'datas': base64.b64encode(file_content),
-                            'res_model': 'hr.expense',
-                            'res_id': expense.id,
-                            'mimetype': file.mimetype,
-                        })
+            })  
             
             if expense:
                 expense.state = 'hr_approval'
+                
+            expense._send_state_email()  
 
         return request.redirect('/my/employee-expenses')
-
-
-    @http.route(
-        '/payment/callback',
-        type='http',
-        auth='public',
-        methods=['POST'],
-        csrf=False
-    )
-    def payment_callback(self, **post):
-        # bank sends response here
-        reference = post.get('reference')
-        status = post.get('status')
-
-        # update payment transaction here
-
-        return "OK"
