@@ -38,6 +38,11 @@ class HelpdeskTicket(models.Model):
         string='Additional Resolution Owner'
     )
 
+    assigned_resolved_by = fields.Many2one(
+        'hr.employee',
+        string='Assigned To/Resolved By'
+    )
+
     def _get_team_alias_email(self):
         self.ensure_one()
         alias = self.team_id.alias_id
