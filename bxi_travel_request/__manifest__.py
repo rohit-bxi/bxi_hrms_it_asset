@@ -20,6 +20,7 @@
     ],
     'data': [
         'security/ir.model.access.csv',
+        'security/record_rules.xml',
         'data/sequence.xml',
         'data/mail_template.xml',
         'views/travel_request_views.xml',
