@@ -5,7 +5,15 @@
     'version': '19.0.1.0.0',
     'sequence': 1,
     'author': 'BXI',
-    'depends': ['base'],
+    'depends': [
+        'hr_payroll',
+        'hr'
+    ],
+    'data': [
+        'security/ir.model.access.csv',
+        'views/payslip_view.xml',
+        'views/wizard.xml',
+    ],
     'summary': 'Bank Integration ICICI',
     'description': 'Bank Integration ICICI',
     'installable': True,
