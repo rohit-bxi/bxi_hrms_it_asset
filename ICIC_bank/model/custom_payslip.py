@@ -1,6 +1,5 @@
-from odoo import models, fields, api
+from odoo import models, fields
 from odoo.exceptions import ValidationError
-from Crypto.Util.Padding import unpad
 
 import os
 import json
@@ -12,7 +11,7 @@ import requests
 
 from Crypto.Cipher import AES, PKCS1_v1_5
 from Crypto.PublicKey import RSA
-from Crypto.Util.Padding import pad
+from Crypto.Util.Padding import pad, unpad
 
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
@@ -38,11 +37,15 @@ class HrPayslip(models.Model):
     icici_file_seq_num = fields.Char()
 
     def random_16(self):
+
         return ''.join(
-            random.choices(string.digits, k=16)
+            random.choices(
+                string.digits,
+                k=16
+            )
         )
 
-    def get_rsa_key(self):
+    def get_icici_public_key(self):
 
         module_path = os.path.dirname(
             os.path.dirname(__file__)
@@ -54,9 +57,12 @@ class HrPayslip(models.Model):
         )
 
         with open(cert_path, 'rb') as f:
+
             cert_data = f.read()
 
-        cert = x509.load_pem_x509_certificate(cert_data)
+        cert = x509.load_pem_x509_certificate(
+            cert_data
+        )
 
         public_key = cert.public_key()
 
@@ -65,19 +71,19 @@ class HrPayslip(models.Model):
             format=serialization.PublicFormat.SubjectPublicKeyInfo
         )
 
-        rsa_key = RSA.import_key(pem)
-
-        return rsa_key
+        return RSA.import_key(pem)
 
     def encrypt_payload(self, payload):
 
-        rsa_key = self.get_rsa_key()
+        rsa_key = self.get_icici_public_key()
 
         json_data = json.dumps(payload)
 
         randomno1 = self.random_16()
 
-        cipher_rsa = PKCS1_v1_5.new(rsa_key)
+        cipher_rsa = PKCS1_v1_5.new(
+            rsa_key
+        )
 
         encrypted_key = cipher_rsa.encrypt(
             randomno1.encode()
@@ -87,6 +93,7 @@ class HrPayslip(models.Model):
             encrypted_key
         ).decode()
 
+        # RANDOM IV
         randomno2 = self.random_16()
 
         data = randomno2 + json_data
@@ -98,16 +105,25 @@ class HrPayslip(models.Model):
         )
 
         encrypted_data = cipher_aes.encrypt(
-            pad(data.encode(), AES.block_size)
+            pad(
+                data.encode(),
+                AES.block_size
+            )
+        )
+
+        # PREPEND IV
+        final_encrypted_data = (
+            randomno2.encode() +
+            encrypted_data
         )
 
         encr_data_b64 = base64.b64encode(
-            encrypted_data
+            final_encrypted_data
         ).decode()
 
-        request_payload = {
+        return {
             'requestId': '',
-            'service': '',
+            'service': 'CIB',
             'encryptedKey': encr_key_b64,
             'oaepHashingAlgorithm': 'NONE',
             'iv': '',
@@ -115,8 +131,6 @@ class HrPayslip(models.Model):
             'clientInfo': '',
             'optionalParam': ''
         }
-
-        return request_payload
 
     def call_icici_api(
         self,
@@ -153,7 +167,9 @@ class HrPayslip(models.Model):
 
             response_json = response.json()
 
-            decrypted_response = self.decrypt_response(response_json)
+            decrypted_response = self.decrypt_response(
+                response_json
+            )
 
             _logger.info(
                 'ICICI DECRYPTED RESPONSE: %s',
@@ -181,13 +197,15 @@ class HrPayslip(models.Model):
         self.ensure_one()
 
         if self.icici_payment_status == 'paid':
+
             raise ValidationError(
                 'Salary already released.'
             )
-        
-        if self.state != 'validated':
+
+        if self.state != 'done':
+
             raise ValidationError(
-                'Payslip must be confirmed before release salary.'
+                'Payslip must be confirmed.'
             )
 
         employee = self.employee_id
@@ -195,6 +213,7 @@ class HrPayslip(models.Model):
         bank_account_rec = employee.bank_account_ids[:1]
 
         if not bank_account_rec:
+
             raise ValidationError(
                 'Employee bank account missing.'
             )
@@ -202,6 +221,7 @@ class HrPayslip(models.Model):
         bank_account = bank_account_rec.acc_number
 
         if not bank_account:
+
             raise ValidationError(
                 'Employee bank account missing.'
             )
@@ -209,6 +229,7 @@ class HrPayslip(models.Model):
         amount = self.net_wage
 
         if amount <= 0:
+
             raise ValidationError(
                 'Invalid salary amount.'
             )
@@ -232,9 +253,13 @@ class HrPayslip(models.Model):
             payload
         )
 
-        self.icici_response = result.get('response')
+        self.icici_response = result.get(
+            'response'
+        )
 
-        self.icici_payment_status = 'otp_pending'
+        self.icici_payment_status = (
+            'otp_pending'
+        )
 
         return {
             'type': 'ir.actions.act_window',
@@ -246,7 +271,6 @@ class HrPayslip(models.Model):
                 'default_payslip_id': self.id,
             }
         }
-    
 
     def decrypt_response(self, response_data):
 
@@ -275,8 +299,10 @@ class HrPayslip(models.Model):
                     f.read()
                 )
 
-            encrypted_key_bytes = base64.b64decode(
-                encrypted_key
+            encrypted_key_bytes = (
+                base64.b64decode(
+                    encrypted_key
+                )
             )
 
             _logger.info(
@@ -299,18 +325,17 @@ class HrPayslip(models.Model):
                     'AES key decryption failed'
                 )
 
-            _logger.info(
-                'AES KEY LENGTH: %s',
-                len(aes_key)
-            )
-
-            encrypted_data_bytes = base64.b64decode(
-                encrypted_data
+            encrypted_data_bytes = (
+                base64.b64decode(
+                    encrypted_data
+                )
             )
 
             iv = encrypted_data_bytes[:16]
 
-            encrypted_payload = encrypted_data_bytes[16:]
+            encrypted_payload = (
+                encrypted_data_bytes[16:]
+            )
 
             cipher_aes = AES.new(
                 aes_key,
@@ -330,7 +355,8 @@ class HrPayslip(models.Model):
             final_response = decrypted[16:]
 
             return final_response.decode(
-                'utf-8'
+                'utf-8',
+                errors='ignore'
             )
 
         except Exception as e:
