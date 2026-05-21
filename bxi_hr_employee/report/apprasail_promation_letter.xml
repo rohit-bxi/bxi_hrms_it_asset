@@ -1,0 +1,116 @@
+<odoo>
+
+    <template id="report_appraisal_letter_template">
+
+        <t t-foreach="docs" t-as="o">
+
+            <div class="page"
+                 style="padding:40px;
+                        font-size:14px;">
+
+                <div style="text-align:center;">
+
+                    <h2>
+                        Appraisal and Promotion Letter
+                    </h2>
+
+                </div>
+
+                <br/>
+
+                <table style="width:100%;">
+
+                    <tr>
+                        <td>
+                            <strong>Release Date:</strong>
+                            <span t-esc="o.release_date"/>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>
+                            <strong>Employee Name:</strong>
+                            <span t-esc="o.employee_id.name"/>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>
+                            <strong>Employee Code:</strong>
+                            <span t-esc="o.employee_code"/>
+                        </td>
+                    </tr>
+
+                </table>
+
+                <br/>
+                <br/>
+
+                <p>
+                    Dear
+                    <strong>
+                        <span t-esc="o.employee_id.name"/>
+                    </strong>,
+                </p>
+
+                <p>
+                    Congratulations!
+                </p>
+
+                <p style="text-align:justify;">
+
+                    We are pleased to inform you that your
+                    salary structure has been revised with
+                    effect from
+
+                    <strong>
+                        <span t-esc="o.effective_date"/>
+                    </strong>.
+
+                </p>
+
+                <p style="text-align:justify;">
+
+                    Additionally, you are promoted to
+
+                    <strong>
+                        <span t-esc="o.promotion_job_id.name"/>
+                    </strong>.
+
+                </p>
+
+                <br/>
+                <br/>
+
+                <table style="width:100%;">
+
+                    <tr>
+
+                        <td style="width:50%;">
+
+                            <strong>
+                                HR Department
+                            </strong>
+
+                        </td>
+
+                        <td style="width:50%;
+                                   text-align:right;">
+
+                            <strong>
+                                Employee Signature
+                            </strong>
+
+                        </td>
+
+                    </tr>
+
+                </table>
+
+            </div>
+
+        </t>
+
+    </template>
+
+</odoo>

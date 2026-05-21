@@ -151,3 +151,26 @@ class HrEmployee(models.Model):
         self.get_employee_earning()
         for emp in self:
             emp.l10n_in_tds = emp._compute_monthly_tds_new_regime(emp.employee_ctc)
+
+    def action_open_appraisal(self):
+        self.ensure_one()
+        appraisal = self.env[
+            'hr.employee.appraisal'
+        ].search([
+            ('employee_id', '=', self.id)
+        ], limit=1)
+        if not appraisal:
+            appraisal = self.env[
+                'hr.employee.appraisal'
+            ].create({
+                'employee_id': self.id,
+            })
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Appraisal',
+            'res_model': 'hr.employee.appraisal',
+            'view_mode': 'form',
+            'res_id': appraisal.id,
+            'target': 'current',
+        }
+    

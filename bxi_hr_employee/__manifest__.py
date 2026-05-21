@@ -9,7 +9,11 @@
     'description': 'Employee View Modification',
     'depends': ['hr'],
     'data': [
+        'security/ir.model.access.csv',
         'views/hr_employee_view.xml',
+        'views/hr_apprsail.xml',
+        'report/report.xml',
+        'report/apprasail_promation_letter.xml'
     ],
     'installable': True,
     'application': False,
