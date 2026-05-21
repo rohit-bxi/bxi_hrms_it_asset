@@ -153,10 +153,7 @@ class HrPayslip(models.Model):
 
             response_json = response.json()
 
-            decrypted_response = self.decrypt_response(
-                response_json.get('encryptedKey'),
-                response_json.get('encryptedData')
-            )
+            decrypted_response = self.decrypt_response(response_json)
 
             _logger.info(
                 'ICICI DECRYPTED RESPONSE: %s',
@@ -250,13 +247,18 @@ class HrPayslip(models.Model):
             }
         }
     
-    def decrypt_response(
-        self,
-        encrypted_key,
-        encrypted_data
-    ):
+
+    def decrypt_response(self, response_data):
 
         try:
+
+            encrypted_key = response_data.get(
+                'encryptedKey'
+            )
+
+            encrypted_data = response_data.get(
+                'encryptedData'
+            )
 
             module_path = os.path.dirname(
                 os.path.dirname(__file__)
@@ -273,22 +275,40 @@ class HrPayslip(models.Model):
                     f.read()
                 )
 
+            encrypted_key_bytes = base64.b64decode(
+                encrypted_key
+            )
+
+            _logger.info(
+                "Encrypted key length: %s",
+                len(encrypted_key_bytes)
+            )
+
             cipher_rsa = PKCS1_v1_5.new(
                 private_key
             )
 
             aes_key = cipher_rsa.decrypt(
-                base64.b64decode(encrypted_key),
+                encrypted_key_bytes,
                 None
             )
 
-            encrypted_bytes = base64.b64decode(
+            if not aes_key:
+
+                raise ValidationError(
+                    'AES key decryption failed'
+                )
+
+            _logger.info(
+                "AES KEY: %s",
+                aes_key
+            )
+
+            encrypted_data_bytes = base64.b64decode(
                 encrypted_data
             )
 
-            iv = encrypted_bytes[:16]
-
-            encrypted_payload = encrypted_bytes[16:]
+            iv = aes_key
 
             cipher_aes = AES.new(
                 aes_key,
@@ -297,7 +317,7 @@ class HrPayslip(models.Model):
             )
 
             decrypted = cipher_aes.decrypt(
-                encrypted_payload
+                encrypted_data_bytes
             )
 
             decrypted = unpad(
@@ -305,9 +325,17 @@ class HrPayslip(models.Model):
                 AES.block_size
             )
 
-            final_data = decrypted[16:]
+            final_response = decrypted.decode(
+                'utf-8'
+            )
 
-            return final_data.decode()
+
+            _logger.info(
+                'ICICI FINAL RESPONSE: %s',
+                final_response
+            )
+
+            return final_response
 
         except Exception as e:
 
