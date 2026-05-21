@@ -280,7 +280,7 @@ class HrPayslip(models.Model):
             )
 
             _logger.info(
-                "Encrypted key length: %s",
+                'Encrypted key length: %s',
                 len(encrypted_key_bytes)
             )
 
@@ -290,25 +290,27 @@ class HrPayslip(models.Model):
 
             aes_key = cipher_rsa.decrypt(
                 encrypted_key_bytes,
-                None
+                b'ERROR'
             )
 
-            if not aes_key:
+            if aes_key == b'ERROR':
 
                 raise ValidationError(
                     'AES key decryption failed'
                 )
 
             _logger.info(
-                "AES KEY: %s",
-                aes_key
+                'AES KEY LENGTH: %s',
+                len(aes_key)
             )
 
             encrypted_data_bytes = base64.b64decode(
                 encrypted_data
             )
 
-            iv = aes_key
+            iv = encrypted_data_bytes[:16]
+
+            encrypted_payload = encrypted_data_bytes[16:]
 
             cipher_aes = AES.new(
                 aes_key,
@@ -317,7 +319,7 @@ class HrPayslip(models.Model):
             )
 
             decrypted = cipher_aes.decrypt(
-                encrypted_data_bytes
+                encrypted_payload
             )
 
             decrypted = unpad(
@@ -325,17 +327,11 @@ class HrPayslip(models.Model):
                 AES.block_size
             )
 
-            final_response = decrypted.decode(
+            final_response = decrypted[16:]
+
+            return final_response.decode(
                 'utf-8'
             )
-
-
-            _logger.info(
-                'ICICI FINAL RESPONSE: %s',
-                final_response
-            )
-
-            return final_response
 
         except Exception as e:
 
