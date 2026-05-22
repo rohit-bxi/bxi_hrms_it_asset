@@ -1,0 +1,81 @@
+<odoo>
+
+    <template id="report_appraisal_letter_template">
+        <t t-call="web.basic_layout">
+            <t t-foreach="docs" t-as="o">
+                <div class="page"
+                     style="padding:40px;
+                            font-size:14px;
+                            font-family:Arial, sans-serif;">
+                    <div style="text-align:center;">
+                        <h2>
+                            Appraisal and Promotion Letter
+                        </h2>
+                    </div>
+                    <br/>
+                    <table style="width:100%; border-collapse:collapse;">
+                        <tr>
+                            <td style="padding:5px 0;">
+                                <strong>Release Date:</strong>
+                                <span t-esc="o.release_date"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding:5px 0;">
+                                <strong>Employee Name:</strong>
+                                <span t-esc="o.employee_id.name"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding:5px 0;">
+                                <strong>Employee Code:</strong>
+                                <span t-esc="o.employee_code"/>
+                            </td>
+                        </tr>
+                    </table>
+                    <br/>
+                    <br/>
+                    <p>
+                        Dear
+                        <strong>
+                            <span t-esc="o.employee_id.name"/>
+                        </strong>,
+                    </p>
+                    <p>Congratulations!</p>
+                    <p style="text-align:justify; line-height:24px;">
+                        We take this opportunity to congratulate you, and express our appreciation for your valuable contribution in achieving company objectives. 
+                        We are confident that you will continue the good work in the same spirit of commitment and sincerity and grow with our organization.
+                    </p>
+                    <p>
+                    Consequent to the review of your performance, we take great pleasure to inform you that as part of Performance appraisal, 
+                    your salary structure has been revised with effect from <strong><span t-esc="o.effective_date"/></strong>. 
+                    The details of your revised salary structure have been provided under Annexure- I of this letter
+                    </p>
+                    <p style="text-align:justify;line-height:24px;">
+                        Additionally, you are promoted to <strong><span t-esc="o.promotion_job_id.name"/></strong>.
+                    </p>
+                    <p>
+                        Please note that the content of this letter being personal and confidential should not be divulged with others.
+                    </p>
+                    <p>
+                        All other terms and conditions of your employment remain unchanged. 
+                        We look forward to a mutually beneficial association and your active participation as a key contributor in BXITech’s journey towards our shared goals and a rewarding future ahead!
+                    </p>
+                    <br/>
+                    <br/>
+                    <br/>
+                    <table style="width:100%;">
+                        <tr>
+                            <td style="width:50%;">
+                                <strong> HR Department</strong>
+                            </td>
+                            <td style="width:50%;text-align:right;">
+                                <strong>Employee Signature</strong>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>

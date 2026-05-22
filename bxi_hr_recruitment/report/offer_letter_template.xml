@@ -2036,7 +2036,7 @@
                 <!-- LEFT -->
                 <div style="float:left; width:60%;">
                     <strong><t t-esc="company.name"/></strong><br/>
-                    <t t-esc="company.street or ''"/>
+                    <t t-esc="company.company_id.street or ''"/>
                     <t t-if="company.street2">, <t t-esc="company.street2"/></t><br/>
                     <t t-esc="company.city or ''"/>
                     <t t-if="company.state_id">, <t t-esc="company.state_id.name"/></t>
