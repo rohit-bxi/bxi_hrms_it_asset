@@ -202,7 +202,7 @@ class HrPayslip(models.Model):
                 'Salary already released.'
             )
 
-        if self.state != 'done':
+        if self.state != 'validated':
 
             raise ValidationError(
                 'Payslip must be confirmed.'
