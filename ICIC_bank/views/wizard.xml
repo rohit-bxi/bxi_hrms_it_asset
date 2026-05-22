@@ -1,39 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <record id="view_hr_payslip_form_icici" model="ir.ui.view">
-        <field name="name">hr.payslip.form.icici</field>
-        <field name="model">hr.payslip</field>
-        <field name="inherit_id" ref="hr_payroll.view_hr_payslip_form"/>
-
+    <record id="view_icici_otp_wizard_form" model="ir.ui.view">
+        <field name="name">icici.otp.wizard.form</field>
+        <field name="model">icici.otp.wizard</field>
         <field name="arch" type="xml">
-
-            <xpath expr="//header" position="inside">
-
-                <button
-                    name="action_release_salary"
-                    string="Release Salary"
-                    type="object"
-                    class="btn-primary"
-                />
-
-            </xpath>
-
-            <xpath expr="//sheet/group" position="inside">
-
-                <group string="ICICI Payment">
-
-                    <field name="icici_payment_status"/>
-
-                    <field name="icici_reference"/>
-
-                    <field name="icici_file_seq_num"/>
-
+            <form string="ICICI OTP Verification">
+                <group>
+                    <field name="otp" password="True"/>
                 </group>
-
-            </xpath>
-
+                <footer>
+                    <button
+                        name="action_confirm_otp"
+                        string="Verify OTP"
+                        type="object"
+                        class="btn-primary"
+                    />
+                    <button string="Cancel" special="cancel"/>
+                </footer>
+            </form>
         </field>
     </record>
-
 </odoo>
