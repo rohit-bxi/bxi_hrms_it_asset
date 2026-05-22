@@ -15,7 +15,7 @@
                     invisible="state != 'validated'"
                 />
             </xpath>
-            <xpath expr="//group[@name='top'" position="inside">
+            <xpath expr="//group[@name='top']" position="inside">
                 <group string="ICICI Payment">
                     <field  name="icici_payment_status" readonly="1"/>
                     <field  name="icici_reference" readonly="1"/>
