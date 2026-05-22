@@ -1,0 +1,92 @@
+<odoo>
+
+    <record id="view_hr_employee_appraisal_tree" model="ir.ui.view">
+        <field name="name">hr.employee.appraisal.tree</field>
+        <field name="model">hr.employee.appraisal</field>
+        <field name="arch" type="xml">
+            <list string="Employee Appraisal">
+                <field name="employee_id" />
+                <field name="employee_code" />
+                <field name="release_date" />
+                <!-- <field name="effective_date" /> -->
+                <!-- <field name="promotion_job_id" /> -->
+                <field name="state" />
+            </list>
+        </field>
+    </record>
+    <record id="view_hr_employee_appraisal_form" model="ir.ui.view">
+        <field name="name">hr.employee.appraisal.form</field>
+        <field name="model">hr.employee.appraisal</field>
+        <field name="arch" type="xml">
+            <form string="Employee Appraisal">
+                <header>
+                    <button name="action_open_letter_wizard"
+                            type="object"
+                            string="Letter Action"
+                            class="oe_highlight"/>
+                    <field name="state"
+                           widget="statusbar"
+                           statusbar_visible="draft,released,cancelled"/>
+                </header>
+                <sheet>
+                    <group string="Employee Details">
+                        <group>
+                            <field name="employee_id" options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
+                            <field name="employee_code" readonly="1"/>
+                            <field name="company_id" readonly="1" options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
+                            <field name="release_date"/>
+                        </group>
+                        <group>
+                            <field name="department_id" options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
+                            <field name="band"/>
+                            <field name="letter_type"/>
+                            <field name="template_company_id" options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Bonus Details">
+                            <group string="Bonus Details">
+                                <field name="bonus_amount" required="letter_type == 'bonus_letter'"/>
+                                <field name="payout_month" required="letter_type == 'bonus_letter'"/>
+                            </group>
+                        </page>
+                        <page string="Salary Calculation">
+                            <button name="action_release_letter"
+                                type="object"
+                                string="Appraisal and Promotion Letter"
+                                class="btn-primary"></button>
+                            <group string="Calculator Type">
+                                <field name="revenue_type" widget="radio"
+                                    options="{'horizontal': true}" />
+                            </group>
+                            <group string="Employee Info" col="2">
+                                <field name="band" />
+                            </group>
+                            <group string="Monthly Components" col="2">
+                                <field name="basic_salary" />
+                                <field name="flexible_allowance" />
+                                <field name="monthly_total" readonly="1" />
+                                <field name="annual_fixed" readonly="1" />
+                            </group>
+                            <group string="Retirals and Benefits" col="2">
+                                <field name="pf" />
+                                <field name="insurance" />
+                                <field name="nps" />
+                                <field name="retiral_total" readonly="1" />
+                            </group>
+                            <group string="Variable Components" col="2">
+                                <field name="org_bonus" />
+                                <field name="performance_bonus" />
+                                <field name="variable_total" readonly="1" />
+                            </group>
+                            <group string="Final CTC">
+                                <field name="ctc_total" readonly="1" class="oe_highlight" />
+                            </group>
+                        </page>
+
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>
