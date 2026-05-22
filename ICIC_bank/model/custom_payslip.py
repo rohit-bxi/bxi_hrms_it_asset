@@ -77,7 +77,10 @@ class HrPayslip(models.Model):
 
         rsa_key = self.get_icici_public_key()
 
-        json_data = json.dumps(payload)
+        json_data = json.dumps(
+            payload,
+            separators=(',', ':')
+        )
 
         randomno1 = self.random_16()
 
@@ -93,7 +96,6 @@ class HrPayslip(models.Model):
             encrypted_key
         ).decode()
 
-        # RANDOM IV
         randomno2 = self.random_16()
 
         data = randomno2 + json_data
@@ -111,14 +113,8 @@ class HrPayslip(models.Model):
             )
         )
 
-        # PREPEND IV
-        final_encrypted_data = (
-            randomno2.encode() +
-            encrypted_data
-        )
-
         encr_data_b64 = base64.b64encode(
-            final_encrypted_data
+            encrypted_data
         ).decode()
 
         return {
@@ -144,7 +140,7 @@ class HrPayslip(models.Model):
 
         headers = {
             'Content-Type': 'application/json',
-            'Accept': '*/*',
+            'Accept': 'application/json',
             'APIKEY': 'HLAo88SpqGCpnwW87KcdwElPsfhPGVyG'
         }
 
@@ -361,9 +357,7 @@ class HrPayslip(models.Model):
 
             iv = encrypted_data_bytes[:16]
 
-            encrypted_payload = (
-                encrypted_data_bytes[16:]
-            )
+            encrypted_payload = encrypted_data_bytes
 
             cipher_aes = AES.new(
                 aes_key,
