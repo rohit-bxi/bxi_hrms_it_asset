@@ -145,10 +145,24 @@ class HrPayslip(models.Model):
         headers = {
             'Content-Type': 'application/json',
             'Accept': '*/*',
-            'apikey': 'HLAo88SpqGCpnwW87KcdwElPsfhPGVyG'
+            'APIKEY': 'HLAo88SpqGCpnwW87KcdwElPsfhPGVyG'
         }
 
         try:
+            _logger.info(
+                'ICICI REQUEST URL: %s',
+                url
+            )
+
+            _logger.info(
+                'ICICI REQUEST HEADERS: %s',
+                headers
+            )
+
+            _logger.info(
+                'ICICI REQUEST PAYLOAD: %s',
+                encrypted_payload
+            )
 
             response = requests.post(
                 url,
@@ -156,6 +170,16 @@ class HrPayslip(models.Model):
                 json=encrypted_payload,
                 timeout=60,
                 verify=True
+            )
+
+            _logger.info(
+                'ICICI STATUS CODE: %s',
+                response.status_code
+            )
+
+            _logger.info(
+                'ICICI RESPONSE TEXT: %s',
+                response.text
             )
 
             response.raise_for_status()
@@ -202,7 +226,7 @@ class HrPayslip(models.Model):
                 'Salary already released.'
             )
 
-        if self.state != 'validated':
+        if self.state in ['draft', 'cancel']:
 
             raise ValidationError(
                 'Payslip must be confirmed.'
@@ -234,7 +258,7 @@ class HrPayslip(models.Model):
                 'Invalid salary amount.'
             )
 
-        payload = {
+        payload = { 
             'AGGRID': 'CIBBULK001',
             'AGGRNAME': 'BULKTESTING',
             'CORPID': 'TXBCORP2',
@@ -256,7 +280,11 @@ class HrPayslip(models.Model):
         self.icici_response = result.get(
             'response'
         )
-
+        if result.get('status_code') != 200:
+            self.icici_payment_status = 'failed'
+            raise ValidationError(
+                f"ICICI API Error:\n\n{result.get('response')}"
+            )
         self.icici_payment_status = (
             'otp_pending'
         )
