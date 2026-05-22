@@ -486,13 +486,19 @@ class HrPayslip(models.Model):
 
         self.ensure_one()
 
+        if not self.icici_file_seq_num:
+
+            raise ValidationError(
+                'ICICI File Sequence Number missing.'
+            )
+
         payload = {
-            "AGGRID": "CIBBULK001",
-            "CORPID": "TXBCORP2",
-            "USERID": "TXBCORP2.USER2",
-            "URN": "CIBTESTING",
-            "FILESEQNUM": self.icici_file_seq_num,
-            "ISENCRYPTED": "N"
+            'AGGRID': 'CIBBULK001',
+            'CORPID': 'TXBCORP2',
+            'USERID': 'TXBCORP2.USER2',
+            'URN': 'CIBTESTING',
+            'FILESEQNUM': self.icici_file_seq_num,
+            'ISENCRYPTED': 'N'
         }
 
         url = (
@@ -505,47 +511,40 @@ class HrPayslip(models.Model):
             payload
         )
 
-        self.icici_response = result.get(
-            'response'
-        )
+        response = result.get('response')
+
+        self.icici_response = response
 
         try:
 
-            json_start = response.find('{')
-
-            json_end = response.rfind('}') + 1
-
-            clean_response = response[
-                json_start:json_end
-            ]
-
-            response_json = json.loads(
-                clean_response
-            )
+            response_json = json.loads(response)
 
         except Exception:
 
-            raise ValidationError(
-                f'Invalid ICICI response:\n\n{response}'
-            )
+            raise ValidationError(response)
 
-        status = response_json.get(
+        response_code = response_json.get(
+            'ResponseCode'
+        )
+
+        payment_status = response_json.get(
             'STATUS'
         )
 
-        status = (
-            response_json.get('STATUS')
-            or ''
-        ).upper()
-
-        if status in [
-            'SUCCESS',
-            'PAID',
-            'COMPLETED'
-        ]:
+        if (
+            response_code == '0000'
+            and payment_status == 'SUCCESS'
+        ):
 
             self.icici_payment_status = 'paid'
 
-        elif status == 'FAILED':
+            self.state = 'paid'
+
+        elif payment_status == 'FAILED':
 
             self.icici_payment_status = 'failed'
+
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'reload',
+        }
