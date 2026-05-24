@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Report Action -->
+    <record id="action_report_promotion_letter" model="ir.actions.report">
+        <field name="name">Promotion Letter</field>
+        <field name="model">hr.employee.appraisal</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">bxi_hr_performance_bonus.report_promotion_letter_template</field>
+        <field name="report_file">bxi_hr_performance_bonus.report_promotion_letter_template</field>
+        <field name="print_report_name">'Promotion Letter - %s' % (object.employee_id.name)</field>
+        <field name="paperformat_id" ref="paperformat_bonus_letter_a4"/>
+    </record>
+
+
+    <!-- Report Template -->
+    <template id="report_promotion_letter_template">
+        <t t-call="web.html_container">
+
+            <t t-foreach="docs" t-as="o">
+
+                <!-- COMPANY -->
+                <t t-set="company"
+                   t-value="o.template_company_id or o.company_id or res_company"/>
+
+                <!-- COMPANY BASED HEADER COLOR -->
+                <t t-set="header_bg"
+                   t-value="'#0b2a6f' if o.template_company_id.id == 1 else
+                            '#f0f0f0ff' if o.template_company_id.id == 4 else
+                            '#E3E3E3'"/>
+
+                <!-- CALL MAIN LAYOUT -->
+                <t t-call="custom_template.bxi_custom_layout">
+
+                    <div class="page"
+                         style="padding:40px;
+                                font-size:14px;
+                                font-family:Arial, sans-serif;">
+
+                        <!-- TITLE -->
+                        <div style="text-align:center;">
+                            <h2>Promotion Letter</h2>
+                        </div>
+
+                        <br/>
+
+                        <!-- DETAILS -->
+                        <table style="width:100%; border-collapse:collapse;">
+                            <tr>
+                                <td>
+                                    <strong>Release Date:</strong>
+                                    <span t-field="o.release_date"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Employee Name:</strong>
+                                    <span t-field="o.employee_id.name"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Effective Date:</strong>
+                                    <span t-field="o.effective_date"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Emp. Code:</strong>
+                                    <span t-field="o.employee_code"/>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <br/><br/>
+
+                        <!-- BODY -->
+                        <p>
+                            Dear <strong><span t-field="o.employee_id.name"/></strong>,
+                        </p>
+
+                        <p><strong>Congratulations!</strong></p>
+
+                        <p style="text-align:justify;">
+                            We take this opportunity to congratulate you and express our appreciation
+                            for your valuable contribution in achieving company objectives.
+                        </p>
+
+                        <p style="text-align:justify;">
+                            We are delighted to announce your promotion to the role of
+                            <strong>
+                                <t t-if="o.promoted_job_id">
+                                    <span t-field="o.promoted_job_id.name"/>
+                                </t>
+                                <t t-else="">
+                                    <span t-field="o.promotion_job_id.name"/>
+                                </t>
+                            </strong>
+
+                            <t t-if="o.promoted_department_id">
+                                in the <strong><span t-field="o.promoted_department_id.name"/></strong> department
+                            </t>
+
+                            with effect from
+                            <strong><span t-field="o.effective_date"/></strong>.
+                        </p>
+
+                        <p>
+                            Please keep this letter confidential and do not share it externally.
+                        </p>
+
+                        <p>
+                            All other terms and conditions remain unchanged. We look forward to your continued
+                            contribution.
+                        </p>
+
+                        <br/><br/><br/>
+
+                        <!-- SIGNATURE -->
+                        <table style="width:100%;">
+                            <tr>
+                                <td style="width:50%;">
+                                    <strong>Sincerely,</strong><br/>
+                                    <span t-field="o.company_id.name"/>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <table style="width:100%;">
+                            <tr>
+                                <td style="width:50%;">
+                                    <strong>Pallavi Paliwal</strong><br/>
+                                    Partner &amp; MD
+                                </td>
+                                <td style="width:50%; text-align:right;">
+                                    <strong>Nazia Khan</strong><br/>
+                                    Director-HR
+                                </td>
+                            </tr>
+                        </table>
+
+                    </div>
+
+                </t>
+
+            </t>
+
+        </t>
+    </template>
+
+</odoo>

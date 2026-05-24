@@ -17,7 +17,7 @@
         - Performance/Bonus Tracking
         - PDF Reports
     """,
-    'depends': ['hr'],
+    'depends': ['hr', 'mail'],
     'data': [
         'security/ir.model.access.csv',
         'views/employee_letter_wizard.xml',
@@ -27,6 +27,7 @@
         'report/report.xml',
         'report/report_employee_bonus_letter.xml',
         'report/report_apprsail_promotion.xml',
+        'report/report_promotion_letter.xml',
         'report/employee_bonus_letter.xml',
     ],
     'installable': True,

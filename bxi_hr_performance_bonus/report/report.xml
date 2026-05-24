@@ -4,12 +4,11 @@
         <field name="name">Appraisal Letter</field>
         <field name="model">hr.employee.appraisal</field>
         <field name="report_type">qweb-pdf</field>
-        <field name="report_name">bxi_hr_employee.report_appraisal_letter_template</field>
-        <field name="report_file">bxi_hr_employee.report_appraisal_letter_template</field>
+        <field name="report_name">bxi_hr_performance_bonus.report_appraisal_letter_template</field>
+        <field name="report_file">bxi_hr_performance_bonus.report_appraisal_letter_template</field>
         <field name="print_report_name">
             'Appraisal Letter - %s' % (object.employee_id.name)
         </field>
-        <field name="binding_model_id" ref="model_hr_employee_appraisal"/>
-        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="paperformat_bonus_letter_a4"/>
     </record>
 </odoo>

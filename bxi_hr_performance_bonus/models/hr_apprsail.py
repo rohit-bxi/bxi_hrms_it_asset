@@ -1,4 +1,5 @@
 from odoo import models, fields, api, _
+# pyrefly: ignore [missing-import]
 from odoo.exceptions import UserError, ValidationError
 
 
@@ -6,6 +7,7 @@ class HrEmployeeAppraisal(models.Model):
     _name = 'hr.employee.appraisal'
     _description = 'Employee Appraisal'
     _rec_name = 'employee_id'
+    _inherit = ['mail.thread']
 
     employee_id = fields.Many2one(
         'hr.employee',
@@ -30,7 +32,19 @@ class HrEmployeeAppraisal(models.Model):
     )
     promotion_job_id = fields.Many2one(
         related='employee_id.job_id',
+        readonly=False,
         string="Promotion To Role"
+    )
+    promoted_department_id = fields.Many2one(
+        'hr.department',
+        string="Promoted Department"
+    )
+    promoted_job_id = fields.Many2one(
+        'hr.job',
+        string="Promoted Designation"
+    )
+    promoted_position = fields.Char(
+        string="Promoted Position"
     )
     department_id = fields.Many2one(
         related='employee_id.department_id',
@@ -40,7 +54,7 @@ class HrEmployeeAppraisal(models.Model):
     effective_date = fields.Date()
     bonus_amount = fields.Integer()
     payout_month = fields.Date()
-
+    appraisal_percentage = fields.Integer(string="Appraisal(%)")
     band = fields.Char(
         related='employee_id.role_band',
         readonly=False,
@@ -79,16 +93,15 @@ class HrEmployeeAppraisal(models.Model):
     pf = fields.Float("Provident Fund", default=21600.0, tracking=True) 
     insurance = fields.Float("Medical Insurance", default=50000.0, tracking=True) 
     nps = fields.Float("NPS", default=15000, tracking=True)
-    performance_bonus = fields.Float("Performance Bonus", compute="_compute_bonus", tracking=True)
-
+    performance_bonus_percentage = fields.Integer(string="Performance Bonus %")
     retiral_total = fields.Float(
         compute="_compute_salary",
         store=True,
         tracking=True,
         compute_sudo=True,
     )
-    org_bonus = fields.Float("Org Bonus", compute="_compute_bonus", tracking=True) 
-    performance_bonus = fields.Float("Performance Bonus", compute="_compute_bonus", tracking=True)
+    org_bonus = fields.Float("Org Bonus", compute="_compute_bonus", tracking=True,readonly=False) 
+    performance_bonus = fields.Float("Performance Bonus", compute="_compute_bonus", tracking=True,readonly=False)
     variable_total = fields.Float(
         compute="_compute_salary",
         store=True,
@@ -126,37 +139,11 @@ class HrEmployeeAppraisal(models.Model):
     @api.constrains('bonus_amount')
     def _check_bonus_amount(self):
         for rec in self:
-            if rec.bonus_amount <= 0:
-                raise ValidationError(
-                    "Bonus Amount must be greater than 0."
-                )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+            if rec.letter_type == 'bonus_letter':
+                if rec.bonus_amount <= 0:
+                    raise ValidationError(
+                        "Bonus Amount must be greater than 0."
+                    )
 
     @api.depends(
         'basic_salary',
@@ -195,21 +182,27 @@ class HrEmployeeAppraisal(models.Model):
                 rec.variable_total
             )
     
-    @api.depends('annual_fixed', 'retiral_total')
+    @api.depends('annual_fixed','retiral_total','performance_bonus_percentage','revenue_type')
     def _compute_bonus(self):
         for rec in self:
-            if rec.revenue_type in ['revenue','simple']:
-                rec.org_bonus = (rec.annual_fixed + rec.retiral_total) * 0.10
-
-                rec.performance_bonus = (
-                    rec.annual_fixed + rec.retiral_total + rec.org_bonus
+            if rec.revenue_type in ['revenue', 'simple']:
+                rec.org_bonus = (
+                    (rec.annual_fixed or 0.0)
+                    + (rec.retiral_total or 0.0)
                 ) * 0.10
             else:
-                rec.org_bonus = (rec.annual_fixed + rec.retiral_total) * 0.25
+                rec.org_bonus = (
+                    (rec.annual_fixed or 0.0)
+                    + (rec.retiral_total or 0.0)
+                ) * 0.25
+            total_amount = (
+                (rec.annual_fixed or 0.0)
+                + (rec.retiral_total or 0.0)
+                + (rec.org_bonus or 0.0)
+            )
 
-                rec.performance_bonus = 0.00
-    
-    def action_release_letter(self):
-        return self.env.ref(
-            'bxi_hr_employee.action_report_appraisal_letter'
-        ).report_action(self)
+            rec.performance_bonus = (
+                total_amount
+                * (rec.performance_bonus_percentage or 0.0)
+                / 100
+            )
