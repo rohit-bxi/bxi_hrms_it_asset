@@ -16,6 +16,7 @@ from Crypto.Util.Padding import pad, unpad
 
 
 _logger = logging.getLogger(__name__)
+session = requests.Session()
 
 
 class HrPayslip(models.Model):
@@ -43,7 +44,11 @@ class HrPayslip(models.Model):
             )
         )
 
+    _icici_public_key_cache = None
     def get_icici_public_key(self):
+        cls = type(self)
+        if cls._icici_public_key_cache:
+            return cls._icici_public_key_cache
         module_path = os.path.dirname(__file__)
         public_key_path = os.path.join(
             module_path,
@@ -52,10 +57,17 @@ class HrPayslip(models.Model):
         )
         with open(public_key_path, 'rb') as f:
             key_data = f.read()
-        return RSA.import_key(key_data)
+        cls._icici_public_key_cache = RSA.import_key(
+            key_data
+        )
+        return cls._icici_public_key_cache
+    
+    _private_key_cache = None
 
     def get_private_key(self):
-
+        cls = type(self)
+        if cls._private_key_cache:
+            return cls._private_key_cache
         module_path = os.path.dirname(__file__)
         private_key_path = os.path.join(
             module_path,
@@ -64,7 +76,10 @@ class HrPayslip(models.Model):
         )
         with open(private_key_path, 'rb') as f:
             key_data = f.read()
-        return RSA.import_key(key_data)
+        cls._private_key_cache = RSA.import_key(
+            key_data
+        )
+        return cls._private_key_cache
 
     def encrypt_payload(self, payload):
 
@@ -183,15 +198,14 @@ class HrPayslip(models.Model):
             )
 
             _logger.info(
-                'ICICI REQUEST PAYLOAD: %s',
-                encrypted_payload
+                'ICICI API CALL STARTED'
             )
 
-            response = requests.post(
+            response = session.post(
                 url,
                 headers=headers,
                 json=encrypted_payload,
-                timeout=30
+                timeout=(5, 15)
             )
 
             _logger.info(
@@ -200,8 +214,8 @@ class HrPayslip(models.Model):
             )
 
             _logger.info(
-                'ICICI RESPONSE TEXT: %s',
-                response.text
+                'ICICI STATUS CODE: %s',
+                response.status_code
             )
 
             if response.status_code != 200:
