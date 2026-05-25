@@ -292,23 +292,43 @@ class HrPayslip(models.Model):
     def action_release_salary(self):
 
         if not self:
-
             raise ValidationError(
                 'No payslips selected.'
             )
-
         for slip in self:
-
             if slip.icici_payment_status == 'paid':
-
                 raise ValidationError(
                     f'Salary already released for {slip.employee_id.name}'
                 )
-
             if slip.state in ['draft', 'cancel']:
-
                 raise ValidationError(
                     f'{slip.employee_id.name} payslip is not confirmed.'
+                )
+            employee = slip.employee_id
+            bank_account_rec = (
+                employee.bank_account_ids.filtered(
+                    lambda b: b.acc_number
+                )[:1]
+            )
+
+            if not bank_account_rec:
+
+                raise ValidationError(
+                    f'Employee bank account missing for {employee.name}'
+                )
+
+            if not bank_account_rec.acc_number:
+
+                raise ValidationError(
+                    f'Employee account number missing for {employee.name}'
+                )
+
+            amount = int(slip.net_wage)
+
+            if amount <= 0:
+
+                raise ValidationError(
+                    f'Invalid salary amount for {employee.name}'
                 )
 
         create_payload = {
@@ -317,14 +337,18 @@ class HrPayslip(models.Model):
             "CORPID": "TXBCORP2",
             "USERID": "USER2",
             "URN": "CIBTESTING",
-            "UNIQUEID": str(random.randint(10000, 99999))
+            "UNIQUEID": str(
+                random.randint(10000, 99999)
+            )
         }
 
         url = (
             'https://apibankingonesandbox.icici.bank.in'
             '/api/Corporate/CIB_SV/v1/Create'
         )
+
         self.env.cr.commit()
+
         result = self[0].call_icici_api(
             url,
             create_payload
@@ -359,6 +383,7 @@ class HrPayslip(models.Model):
             or response_json.get('otp')
             or response_json.get('AgOtp')
         )
+
         _logger.info(
             'ICICI OTP RECEIVED: %s',
             otp
@@ -371,7 +396,8 @@ class HrPayslip(models.Model):
             )
 
         self.write({
-            'icici_generated_otp': otp
+            'icici_generated_otp': otp,
+            'icici_payment_status': 'otp_pending'
         })
 
         return {
@@ -392,32 +418,11 @@ class HrPayslip(models.Model):
         total_amount = 0
         salary_lines = []
         for slip in self:
-            if slip.icici_payment_status == 'paid':
-                raise ValidationError(
-                    f'Salary already released for {slip.employee_id.name}'
-                )
             employee = slip.employee_id
-            bank_account_rec = (
-                employee.bank_account_ids.filtered(
-                    lambda b: b.acc_number
-                )[:1]
-            )
-            if not bank_account_rec:
-                raise ValidationError(
-                    f'Bank account missing for {employee.name}'
-                )
             bank_account = (
-                bank_account_rec.acc_number
+                employee.bank_account_ids[:1].acc_number
             )
-            if not bank_account:
-                raise ValidationError(
-                    f'Account number missing for {employee.name}'
-                )
             amount = int(slip.net_wage)
-            if amount <= 0:
-                raise ValidationError(
-                    f'Invalid salary amount for {employee.name}'
-                )
             total_amount += amount
 
         from datetime import datetime
