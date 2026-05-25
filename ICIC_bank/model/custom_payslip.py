@@ -419,9 +419,12 @@ class HrPayslip(models.Model):
         salary_lines = []
         for slip in self:
             employee = slip.employee_id
-            bank_account = (
-                employee.bank_account_ids[:1].acc_number
+            bank_account_rec = (
+                employee.bank_account_ids.filtered(
+                    lambda b: b.acc_number
+                )[:1]
             )
+            bank_account = bank_account_rec.acc_number
             amount = int(slip.net_wage)
             total_amount += amount
 
@@ -436,14 +439,35 @@ class HrPayslip(models.Model):
         salary_lines.append(
             f'MDR|000451000301|0011|salary|{total_amount}|INR|salary|ICIC0000011|WIB^'
         )
+
         for slip in self:
             employee = slip.employee_id
-            bank_account = (
-                employee.bank_account_ids[:1].acc_number
+            bank_account_rec = (
+                employee.bank_account_ids.filtered(
+                    lambda b: b.acc_number
+                )[:1]
             )
-            amount = int(slip.net_wage)
+            bank_account = bank_account_rec.acc_number
+            bank = bank_account_rec.bank_id
+            ifsc = (
+                bank.bic
+                or ''
+            ).strip()
+            amount = int(
+                slip.net_wage
+            )
+            if ifsc.startswith('ICIC'):
+                transaction_type = 'MCW'
+                payment_mode = 'WIB'
+            else:
+                transaction_type = 'MCO'
+                payment_mode = 'NFT'
             salary_lines.append(
-                f'MCW|{bank_account}|0411|{employee.name}|{amount}|INR|Salary|ICIC0000011|WIB^'
+                f'{transaction_type}|'
+                f'{bank_account}|0411|'
+                f'{employee.name}|'
+                f'{amount}|INR|Salary|'
+                f'{ifsc}|{payment_mode}^'
             )
 
         salary_file = '\n'.join(
