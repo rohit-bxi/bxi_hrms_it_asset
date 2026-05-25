@@ -417,29 +417,12 @@ class HrPayslip(models.Model):
             )
         total_amount = 0
         salary_lines = []
-        for slip in self:
-            employee = slip.employee_id
-            bank_account_rec = (
-                employee.bank_account_ids.filtered(
-                    lambda b: b.acc_number
-                )[:1]
-            )
-            bank_account = bank_account_rec.acc_number
-            amount = int(slip.net_wage)
-            total_amount += amount
 
         from datetime import datetime
 
         today_date = datetime.today().strftime(
             '%d/%m/%Y'
         )
-        salary_lines.append(
-            f'FHR|7|{today_date}|salarybatch|{total_amount}|INR|000451000301|0011^'
-        )
-        salary_lines.append(
-            f'MDR|000451000301|0001|salary|{total_amount}|INR|salary|ICIC0000011|WIB^'
-        )
-
         for slip in self:
             employee = slip.employee_id
             bank_account_rec = (
@@ -447,11 +430,20 @@ class HrPayslip(models.Model):
                     lambda b: b.acc_number
                 )[:1]
             )
-            bank_account = bank_account_rec.acc_number
+            if not bank_account_rec:
+                raise ValidationError(
+                    f'Bank account missing for {employee.name}'
+                )
+            bank_account = (
+                bank_account_rec.acc_number or ''
+            ).strip()
+            if not bank_account:
+                raise ValidationError(
+                    f'Account number missing for {employee.name}'
+                )
             bank = bank_account_rec.bank_id
             ifsc = (
-                bank.bic
-                or ''
+                bank.bic or ''
             ).strip()
             if not ifsc:
                 raise ValidationError(
@@ -460,6 +452,11 @@ class HrPayslip(models.Model):
             amount = int(
                 slip.net_wage
             )
+            if amount <= 0:
+                raise ValidationError(
+                    f'Invalid amount for {employee.name}'
+                )
+            total_amount += amount
             if ifsc.startswith('ICIC'):
                 transaction_type = 'MCW'
                 payment_mode = 'WIB'
@@ -473,29 +470,47 @@ class HrPayslip(models.Model):
                 f'{amount}|INR|SAL|'
                 f'{ifsc}|{payment_mode}^'
             )
-
-        salary_file = '\n'.join(
+        file_lines = [
+            (
+                f'FHR|7|{today_date}|salarybatch|'
+                f'{total_amount}|INR|000451000301|0011^'
+            ),
+            (
+                f'MDR|000451000301|0001|salary|'
+                f'{total_amount}|INR|salary|'
+                f'ICIC0000011|WIB^'
+            )
+        ]
+        file_lines.extend(
             salary_lines
         )
+
+        salary_file = '\n'.join(
+            file_lines
+        )
+
         _logger.info(
             'ICICI FINAL SALARY FILE:\n%s',
             salary_file
         )
+
         encoded_file = base64.b64encode(
             salary_file.encode()
         ).decode()
 
         payload = {
-            "FILE_DESCRIPTION": "PAYROLL",
-            "AGGR_ID": "CIBBULK001",
-            "URN": "CIBTESTING",
-            "AGGR_NAME": "BULKTESTING",
-            "USER_ID": "USER2",
-            "CORP_ID": "TXBCORP2",
-            "UNIQUE_ID": str(random.randint(10000, 99999)),
-            "AGOTP": otp,
-            "FILE_NAME": f"salary_batch_{datetime.today().strftime('%Y%m%d%H%M%S')}.txt",
-            "FILE_CONTENT": encoded_file
+            'FILE_DESCRIPTION': 'PAYROLL',
+            'AGGR_ID': 'CIBBULK001',
+            'URN': 'CIBTESTING',
+            'AGGR_NAME': 'BULKTESTING',
+            'USER_ID': 'USER2',
+            'CORP_ID': 'TXBCORP2',
+            'UNIQUE_ID': str(self.ids[0]),
+            'AGOTP': otp,
+            'FILE_NAME': (
+                f'salary_{self.ids[0]}.txt'
+            ),
+            'FILE_CONTENT': encoded_file
         }
 
         url = (
@@ -511,67 +526,61 @@ class HrPayslip(models.Model):
         response = result.get(
             'response'
         )
-        if result.get('status_code') != 200:
 
-            self.write({
-                'icici_payment_status': 'failed',
-                'icici_response': response
-            })
+        if not response:
 
             raise ValidationError(
-                response
-            )
-        try:
-            json_start = response.find('{')
-
-            json_end = response.rfind('}') + 1
-
-            clean_response = response[
-                json_start:json_end
-            ]
-
-            response_json = json.loads(
-                clean_response
+                'Empty response from ICICI.'
             )
 
-        except Exception:
-
-            raise ValidationError(
-                f'Invalid ICICI response:\n\n{response}'
+        response_json = json.loads(
+            response
         )
 
         response_code = response_json.get(
             'ResponseCode'
         )
 
-        if response_code == '0000':
-            file_seq_num = response_json.get(
-                'FILESEQNUM'
-            )
-            utr = response_json.get(
-                'UTR'
-            )
-            self.write({
-                'icici_payment_status': 'processing',
-                'icici_response': response,
-                'icici_file_seq_num': file_seq_num,
-                'icici_reference': utr,
-                'icici_generated_otp': False
-            })
-
-        else:
-
-            self.write({
-                'icici_payment_status': 'failed',
-                'icici_response': response
-            })
+        if response_code != '0000':
 
             raise ValidationError(
                 response_json.get(
                     'Message',
-                    'Bulk payment failed.'
+                    'ICICI Payment Failed'
                 )
             )
+
+        file_seq_num = response_json.get(
+            'FILESEQNUM'
+        )
+
+        utr = response_json.get(
+            'UTR'
+        )
+
+        for slip in self:
+
+            slip.icici_payment_status = (
+                'processing'
+            )
+
+            slip.icici_file_seq_num = (
+                file_seq_num
+            )
+
+            slip.icici_reference = (
+                utr
+            )
+
+            slip.icici_response = (
+                response
+            )
+
+            slip.icici_generated_otp = (
+                False
+            )
+
+        return True
         
     def action_check_payment_status(self):
 
