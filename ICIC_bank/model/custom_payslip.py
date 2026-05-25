@@ -226,7 +226,7 @@ class HrPayslip(models.Model):
                             'ICICI server timeout. Please try again.'
                         )
 
-            if not response:
+            if response is None:
 
                 raise ValidationError(
                     'No response from ICICI.'
