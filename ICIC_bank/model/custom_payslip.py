@@ -85,9 +85,10 @@ class HrPayslip(models.Model):
 
         rsa_key = self.get_icici_public_key()
 
-        json_data = json.dumps(
+        json.dumps(
             payload,
-            separators=(',', ':')
+            separators=(',', ':'),
+            ensure_ascii=False
         )
 
         randomno1 = self.random_16()
@@ -182,15 +183,13 @@ class HrPayslip(models.Model):
         return final_response.decode()
     
     def call_icici_api(self, url, payload):
-
         headers = {
             'Content-Type': 'application/json',
-            'Accept': '*/*',
+            'Accept': 'application/json',
+            'Connection': 'keep-alive',
             'APIKEY': 'HLAo88SpqGCpnwW87KcdwElPsfhPGVyG'
         }
-
         response = None
-
         try:
 
             encrypted_payload = self.encrypt_payload(
@@ -201,17 +200,37 @@ class HrPayslip(models.Model):
                 'ICICI API CALL STARTED'
             )
 
-            response = session.post(
-                url,
-                headers=headers,
-                json=encrypted_payload,
-                timeout=(5, 15)
-            )
+            for attempt in range(3):
 
-            _logger.info(
-                'ICICI STATUS CODE: %s',
-                response.status_code
-            )
+                try:
+
+                    response = session.post(
+                        url,
+                        headers=headers,
+                        json=encrypted_payload,
+                        timeout=(10, 60)
+                    )
+
+                    break
+
+                except requests.exceptions.ReadTimeout:
+
+                    _logger.warning(
+                        'ICICI timeout retry %s',
+                        attempt + 1
+                    )
+
+                    if attempt == 2:
+
+                        raise ValidationError(
+                            'ICICI server timeout. Please try again.'
+                        )
+
+            if not response:
+
+                raise ValidationError(
+                    'No response from ICICI.'
+                )
 
             _logger.info(
                 'ICICI STATUS CODE: %s',
@@ -224,11 +243,11 @@ class HrPayslip(models.Model):
 
                     error_response = response.json()
 
-                    error_message = error_response.get(
-                        'errormessage'
-                    ) or error_response.get(
-                        'message'
-                    ) or response.text
+                    error_message = (
+                        error_response.get('errormessage')
+                        or error_response.get('message')
+                        or response.text
+                    )
 
                 except Exception:
 
@@ -238,20 +257,20 @@ class HrPayslip(models.Model):
                     f'ICICI API Error:\n{error_message}'
                 )
 
+            response_json = response.json()
+
             decrypted_response = self.decrypt_response(
-                response.json()
+                response_json
+            )
+
+            _logger.info(
+                'ICICI RESPONSE DECRYPTED SUCCESS'
             )
 
             return {
                 'status_code': response.status_code,
                 'response': decrypted_response
             }
-
-        except requests.exceptions.ReadTimeout:
-
-            raise ValidationError(
-                'ICICI API timeout. Please try again.'
-            )
 
         except requests.exceptions.ConnectionError:
 
@@ -261,22 +280,14 @@ class HrPayslip(models.Model):
 
         except Exception as e:
 
-            error_message = str(e)
-
-            if response is not None:
-
-                error_message += (
-                    f'\nResponse: {response.text}'
-                )
-
             _logger.exception(
                 'ICICI API ERROR'
             )
 
             raise ValidationError(
-                error_message
+                str(e)
             )
-        
+            
     def action_release_salary(self):
 
         if not self:
@@ -312,7 +323,7 @@ class HrPayslip(models.Model):
             'https://apibankingonesandbox.icici.bank.in'
             '/api/Corporate/CIB_SV/v1/Create'
         )
-
+        self.env.cr.commit()
         result = self[0].call_icici_api(
             url,
             create_payload
