@@ -239,10 +239,14 @@ class ICICIOtpWizard(models.TransientModel):
             # RESPONSE JSON
             # ======================================
 
+            json_start = response.find('{')
+            json_end = response.rfind('}') + 1
+            clean_response = response[
+                json_start:json_end
+            ]
             response_json = json.loads(
-                response
+                clean_response
             )
-
             response_code = response_json.get(
                 'ResponseCode'
             )
