@@ -437,7 +437,7 @@ class HrPayslip(models.Model):
             f'FHR|7|{today_date}|salarybatch|{total_amount}|INR|000451000301|0011^'
         )
         salary_lines.append(
-            f'MDR|000451000301|0011|salary|{total_amount}|INR|salary|ICIC0000011|WIB^'
+            f'MDR|000451000301|0001|salary|{total_amount}|INR|salary|ICIC0000011|WIB^'
         )
 
         for slip in self:
@@ -453,6 +453,10 @@ class HrPayslip(models.Model):
                 bank.bic
                 or ''
             ).strip()
+            if not ifsc:
+                raise ValidationError(
+                    f'IFSC missing for {employee.name}'
+                )
             amount = int(
                 slip.net_wage
             )
@@ -464,16 +468,19 @@ class HrPayslip(models.Model):
                 payment_mode = 'NFT'
             salary_lines.append(
                 f'{transaction_type}|'
-                f'{bank_account}|0411|'
-                f'{employee.name}|'
-                f'{amount}|INR|Salary|'
+                f'{bank_account}|0001|'
+                f'{employee.name[:20]}|'
+                f'{amount}|INR|SAL|'
                 f'{ifsc}|{payment_mode}^'
             )
 
         salary_file = '\n'.join(
             salary_lines
         )
-
+        _logger.info(
+            'ICICI FINAL SALARY FILE:\n%s',
+            salary_file
+        )
         encoded_file = base64.b64encode(
             salary_file.encode()
         ).decode()
