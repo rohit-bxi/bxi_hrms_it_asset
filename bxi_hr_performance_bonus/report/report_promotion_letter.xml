@@ -1,6 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
+    <!-- ================= REPORT ACTION ================= -->
+    <record id="action_report_promotion_letter" model="ir.actions.report">
+        <field name="name">Promotion Letter</field>
+        <field name="model">hr.employee.appraisal</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">bxi_hr_performance_bonus.report_promotion_letter_template</field>
+        <field name="report_file">bxi_hr_performance_bonus.report_promotion_letter_template</field>
+        <field name="print_report_name">'Promotion Letter - %s' % (object.employee_id.name)</field>
+        <field name="paperformat_id" ref="paperformat_bonus_letter_a4"/>
+    </record>
+
+
+    <!-- ================= MAIN TEMPLATE ================= -->
     <template id="report_promotion_letter_template">
         <t t-call="web.html_container">
 
@@ -180,4 +193,5 @@
         </div>
 
     </template>
+
 </odoo>
