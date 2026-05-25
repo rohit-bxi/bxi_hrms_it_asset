@@ -85,7 +85,7 @@ class HrPayslip(models.Model):
 
         rsa_key = self.get_icici_public_key()
 
-        json.dumps(
+        json_data = json.dumps(
             payload,
             separators=(',', ':'),
             ensure_ascii=False
@@ -136,7 +136,7 @@ class HrPayslip(models.Model):
             'clientInfo': '',
             'optionalParam': ''
         }
-
+    
     def decrypt_response(self, response_data):
         encrypted_key = response_data.get(
             'encryptedKey'
