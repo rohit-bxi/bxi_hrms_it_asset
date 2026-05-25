@@ -264,7 +264,8 @@ class HrPayslip(models.Model):
             )
 
             _logger.info(
-                'ICICI RESPONSE DECRYPTED SUCCESS'
+                'ICICI DECRYPTED RESPONSE: %s',
+                decrypted_response
             )
 
             return {
@@ -357,6 +358,10 @@ class HrPayslip(models.Model):
             response_json.get('OTP')
             or response_json.get('otp')
             or response_json.get('AgOtp')
+        )
+        _logger.info(
+            'ICICI OTP RECEIVED: %s',
+            otp
         )
 
         if not otp:
