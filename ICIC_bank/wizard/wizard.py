@@ -91,8 +91,11 @@ class ICICIOtpWizard(models.TransientModel):
                 )
 
             bank_account = (
-                bank_account_rec.acc_number
-            )
+                (
+                    bank_account_rec.acc_number
+                    or ''
+                ).replace(' ', '')
+            ).strip()
 
             amount = int(slip.net_wage)
 
@@ -127,7 +130,7 @@ class ICICIOtpWizard(models.TransientModel):
         # ==========================================
 
         salary_lines.append(
-            f'MDR|000451000301|0011|salary|'
+            f'MDR|000451000301|0001|salary|'
             f'{total_amount}|INR|salary|'
             f'ICIC0000011|WIB^'
         )
@@ -140,18 +143,58 @@ class ICICIOtpWizard(models.TransientModel):
 
             employee = slip.employee_id
 
-            bank_account = (
+            bank_account_rec = (
                 employee.bank_account_ids.filtered(
                     lambda b: b.acc_number
-                )[:1].acc_number
+                )[:1]
             )
 
-            amount = int(slip.net_wage)
+            if not bank_account_rec:
+
+                raise ValidationError(
+                    f'Bank account missing for '
+                    f'{employee.name}'
+                )
+
+            bank_account = (
+                bank_account_rec.acc_number or ''
+            ).strip()
+
+            bank = bank_account_rec.bank_id
+
+            ifsc = (
+                bank.bic or ''
+            ).strip()
+
+            if not ifsc:
+
+                raise ValidationError(
+                    f'IFSC missing for '
+                    f'{employee.name}'
+                )
+
+            amount = int(
+                slip.net_wage
+            )
+
+            if ifsc.startswith('ICIC'):
+
+                transaction_type = 'MCW'
+
+                payment_mode = 'WIB'
+
+            else:
+
+                transaction_type = 'MCO'
+
+                payment_mode = 'NFT'
 
             salary_lines.append(
-                f'MCW|{bank_account}|0411|'
-                f'{employee.name}|{amount}|INR|'
-                f'Salary|ICIC0000011|WIB^'
+                f'{transaction_type}|'
+                f'{bank_account}|0001|'
+                f'{employee.name.replace("|", "").replace("^", "")[:20]}|'
+                f'{amount}|INR|SAL|'
+                f'{ifsc}|{payment_mode}^'
             )
 
         # ==========================================
@@ -163,7 +206,7 @@ class ICICIOtpWizard(models.TransientModel):
         )
 
         _logger.info(
-            'ICICI BULK SALARY FILE: %s',
+            'ICICI FINAL SALARY FILE:\n%s',
             salary_file
         )
 
