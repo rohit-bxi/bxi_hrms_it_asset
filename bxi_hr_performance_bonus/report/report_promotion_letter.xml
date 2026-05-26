@@ -9,7 +9,7 @@
         <field name="report_name">bxi_hr_performance_bonus.report_promotion_letter_template</field>
         <field name="report_file">bxi_hr_performance_bonus.report_promotion_letter_template</field>
         <field name="print_report_name">'Promotion Letter - %s' % (object.employee_id.name)</field>
-        <field name="paperformat_id" ref="paperformat_bonus_letter_a4"/>
+        <field name="paperformat_id" ref="paperformat_bonus_letter_a4" />
     </record>
 
 
@@ -20,14 +20,14 @@
             <t t-foreach="docs" t-as="o">
 
                 <!-- COMPANY -->
-                <t t-set="company" t-value="o.template_company_id"/>
+                <t t-set="company" t-value="o.template_company_id" />
 
                 <!-- ================= LAYOUT SWITCH (5 COMPANIES) ================= -->
 
                 <t t-if="o.template_company_id and o.template_company_id.id == 1">
 
                     <t t-call="custom_template.bxi_custom_layout">
-                        <t t-call="bxi_hr_performance_bonus._promotion_letter_content"/>
+                        <t t-call="bxi_hr_performance_bonus._promotion_letter_content" />
                     </t>
 
                 </t>
@@ -35,7 +35,7 @@
                 <t t-elif="o.template_company_id and o.template_company_id.id == 2">
 
                     <t t-call="custom_template.bxi_n01_layout">
-                        <t t-call="bxi_hr_performance_bonus._promotion_letter_content"/>
+                        <t t-call="bxi_hr_performance_bonus._promotion_letter_content" />
                     </t>
 
                 </t>
@@ -43,7 +43,7 @@
                 <t t-elif="o.template_company_id and o.template_company_id.id == 3">
 
                     <t t-call="custom_template.bxi_custom_layout">
-                        <t t-call="bxi_hr_performance_bonus._promotion_letter_content"/>
+                        <t t-call="bxi_hr_performance_bonus._promotion_letter_content" />
                     </t>
 
                 </t>
@@ -51,7 +51,7 @@
                 <t t-elif="o.template_company_id and o.template_company_id.id == 4">
 
                     <t t-call="custom_template.bxi_n01_layout">
-                        <t t-call="bxi_hr_performance_bonus._promotion_letter_content"/>
+                        <t t-call="bxi_hr_performance_bonus._promotion_letter_content" />
                     </t>
 
                 </t>
@@ -59,7 +59,7 @@
                 <t t-elif="o.template_company_id and o.template_company_id.id == 5">
 
                     <t t-call="custom_template.bxi_custom_layout">
-                        <t t-call="bxi_hr_performance_bonus._promotion_letter_content"/>
+                        <t t-call="bxi_hr_performance_bonus._promotion_letter_content" />
                     </t>
 
                 </t>
@@ -68,7 +68,7 @@
                 <t t-else="">
 
                     <t t-call="custom_template.bxi_custom_layout">
-                        <t t-call="bxi_hr_performance_bonus._promotion_letter_content"/>
+                        <t t-call="bxi_hr_performance_bonus._promotion_letter_content" />
                     </t>
 
                 </t>
@@ -83,7 +83,7 @@
     <template id="_promotion_letter_content">
 
         <div class="page"
-             style="padding:40px;
+            style="padding:40px;
                     font-size:14px;
                     font-family:Arial, sans-serif;">
 
@@ -92,100 +92,109 @@
                 <h2>Promotion Letter</h2>
             </div>
 
-            <br/>
+            <br />
 
             <!-- DETAILS -->
             <table style="width:100%; border-collapse:collapse;">
                 <tr>
                     <td>
                         <strong>Release Date:</strong>
-                        <span t-field="o.release_date"/>
+                        <span t-field="o.release_date" />
                     </td>
                 </tr>
                 <tr>
                     <td>
                         <strong>Employee Name:</strong>
-                        <span t-field="o.employee_id.name"/>
+                        <span t-field="o.employee_id.name" />
                     </td>
                 </tr>
                 <tr>
                     <td>
                         <strong>Effective Date:</strong>
-                        <span t-field="o.effective_date"/>
+                        <span t-field="o.effective_date" />
                     </td>
                 </tr>
                 <tr>
                     <td>
                         <strong>Emp. Code:</strong>
-                        <span t-field="o.employee_code"/>
+                        <span t-field="o.employee_code" />
                     </td>
                 </tr>
             </table>
 
-            <br/><br/>
+            <br />
+            <br />
 
             <!-- BODY -->
+            <p> Dear <strong>
+                    <span t-field="o.employee_id.name" />
+                </strong>, </p>
+
             <p>
-                Dear <strong><span t-field="o.employee_id.name"/></strong>,
+                <strong>Congratulations!</strong>
             </p>
 
-            <p><strong>Congratulations!</strong></p>
-
-            <p style="text-align:justify;">
-                We take this opportunity to congratulate you and express our appreciation
-                for your valuable contribution in achieving company objectives.
-            </p>
-
-            <p style="text-align:justify;">
-                We are delighted to announce your promotion to the role of
+            <p style="text-align:justify;"> We are pleased to inform you that based on your
+                performance, contribution, and continued commitment towards organizational goals,
+                you are being promoted to the position of 
                 <strong>
                     <t t-if="o.promoted_job_id">
-                        <span t-field="o.promoted_job_id.name"/>
+                        <span t-field="o.promoted_job_id.name" />
                     </t>
                     <t t-else="">
-                        <span t-field="o.promotion_job_id.name"/>
+                        <span t-field="o.promotion_job_id.name" />
                     </t>
                 </strong>
-
-                <t t-if="o.promoted_department_id">
-                    in the <strong><span t-field="o.promoted_department_id.name"/></strong> department
-                </t>
-
-                with effect from
-                <strong><span t-field="o.effective_date"/></strong>.
+                with effect from <strong>
+                    <t t-if="o.effective_date">
+                        <span t-field="o.effective_date" />
+                    </t>
+                    <t t-else="">
+                        <span t-field="o.effective_date" />
+                    </t>
+                </strong>
             </p>
 
             <p>
-                Please keep this letter confidential and do not share it externally.
+                Your dedication, professionalism, and efforts have been valuable to the
+                organization, and we are confident that you will continue to contribute with the
+                same level of sincerity and ownership in your new role and responsibilities.
+
+                Please note that all other terms and conditions of your employment remain unchanged
+                unless otherwise communicated separately.
             </p>
 
             <p>
-                All other terms and conditions remain unchanged.
+                We look forward to your continued contribution and wish you success in your enhanced
+                role at <strong>
+                    <t t-if="o.template_company_id.name">
+                        <span t-field="o.template_company_id.name" />
+                    </t>
+                    <t t-else="">
+                        <span t-field="o.template_company_id.name" />
+                    </t>
+                </strong>.
+                Congratulations once again and best wishes for your continued growth with the
+                organization.
             </p>
 
-            <p>
-                We look forward to your continued contribution.
-            </p>
-
-            <br/><br/><br/>
+            <br />
+            <br />
 
             <!-- SIGNATURE -->
             <div style="margin-top:70px;">
                 <p>Sincerely,</p>
 
-                <br/><br/>
+                <br />
+                <br />
 
                 <table style="width:100%;">
                     <tr>
                         <td style="width:50%;">
-                            <strong>Pallavi Paliwal</strong><br/>
-                            Partner &amp; MD
-                        </td>
+                            <strong>Pallavi Paliwal</strong><br /> Partner &amp; MD </td>
 
                         <td style="width:50%; text-align:right;">
-                            <strong>Nazia Khan</strong><br/>
-                            HR Head
-                        </td>
+                            <strong>Nazia Khan</strong><br /> HR Head </td>
                     </tr>
                 </table>
             </div>
