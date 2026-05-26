@@ -122,6 +122,59 @@ class HrEmployeeAppraisal(models.Model):
         ('nonrevenue', 'Non Revenue'),
     ], string="Type", default='revenue', tracking=True)
 
+    current_band = fields.Char(
+            related='employee_id.role_band',
+            readonly=False,
+        )
+    current_basic_salary = fields.Float("Basic Salary")
+    current_flexible_allowance = fields.Float(
+        "Flexible Allowance",
+        compute="_compute_salary",
+        store=True,
+        readonly=True,
+        force_save=True,
+        compute_sudo=True,
+    )
+
+    current_monthly_total = fields.Float(
+        compute="_compute_salary",
+        store=True,
+        tracking=True,
+        compute_sudo=True,
+    )
+
+    current_annual_fixed = fields.Float(
+        compute="_compute_salary",
+        store=True,
+        tracking=True,
+        compute_sudo=True,
+    )
+    current_pf = fields.Float("Provident Fund", default=21600.0, tracking=True) 
+    current_insurance = fields.Float("Medical Insurance", default=50000.0, tracking=True) 
+    current_nps = fields.Float("NPS", default=15000, tracking=True)
+    current_performance_bonus_percentage = fields.Integer(string="Performance Bonus %")
+    current_retiral_total = fields.Float(
+        compute="_compute_salary",
+        store=True,
+        tracking=True,
+        compute_sudo=True,
+    )
+    current_org_bonus = fields.Float("Org Bonus", compute="_compute_bonus", tracking=True,readonly=False) 
+    current_performance_bonus = fields.Float("Performance Bonus", compute="_compute_bonus", tracking=True,readonly=False)
+    current_variable_total = fields.Float(
+        compute="_compute_salary",
+        store=True,
+        tracking=True,
+        compute_sudo=True,
+    )
+
+    current_ctc_total = fields.Float(
+        compute="_compute_salary",
+        store=True,
+        tracking=True,
+        compute_sudo=True,
+    )
+
     def action_open_letter_wizard(self):
         self.ensure_one()
 

@@ -1,6 +1,5 @@
-from odoo import models, fields, _
+from odoo import models, fields, _,api
 # pyrefly: ignore [missing-import]
-from odoo.exceptions import UserError
 from datetime import date
 
 class HrEmployee(models.Model):
@@ -8,16 +7,18 @@ class HrEmployee(models.Model):
 
     appraisal_count = fields.Integer(
         string="Performance/Bonus",
-        compute="_compute_appraisal_count"
+        compute="_compute_appraisal_count_1"
     )
+    appraisal_ids = fields.One2many('hr.employee.appraisal', 'employee_id')
 
-    def _compute_appraisal_count(self):
-        for rec in self:
-            rec.appraisal_count = self.env[
-                'hr.employee.appraisal'
-            ].search_count([
-                ('employee_id', '=', rec.id)
-            ])
+
+    @api.depends('appraisal_ids')
+    def _compute_appraisal_count_1(self):
+        read_group_result = self.env['hr.employee.appraisal'].with_context(active_test=False)._read_group([('employee_id', 'in', self.ids)], ['employee_id'], ['__count'])
+        result = {employee.id: count for employee, count in read_group_result}
+        for employee in self:
+            employee.appraisal_count = result.get(employee.id, 0)
+
 
     def action_open_appraisals(self):
         self.ensure_one()
@@ -27,9 +28,12 @@ class HrEmployee(models.Model):
             'name': 'Performance / Bonus',
             'res_model': 'hr.employee.appraisal',
             'view_mode': 'list,form',
-            'domain': [('employee_id', '=', self.id)],
+            'domain': [
+                ('employee_id', '=', self.id)
+            ],
             'context': {
-                'default_employee_id': self.id
+                'default_employee_id': self.id,
+                'active_test': False,
             },
             'target': 'current',
         }

@@ -2023,41 +2023,56 @@
 
     <template id="custom_external_footer" inherit_id="web.external_layout_standard">
 
-    <!-- Replace full footer container -->
-    <xpath expr="//div[contains(@class,'o_footer')]" position="replace">
-        <div style="margin-top:10px; text-align:right;">
-            <strong style="color:#1e90ff; font-weight:bold; text-decoration:underline;">Employee Signature</strong>
-            <div style="height:30px; border-bottom:1px solid black; width:200px; margin-left:auto;"></div>
-        </div>
-        <div class="o_footer" style="font-size:9px; width:100%;">
-
-            <div style="background:#1f2a44; color:white; padding:10px 20px;">
-
-                <!-- LEFT -->
-                <div style="float:left; width:60%;">
-                    <strong><t t-esc="company.name"/></strong><br/>
-                    <t t-esc="company.company_id.street or ''"/>
-                    <t t-if="company.street2">, <t t-esc="company.street2"/></t><br/>
-                    <t t-esc="company.city or ''"/>
-                    <t t-if="company.state_id">, <t t-esc="company.state_id.name"/></t>
-                    <t t-if="company.zip"> - <t t-esc="company.zip"/></t><br/>
-                    <t t-esc="company.country_id.name or ''"/>
-                </div>
-
-                <!-- RIGHT -->
-                <div style="float:right; width:35%; text-align:right;">
-                    CIN: <t t-esc="company.company_registry or 'N/A'"/><br/>
-                    Email: <t t-esc="company.email or ''"/><br/>
-                    Phone: <t t-esc="company.phone or ''"/>
-                </div>
-
-                <div style="clear:both;"></div>
-
+        <xpath expr="//div[contains(@class,'o_footer')]" position="replace">
+            <div style="margin-top:10px; text-align:right;">
+                <strong style="color:#1e90ff;font-weight:bold;text-decoration:underline;">
+                    Employee Signature
+                </strong>
+                <div style="height:30px;border-bottom:1px solid black;width:200px;margin-left:auto;"/>
             </div>
 
-        </div>
+            <div class="o_footer" style="font-size:9px;width:100%;">
+                <div style="background:#1f2a44;color:white; padding:10px 20px;">
+                    <div style="float:left;width:60%;">
+                        <strong> <t t-out="company.name"/> </strong>
+                        <br/>
+                        <t t-out="company.street or ''"/>
+                        <t t-if="company.street2">
+                            ,
+                            <t t-out="company.street2"/>
+                        </t>
+                        <br/>
+                        <t t-out="company.city or ''"/>
+                        <t t-if="company.state_id">
+                            ,
+                            <t t-out="company.state_id.name"/>
+                        </t>
 
-    </xpath>
+                        <t t-if="company.zip">
+                            -
+                            <t t-out="company.zip"/>
+                        </t>
 
-</template>
+                        <br/>
+
+                        <t t-out="company.country_id.name or ''"/>
+
+                    </div>
+
+                    <!-- RIGHT -->
+                    <div style="float:right;width:35%;text-align:right;">
+                        CIN:
+                        <t t-out="company.company_registry or 'N/A'"/>
+                        <br/>
+                        Email:
+                        <t t-out="company.email or ''"/>
+                        <br/>
+                        Phone:
+                        <t t-out="company.phone or ''"/>
+                    </div>
+                    <div style="clear:both;"/>
+                </div>
+            </div>
+        </xpath>
+    </template>
 </odoo>

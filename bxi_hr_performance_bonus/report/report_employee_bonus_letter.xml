@@ -1,183 +1,150 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <template id="report_promotion_letter_template">
-        <t t-call="web.html_container">
+    <record id="action_report_employee_bonus_letter" model="ir.actions.report">
+        <field name="name">Employee Bonus Letter</field>
+        <field name="model">hr.employee.appraisal</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">bxi_hr_performance_bonus.report_employee_bonus_letter</field>
+        <field name="report_file">bxi_hr_performance_bonus.report_employee_bonus_letter</field>
+        <field name="print_report_name">'Bonus Letter - %s' % (object.employee_id.name or '')</field>
+        <field name="paperformat_id" ref="paperformat_bonus_letter_a4" />
+    </record>
 
+    <template id="report_employee_bonus_letter">
+        <t t-call="web.html_container">
             <t t-foreach="docs" t-as="o">
 
-                <!-- COMPANY -->
-                <t t-set="company" t-value="o.template_company_id"/>
-
-                <!-- ================= LAYOUT SWITCH (5 COMPANIES) ================= -->
+                <t t-set="company" t-value="o.template_company_id" />
 
                 <t t-if="o.template_company_id and o.template_company_id.id == 1">
-
                     <t t-call="custom_template.bxi_custom_layout">
-                        <t t-call="bxi_hr_performance_bonus._promotion_letter_content"/>
+                        <t t-call="bxi_hr_performance_bonus._report_employee_bonus_letter" />
                     </t>
-
                 </t>
 
                 <t t-elif="o.template_company_id and o.template_company_id.id == 2">
-
                     <t t-call="custom_template.bxi_n01_layout">
-                        <t t-call="bxi_hr_performance_bonus._promotion_letter_content"/>
+                        <t t-call="bxi_hr_performance_bonus._report_employee_bonus_letter" />
                     </t>
-
                 </t>
 
                 <t t-elif="o.template_company_id and o.template_company_id.id == 3">
-
                     <t t-call="custom_template.bxi_custom_layout">
-                        <t t-call="bxi_hr_performance_bonus._promotion_letter_content"/>
+                        <t t-call="bxi_hr_performance_bonus._report_employee_bonus_letter" />
                     </t>
-
                 </t>
 
                 <t t-elif="o.template_company_id and o.template_company_id.id == 4">
-
                     <t t-call="custom_template.bxi_n01_layout">
-                        <t t-call="bxi_hr_performance_bonus._promotion_letter_content"/>
+                        <t t-call="bxi_hr_performance_bonus._report_employee_bonus_letter" />
                     </t>
-
                 </t>
 
                 <t t-elif="o.template_company_id and o.template_company_id.id == 5">
-
                     <t t-call="custom_template.bxi_custom_layout">
-                        <t t-call="bxi_hr_performance_bonus._promotion_letter_content"/>
+                        <t t-call="bxi_hr_performance_bonus._report_employee_bonus_letter" />
                     </t>
-
                 </t>
 
-                <!-- DEFAULT -->
                 <t t-else="">
-
                     <t t-call="custom_template.bxi_custom_layout">
-                        <t t-call="bxi_hr_performance_bonus._promotion_letter_content"/>
+                        <t t-call="bxi_hr_performance_bonus._bonus_letter_content" />
                     </t>
-
                 </t>
 
             </t>
-
         </t>
     </template>
 
-
-    <!-- ================= CONTENT BLOCK ================= -->
-    <template id="_promotion_letter_content">
-
-        <div class="page"
-             style="padding:40px;
-                    font-size:14px;
-                    font-family:Arial, sans-serif;">
-
-            <!-- TITLE -->
+    <template id="_report_employee_bonus_letter">
+        <div class="page" style="padding:40px; font-size:14px; font-family:Arial, sans-serif;">
             <div style="text-align:center;">
-                <h2>Promotion Letter</h2>
+                <h2>Bonus Letter</h2>
             </div>
+            <br />
+            <div style="margin-bottom: 40px;">
+                <strong>Release Date :</strong>
+                <span t-field="o.release_date" />
+                <br />
+                <br />
+                <strong>Employee Name :</strong>
+                <span t-field="o.employee_id.name" />
+                <br />
+                <strong>Emp. Code :</strong>
+                <span t-field="o.employee_code" />
+            </div>
+            <p> Dear <strong>
+                    <span t-field="o.employee_id.name" />
+                </strong>, </p>
 
-            <br/>
+            <p style="text-align: justify;"> We are pleased to inform you that you have been awarded
+                a <strong>Bonus Payout</strong> for your contribution and performance during the
+                review period. </p>
 
-            <!-- DETAILS -->
-            <table style="width:100%; border-collapse:collapse;">
-                <tr>
-                    <td>
-                        <strong>Release Date:</strong>
-                        <span t-field="o.release_date"/>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <strong>Employee Name:</strong>
-                        <span t-field="o.employee_id.name"/>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <strong>Effective Date:</strong>
-                        <span t-field="o.effective_date"/>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <strong>Emp. Code:</strong>
-                        <span t-field="o.employee_code"/>
-                    </td>
-                </tr>
-            </table>
+            <p>Your payout details are as follows:</p>
 
-            <br/><br/>
+            <ul style="margin-left: 20px;">
+                <li>
+                    <strong>Bonus Payout Amount :</strong> INR <span t-field="o.bonus_amount" />
+                </li>
+                <li>
+                    <strong>Payout Month :</strong>
+                    <span t-field="o.payout_month" />
+                </li>
+            </ul>
 
-            <!-- BODY -->
-            <p>
-                Dear <strong><span t-field="o.employee_id.name"/></strong>,
+            <p style="text-align: justify;">
+                This payout reflects your efforts, commitment, and contribution
+                towards the success of the organization during the review period.
             </p>
 
-            <p><strong>Congratulations!</strong></p>
+            <p>Please note:</p>
 
-            <p style="text-align:justify;">
-                We take this opportunity to congratulate you and express our appreciation
-                for your valuable contribution in achieving company objectives.
-            </p>
+            <ul style="margin-left: 20px;">
+                <li>
+                    The payout is subject to applicable taxes and statutory
+                    deductions as per company policy.
+                </li>
+                <li>
+                    This payout is discretionary in nature and based on
+                    performance, business outcomes, and management approval.
+                </li>
+                <li>
+                    The payout amount will be processed in the payout month
+                    along with the salary cycle.
+                </li>
+            </ul>
 
-            <p style="text-align:justify;">
-                We are delighted to announce your promotion to the role of
-                <strong>
-                    <t t-if="o.promoted_job_id">
-                        <span t-field="o.promoted_job_id.name"/>
-                    </t>
-                    <t t-else="">
-                        <span t-field="o.promotion_job_id.name"/>
-                    </t>
-                </strong>
-
-                <t t-if="o.promoted_department_id">
-                    in the <strong><span t-field="o.promoted_department_id.name"/></strong> department
-                </t>
-
-                with effect from
-                <strong><span t-field="o.effective_date"/></strong>.
+            <p style="text-align: justify;">
+                We appreciate your dedication, hard work, and continued
+                contribution to the organization. We look forward to your
+                ongoing support in achieving greater milestones together.
             </p>
 
             <p>
-                Please keep this letter confidential and do not share it externally.
+                Congratulations and wishing you continued success ahead.
             </p>
 
-            <p>
-                All other terms and conditions remain unchanged.
-            </p>
-
-            <p>
-                We look forward to your continued contribution.
-            </p>
-
-            <br/><br/><br/>
-
-            <!-- SIGNATURE -->
-            <div style="margin-top:70px;">
+            <div style="margin-top: 70px;">
                 <p>Sincerely,</p>
 
-                <br/><br/>
+                <br />
+                <br />
 
-                <table style="width:100%;">
+                <table style="width: 100%;">
                     <tr>
-                        <td style="width:50%;">
-                            <strong>Pallavi Paliwal</strong><br/>
-                            Partner &amp; MD
-                        </td>
+                        <td style="width: 50%;">
+                            <strong>Pallavi Paliwal</strong>
+                                        <br /> Partner &amp; MD </td>
 
-                        <td style="width:50%; text-align:right;">
-                            <strong>Nazia Khan</strong><br/>
-                            HR Head
-                        </td>
+                        <td style="width: 50%; text-align: right;">
+                            <strong>Nazia Khan</strong>
+                                        <br /> HR Head </td>
                     </tr>
                 </table>
             </div>
 
         </div>
-
     </template>
 </odoo>

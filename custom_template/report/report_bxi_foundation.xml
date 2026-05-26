@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-    <template id="bxi_custom_layout">
 
+    <template id="bxi_foundation_layout">
         <t t-call="web.html_container">
 
             <!-- COMPANY -->
             <t t-set="company"
                t-value="o.template_company_id or res_company"/>
 
-            <!-- COLOR -->
+            <!-- HEADER COLOR -->
             <t t-set="header_bg"
-               t-value="'#0b2a6f' if company.id == 1 else '#5b0f00'"/>
+               t-value="'#E3E3E3'"/>
 
             <div class="page"
                  t-attf-style="
@@ -21,18 +21,20 @@
                     padding-bottom:110px;
                  ">
 
-                <!-- HEADER -->
+                <!-- ================= HEADER ================= -->
                 <div t-attf-style="
                     width:100%;
-                    height:90px;
+                    height:95px;
                     background:#{header_bg};
+                    -webkit-print-color-adjust:exact;
+                    print-color-adjust:exact;
                     padding:0 30px;
                     box-sizing:border-box;
                 ">
 
                     <table style="
                         width:100%;
-                        height:90px;
+                        height:95px;
                         border-collapse:collapse;
                     ">
                         <tr>
@@ -45,10 +47,7 @@
                             ">
                                 <t t-if="company.logo_web">
                                     <img t-att-src="image_data_uri(company.logo_web)"
-                                         style="
-                                            height:55px;
-                                            width:auto;
-                                         "/>
+                                         style="height:55px; width:auto;"/>
                                 </t>
                             </td>
 
@@ -57,11 +56,11 @@
                                 width:60%;
                                 vertical-align:middle;
                                 text-align:center;
-                                color:#ffffff;
-                                font-size:22px;
+                                font-size:20px;
                                 font-weight:bold;
                                 text-transform:uppercase;
                                 letter-spacing:1px;
+                                color:#222;
                             ">
                                 <t t-esc="company.name"/>
                             </td>
@@ -71,43 +70,44 @@
 
                         </tr>
                     </table>
+
                 </div>
 
-                <!-- BODY -->
+                <!-- ================= BODY ================= -->
                 <div style="
                     padding:30px 20px 20px 20px;
+                    box-sizing:border-box;
                 ">
                     <t t-out="0"/>
                 </div>
 
-                <!-- FOOTER -->
+                <!-- ================= FOOTER ================= -->
                 <div t-attf-style="
                     position:absolute;
                     bottom:0;
                     left:0;
                     width:100%;
-                    height:90px;
+                    height:95px;
                     background:#{header_bg};
-                    color:#ffffff;
-                    font-size:8px;
+                    -webkit-print-color-adjust:exact;
+                    print-color-adjust:exact;
+                    color:#222;
+                    font-size:9px;
                 ">
 
                     <table style="
                         width:100%;
-                        height:90px;
+                        height:95px;
                         border-collapse:collapse;
-                        color:#ffffff;
                     ">
-
                         <tr>
 
-                            <!-- LEFT -->
+                            <!-- LEFT DETAILS -->
                             <td style="
-                                width:45%;
-                                padding:10px 15px;
+                                width:55%;
+                                padding:10px 20px;
                                 vertical-align:middle;
-                                line-height:13px;
-                                color:#ffffff;
+                                line-height:14px;
                             ">
                                 <strong>
                                     <t t-esc="company.name"/>
@@ -140,51 +140,46 @@
                                 <t t-esc="company.country_id.name or ''"/>
                             </td>
 
-                            <!-- CENTER -->
+                            <!-- RIGHT DETAILS (RESTORED) -->
                             <td style="
-                                width:35%;
-                                vertical-align:middle;
+                                width:25%;
+                                padding:10px 10px;
                                 text-align:right;
-                                padding:10px;
+                                vertical-align:middle;
                                 line-height:14px;
-                                color:#ffffff;
                             ">
 
                                 <div>
-                                    CIN :
-                                    <t t-esc="company.company_registry or 'N/A'"/>
-                                </div>
-
-                                <div>
-                                    Email :
+                                    Email:
                                     <t t-esc="company.email or ''"/>
                                 </div>
 
                                 <div>
-                                    Phone :
+                                    Phone:
                                     <t t-esc="company.phone or ''"/>
+                                </div>
+
+                                <div>
+                                    CIN:
+                                    <t t-esc="company.company_registry or ''"/>
                                 </div>
 
                             </td>
 
-                            <!-- RIGHT LOGO -->
+                            <!-- RIGHT LOGO (RESTORED) -->
                             <td style="
                                 width:20%;
-                                vertical-align:middle;
                                 text-align:center;
+                                vertical-align:middle;
                                 padding:10px;
                             ">
                                 <t t-if="company.logo_web">
                                     <img t-att-src="image_data_uri(company.logo_web)"
-                                         style="
-                                            max-height:35px;
-                                            width:auto;
-                                         "/>
+                                         style="max-height:40px; width:auto;"/>
                                 </t>
                             </td>
 
                         </tr>
-
                     </table>
 
                 </div>
@@ -192,6 +187,6 @@
             </div>
 
         </t>
-
     </template>
+
 </odoo>

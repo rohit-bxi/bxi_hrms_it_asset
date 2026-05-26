@@ -12,7 +12,9 @@
     'depends': ['hr'],
     'data': [
         'report/report.xml',
-        'report/report_nzero_one.xml'
+        'report/report_nzero_one.xml',
+        'report/report_bxi_foundation.xml',
+
     ],
     'installable': True,
     'application': False,
