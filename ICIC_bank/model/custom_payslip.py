@@ -344,15 +344,17 @@ class HrPayslip(models.Model):
                     f'Invalid salary amount for {employee.name}'
                 )
 
+        unique_id = str(
+            random.randint(10000, 99999)
+        )
+
         create_payload = {
             "AGGRID": "CIBBULK001",
             "AGGRNAME": "BULKTESTING",
             "CORPID": "TXBCORP2",
             "USERID": "USER2",
             "URN": "CIBTESTING",
-            "UNIQUEID": str(
-                random.randint(10000, 99999)
-            )
+            "UNIQUEID": unique_id
         }
 
         url = (
@@ -410,7 +412,8 @@ class HrPayslip(models.Model):
 
         self.write({
             'icici_generated_otp': otp,
-            'icici_payment_status': 'otp_pending'
+            'icici_payment_status': 'otp_pending',
+            'icici_reference': unique_id
         })
 
         return {
@@ -477,10 +480,8 @@ class HrPayslip(models.Model):
             total_amount += amount
             if ifsc.upper().startswith('ICIC'):
                 transaction_type = 'MCW'
-                payment_mode = 'WIB'
             else:
                 transaction_type = 'MCO'
-                payment_mode = 'NFT'
 
             clean_name = (
                 employee.name
@@ -497,7 +498,7 @@ class HrPayslip(models.Model):
                 line = (
                     f'MCW|{bank_account}|0411|'
                     f'{clean_name}|{amount}|'
-                    f'INR|SALARY|{ifsc}|WIB^'
+                    f'INR|salary|{ifsc}|WIB^'
                 )
 
             else:
@@ -505,7 +506,7 @@ class HrPayslip(models.Model):
                 line = (
                     f'MCO|{bank_account}|0011|'
                     f'{clean_name}|{amount}|'
-                    f'INR|SALARY|NFT|{ifsc}^'
+                    f'INR|salary|NFT|{ifsc}^'
                 )
 
             salary_lines.append(line)
@@ -527,7 +528,7 @@ class HrPayslip(models.Model):
 
         salary_file = '\r\n'.join(
             file_lines
-        )
+        ) + '\r\n'
 
         _logger.info(
             'ICICI FINAL SALARY FILE:\n%s',
@@ -539,13 +540,13 @@ class HrPayslip(models.Model):
         ).decode()
 
         payload = {
-            'FILE_DESCRIPTION': 'SALARY',
+            'FILE_DESCRIPTION': f'TEST{random.randint(100000,999999)}',
             'AGGR_ID': 'CIBBULK001',
             'URN': 'CIBTESTING',
             'AGGR_NAME': 'BULKTESTING',
             'USER_ID': 'USER2',
             'CORP_ID': 'TXBCORP2',
-            'UNIQUE_ID': str(int(datetime.now().timestamp())),
+            'UNIQUE_ID': self[0].icici_reference,
             'AGOTP': otp,
             'FILE_NAME': (
                 f'salary_{random.randint(10000,99999)}.txt'
