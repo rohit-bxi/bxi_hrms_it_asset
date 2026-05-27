@@ -323,7 +323,7 @@ class HrPayslip(models.Model):
                     f'Employee account number missing for {employee.name}'
                 )
 
-            amount = int(slip.net_wage)
+            amount = 1
 
             if amount <= 0:
 
@@ -461,26 +461,44 @@ class HrPayslip(models.Model):
                     f'Invalid amount for {employee.name}'
                 )
             total_amount += amount
-            if ifsc.startswith('ICIC'):
+            if ifsc.upper().startswith('ICIC'):
                 transaction_type = 'MCW'
                 payment_mode = 'WIB'
             else:
                 transaction_type = 'MCO'
                 payment_mode = 'NFT'
-            salary_lines.append(
-                f'{transaction_type}|'
-                f'{bank_account}|0001|'
-                f"{employee.name.replace('|', '').replace('^', '')[:20]}|"
-                f'{amount}|INR|SAL|'
-                f'{ifsc}|{payment_mode}^'
+
+            clean_name = (
+                employee.name
+                .replace('|', '')
+                .replace('^', '')[:20]
             )
+
+            if transaction_type == 'MCW':
+
+                line = (
+                    f'MCW|{bank_account}|0411|'
+                    f'{clean_name}|{amount}|'
+                    f'INR|salary|{ifsc}|WIB^'
+                )
+
+            else:
+
+                line = (
+                    f'MCO|{bank_account}|0011|'
+                    f'{clean_name}|{amount}|'
+                    f'INR|salary|NFT|{ifsc}^'
+                )
+
+            salary_lines.append(line)
+
         file_lines = [
             (
                 f'FHR|7|{today_date}|salarybatch|'
                 f'{total_amount}|INR|000451000301|0011^'
             ),
             (
-                f'MDR|000451000301|0001|salary|'
+                f'MDR|000451000301|0011|salary|'
                 f'{total_amount}|INR|salary|'
                 f'ICIC0000011|WIB^'
             )
@@ -509,10 +527,12 @@ class HrPayslip(models.Model):
             'AGGR_NAME': 'BULKTESTING',
             'USER_ID': 'USER2',
             'CORP_ID': 'TXBCORP2',
-            'UNIQUE_ID': str(self.ids[0]),
+            'UNIQUE_ID': str(
+                random.randint(100000, 999999)
+            ),
             'AGOTP': otp,
             'FILE_NAME': (
-                f'salary_{self.ids[0]}.txt'
+                f'salary_{random.randint(10000,99999)}.txt'
             ),
             'FILE_CONTENT': encoded_file
         }
