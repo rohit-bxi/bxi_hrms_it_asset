@@ -291,15 +291,6 @@ class HrPayslip(models.Model):
                 'Unable to connect to ICICI server.'
             )
 
-        except Exception as e:
-
-            _logger.exception(
-                'ICICI API ERROR'
-            )
-
-            raise ValidationError(
-                str(e)
-            )
             
     def action_release_salary(self):
 
