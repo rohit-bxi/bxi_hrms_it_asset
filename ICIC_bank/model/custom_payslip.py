@@ -430,6 +430,8 @@ class HrPayslip(models.Model):
         today_date = datetime.today().strftime(
             '%d/%m/%Y'
         )
+        batch_ref = f'salsts{random.randint(100,999)}'
+        narration_ref = f'sals{random.randint(1000,9999)}'
         for slip in self:
             employee = slip.employee_id
             bank_account_rec = (
@@ -460,19 +462,12 @@ class HrPayslip(models.Model):
                 raise ValidationError(
                     f'IFSC missing for {employee.name}'
                 )
-            # amount = int(
-            #     slip.net_wage
-            # )
             amount = 1
             if amount <= 0:
                 raise ValidationError(
                     f'Invalid amount for {employee.name}'
                 )
             total_amount += amount
-            if ifsc.upper().startswith('ICIC'):
-                transaction_type = 'MCW'
-            else:
-                transaction_type = 'MCO'
 
             clean_name = (
                 employee.name
@@ -480,8 +475,7 @@ class HrPayslip(models.Model):
                 .replace('^', '')
                 .replace('.', '')
                 .replace(',', '')
-                .strip()
-                .upper()[:20]
+                .strip()[:20]
             )
 
             if ifsc.startswith('ICIC'):
@@ -503,12 +497,14 @@ class HrPayslip(models.Model):
 
         file_lines = [
             (
-                f'FHR|7|{today_date}|salarybatch|'
-                f'{total_amount}|INR|000451000301|0011^'
+                f'FHR|7|{today_date}|'
+                f'{batch_ref}|{total_amount}|'
+                f'INR|000451000301|0011^'
             ),
             (
-                f'MDR|000451000301|0011|salary|'
-                f'{total_amount}|INR|salary|'
+                f'MDR|000451000301|0011|'
+                f'prachicib|{total_amount}|'
+                f'INR|{narration_ref}|'
                 f'ICIC0000011|WIB^'
             )
         ]
@@ -539,7 +535,8 @@ class HrPayslip(models.Model):
             'UNIQUE_ID': self[0].icici_reference,
             'AGOTP': otp,
             'FILE_NAME': (
-                f'salary_{random.randint(10000,99999)}.txt'
+                f'{random.randint(100000,999999)}'
+                f'S{random.randint(100000,999999)}.txt'
             ),
             'FILE_CONTENT': encoded_file
         }
@@ -574,6 +571,11 @@ class HrPayslip(models.Model):
 
         response_json = json.loads(
             clean_response
+        )
+
+        _logger.info(
+            'ICICI BULK PAYMENT RESPONSE: %s',
+            response_json
         )
 
         response_code = response_json.get(
