@@ -435,7 +435,9 @@ class HrPayslip(models.Model):
                     f'Bank account missing for {employee.name}'
                 )
             bank_account = (
-                bank_account_rec.acc_number or ''
+                (
+                    bank_account_rec.acc_number or ''
+                ).replace(' ', '').replace('-', '')
             ).strip()
             if not bank_account:
                 raise ValidationError(
@@ -443,8 +445,10 @@ class HrPayslip(models.Model):
                 )
             bank = bank_account_rec.bank_id
             ifsc = (
-                bank.bic or ''
-            ).strip()
+                (
+                    bank.bic or ''
+                ).replace(' ', '')
+            ).upper().strip()
             if not ifsc:
                 raise ValidationError(
                     f'IFSC missing for {employee.name}'
@@ -466,7 +470,7 @@ class HrPayslip(models.Model):
             salary_lines.append(
                 f'{transaction_type}|'
                 f'{bank_account}|0001|'
-                f'{employee.name[:20]}|'
+                f"{employee.name.replace('|', '').replace('^', '')[:20]}|"
                 f'{amount}|INR|SAL|'
                 f'{ifsc}|{payment_mode}^'
             )
@@ -533,8 +537,16 @@ class HrPayslip(models.Model):
                 'Empty response from ICICI.'
             )
 
+        json_start = response.find('{')
+
+        json_end = response.rfind('}') + 1
+
+        clean_response = response[
+            json_start:json_end
+        ]
+
         response_json = json.loads(
-            response
+            clean_response
         )
 
         response_code = response_json.get(
