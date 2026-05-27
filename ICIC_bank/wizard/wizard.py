@@ -26,6 +26,11 @@ class ICICIOtpWizard(models.TransientModel):
         string='Payslips',
         required=True
     )
+    payment_date = fields.Date(
+        string='Payment Date',
+        required=True,
+        default=fields.Date.today
+    )
 
     def action_confirm_otp(self):
 
@@ -56,7 +61,8 @@ class ICICIOtpWizard(models.TransientModel):
 
         try:
             slips.process_bulk_payment(
-                self.otp
+                self.otp,
+                self.payment_date
             )
             return {
                 'type': 'ir.actions.client',
