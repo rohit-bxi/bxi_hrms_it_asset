@@ -417,7 +417,10 @@ class HrPayslip(models.Model):
             }
         }
     
-    def process_bulk_payment(self, otp):
+    def process_bulk_payment(self, otp,payment_date):
+        today_date = payment_date.strftime(
+            '%d/%m/%Y'
+        )
         if not self:
             raise ValidationError(
                 'No payslips selected.'
@@ -425,11 +428,7 @@ class HrPayslip(models.Model):
         total_amount = 0
         salary_lines = []
 
-        from datetime import datetime
 
-        today_date = datetime.today().strftime(
-            '%d/%m/%Y'
-        )
         batch_ref = f'salsts{random.randint(100,999)}'
         narration_ref = f'sals{random.randint(1000,9999)}'
         for slip in self:

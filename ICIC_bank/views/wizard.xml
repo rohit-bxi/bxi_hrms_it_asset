@@ -8,6 +8,7 @@
             <form string="ICICI OTP Verification">
                 <group>
                     <field name="otp" password="True"/>
+                    <field name="payment_date"/>
                 </group>
                 <footer>
                     <button
