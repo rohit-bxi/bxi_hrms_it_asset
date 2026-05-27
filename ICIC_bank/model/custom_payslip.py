@@ -8,6 +8,7 @@ import random
 import string
 import logging
 import requests
+import uuid
 
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import AES
@@ -335,9 +336,7 @@ class HrPayslip(models.Model):
                     f'Invalid salary amount for {employee.name}'
                 )
 
-        unique_id = str(
-            random.randint(10000, 99999)
-        )
+        unique_id = uuid.uuid4().hex[:16].upper()
 
         create_payload = {
             "AGGRID": "CIBBULK001",
@@ -525,7 +524,7 @@ class HrPayslip(models.Model):
         ).decode()
 
         payload = {
-            'FILE_DESCRIPTION': f'TEST{random.randint(100000,999999)}',
+            'FILE_DESCRIPTION': f'TEST_{uuid.uuid4().hex[:12].upper()}',
             'AGGR_ID': 'CIBBULK001',
             'URN': 'CIBTESTING',
             'AGGR_NAME': 'BULKTESTING',
@@ -533,10 +532,7 @@ class HrPayslip(models.Model):
             'CORP_ID': 'TXBCORP2',
             'UNIQUE_ID': self[0].icici_reference,
             'AGOTP': otp,
-            'FILE_NAME': (
-                f'{random.randint(100000,999999)}'
-                f'S{random.randint(100000,999999)}.txt'
-            ),
+            'FILE_NAME': f'{uuid.uuid4().hex[:20].upper()}.txt',
             'FILE_CONTENT': encoded_file
         }
 
