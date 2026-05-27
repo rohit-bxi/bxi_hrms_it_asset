@@ -184,9 +184,8 @@ class HrPayslip(models.Model):
     
     def call_icici_api(self, url, payload):
         headers = {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'Connection': 'keep-alive',
+            'accept': '*/*',
+            'content-type': 'application/json',
             'APIKEY': 'HLAo88SpqGCpnwW87KcdwElPsfhPGVyG'
         }
         response = None
@@ -201,6 +200,15 @@ class HrPayslip(models.Model):
             )
 
             for attempt in range(3):
+                _logger.info(
+                    'ICICI REQUEST URL: %s',
+                    url
+                )
+
+                _logger.info(
+                    'ICICI REQUEST BODY: %s',
+                    encrypted_payload
+                )
 
                 try:
 
@@ -209,6 +217,10 @@ class HrPayslip(models.Model):
                         headers=headers,
                         json=encrypted_payload,
                         timeout=(10, 60)
+                    )
+                    _logger.info(
+                        'ICICI RAW RESPONSE: %s',
+                        response.text
                     )
 
                     break
@@ -324,6 +336,7 @@ class HrPayslip(models.Model):
                 )
 
             amount = 1
+            # amount = int(slip.net_wage)
 
             if amount <= 0:
 
@@ -471,7 +484,11 @@ class HrPayslip(models.Model):
             clean_name = (
                 employee.name
                 .replace('|', '')
-                .replace('^', '')[:20]
+                .replace('^', '')
+                .replace('.', '')
+                .replace(',', '')
+                .strip()
+                .upper()[:20]
             )
 
             if transaction_type == 'MCW':
@@ -479,7 +496,7 @@ class HrPayslip(models.Model):
                 line = (
                     f'MCW|{bank_account}|0411|'
                     f'{clean_name}|{amount}|'
-                    f'INR|salary|{ifsc}|WIB^'
+                    f'INR|SALARY|{ifsc}|WIB^'
                 )
 
             else:
@@ -487,7 +504,7 @@ class HrPayslip(models.Model):
                 line = (
                     f'MCO|{bank_account}|0011|'
                     f'{clean_name}|{amount}|'
-                    f'INR|salary|NFT|{ifsc}^'
+                    f'INR|SALARY|NFT|{ifsc}^'
                 )
 
             salary_lines.append(line)
@@ -507,7 +524,7 @@ class HrPayslip(models.Model):
             salary_lines
         )
 
-        salary_file = '\n'.join(
+        salary_file = '\r\n'.join(
             file_lines
         )
 
@@ -521,15 +538,13 @@ class HrPayslip(models.Model):
         ).decode()
 
         payload = {
-            'FILE_DESCRIPTION': 'PAYROLL',
+            'FILE_DESCRIPTION': 'SALARY',
             'AGGR_ID': 'CIBBULK001',
             'URN': 'CIBTESTING',
             'AGGR_NAME': 'BULKTESTING',
             'USER_ID': 'USER2',
             'CORP_ID': 'TXBCORP2',
-            'UNIQUE_ID': str(
-                random.randint(100000, 999999)
-            ),
+            'UNIQUE_ID': str(int(datetime.now().timestamp())),
             'AGOTP': otp,
             'FILE_NAME': (
                 f'salary_{random.randint(10000,99999)}.txt'
