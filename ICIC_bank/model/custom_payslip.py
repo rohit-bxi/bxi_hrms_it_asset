@@ -484,8 +484,7 @@ class HrPayslip(models.Model):
                 .upper()[:20]
             )
 
-            if transaction_type == 'MCW':
-
+            if ifsc.startswith('ICIC'):
                 line = (
                     f'MCW|{bank_account}|0411|'
                     f'{clean_name}|{amount}|'
