@@ -70,7 +70,7 @@
                 </div>
 
                 <!-- FOOTER -->
-                <div t-attf-style="
+                <div style="
                     width:100%;
                     height:80px;
                     background:#{header_bg};
@@ -78,7 +78,6 @@
                     position:fixed;
                     bottom:20;
                     left:0;
-                    font-size:9px;
                     page-break-inside:avoid;
                 ">
 
@@ -89,7 +88,7 @@
 
                         <tr>
 
-                            <!-- LEFT -->
+                            <!-- LEFT DETAILS -->
                             <td style="
                                 width:55%;
                                 padding:10px 20px;
@@ -130,7 +129,9 @@
 
                             <!-- RIGHT DETAILS (RESTORED) -->
                             <td style="
-                                width:35%;
+                                width:25%;
+                                padding:10px;
+                                text-align:right;
                                 vertical-align:middle;
                                 line-height:14px;
                                 color:#ffffff;
