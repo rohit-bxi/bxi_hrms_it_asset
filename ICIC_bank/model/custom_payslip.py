@@ -85,7 +85,11 @@ class HrPayslip(models.Model):
 
         rsa_key = self.get_icici_public_key()
 
-        json_data = json.dumps(payload)
+        json_data = json.dumps(
+            payload,
+            separators=(',', ':'),
+            ensure_ascii=False
+        )
 
         randomno1 = self.random_16()
 
@@ -111,15 +115,11 @@ class HrPayslip(models.Model):
             iv=randomno2.encode()
         )
 
-        cipher_text = cipher_aes.encrypt(
+        encrypted_data = cipher_aes.encrypt(
             pad(
                 data.encode(),
                 AES.block_size
             )
-        )
-
-        encrypted_data = (
-            randomno2.encode() + cipher_text
         )
 
         encr_data_b64 = base64.b64encode(
@@ -163,7 +163,6 @@ class HrPayslip(models.Model):
             encrypted_data
         )
         iv = encrypted_data_bytes[:16]
-        cipher_text = encrypted_data_bytes[16:]
         cipher_aes = AES.new(
             aes_key,
             AES.MODE_CBC,
@@ -171,7 +170,9 @@ class HrPayslip(models.Model):
         )
         try:
             decrypted = unpad(
-                cipher_aes.decrypt(cipher_text),
+                cipher_aes.decrypt(
+                    encrypted_data_bytes
+                ),
                 AES.block_size
             )
         except Exception:
@@ -520,16 +521,16 @@ class HrPayslip(models.Model):
         ).decode()
 
         payload = {
-            "FILE_DESCRIPTION": "TESTID123",
-            "AGGR_ID": "CIBBULK001",
-            "URN": "CIBTESTING",
-            "AGGR_NAME": "BULKTESTING",
-            "USER_ID": "USER2",
-            "CORP_ID": "TXBCORP2",
-            "UNIQUE_ID": str(random.randint(10000, 99999)),
-            "AGOTP": otp,
-            "FILE_NAME": "salary.txt",
-            "FILE_CONTENT": encoded_file
+            'FILE_DESCRIPTION': f'TEST_{uuid.uuid4().hex[:12].upper()}',
+            'AGGR_ID': 'CIBBULK001',
+            'URN': 'CIBTESTING',
+            'AGGR_NAME': 'BULKTESTING',
+            'USER_ID': 'USER2',
+            'CORP_ID': 'TXBCORP2',
+            'UNIQUE_ID': self[0].icici_reference,
+            'AGOTP': otp,
+            'FILE_NAME': f'SALARY_{random.randint(1000,9999)}.txt',
+            'FILE_CONTENT': encoded_file
         }
 
         url = (
@@ -541,7 +542,7 @@ class HrPayslip(models.Model):
             url,
             payload
         )
-        print(result,"\nresult\n")
+        print(result,"result\m")
 
         response = result.get(
             'response'
