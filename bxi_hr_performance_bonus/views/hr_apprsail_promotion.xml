@@ -64,32 +64,35 @@
                             </group>
                         </page>
                         <page string="Appraisal Details" invisible="letter_type not in ['appraisal_promotion_letter','appraisal_letter']">
+                            <group string="Calculator Type">
+                                <field name="revenue_type" widget="radio" options="{'horizontal': true}" readonly="state == 'released'"/>
+                            </group>
+                             <group string="Current Base Info" col="2">
+                                <field name="current_band" readonly="1"/>
+                            </group>
                             <div class="row">
                                 <div class="col-md-6 border-end">
                                     <div class="oe_title">
                                         <h2>Current Contract Information</h2>
                                     </div>
                                     
-                                    <group string="Current Base Info" col="2">
-                                        <field name="current_band" readonly="1"/>
-                                    </group>
-                                    
                                     <group string="Current Monthly Components" col="2">
-                                        <field name="current_basic_salary" readonly="1"/>
+                                        <field name="current_basic_salary"/>
                                         <field name="current_flexible_allowance" readonly="1"/>
                                         <field name="current_monthly_total" readonly="1" />
                                         <field name="current_annual_fixed" readonly="1" />
                                     </group>
                                     
                                     <group string="Current Retirals and Benefits" col="2">
-                                        <field name="current_pf" readonly="1"/>
-                                        <field name="current_insurance" readonly="1"/>
-                                        <field name="current_nps" readonly="1"/>
+                                        <field name="current_pf"/>
+                                        <field name="current_insurance"/>
+                                        <field name="current_nps"/>
                                         <field name="current_retiral_total" readonly="1" />
                                     </group>
                                     
                                     <group string="Current Variable Components" col="2">
-                                        <field name="current_performance_bonus" readonly="1"/>
+                                        <field name="current_performance_bonus"/>
+                                        <field name="current_performance_bonus_percentage"/>
                                         <field name="current_org_bonus" readonly="1"/>
                                         <field name="current_variable_total" readonly="1" />
                                     </group>
@@ -99,19 +102,11 @@
                                     </group>
                                 </div>
 
-                                <div class="col-md-6">
+                                <div class="col-md-6 border-end">
                                     <div class="oe_title">
                                         <h2>Proposed Appraisal Details</h2>
                                     </div>
-                                    
-                                    <group string="Calculator Type">
-                                        <field name="revenue_type" widget="radio" options="{'horizontal': true}" readonly="state == 'released'"/>
-                                    </group>
-                                    
-                                    <group string="Employee Info" col="2">
-                                        <field name="band" readonly="state == 'released'"/>
-                                    </group>
-                                    
+                                                                       
                                     <group string="Monthly Components" col="2">
                                         <field name="basic_salary" readonly="state == 'released'"/>
                                         <field name="flexible_allowance" readonly="state == 'released'"/>
