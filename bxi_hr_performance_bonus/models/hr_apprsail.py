@@ -54,7 +54,7 @@ class HrEmployeeAppraisal(models.Model):
     effective_date = fields.Date()
     bonus_amount = fields.Integer()
     payout_month = fields.Date()
-    appraisal_percentage = fields.Integer(string="Appraisal(%)")
+    appraisal_percentage = fields.Float(string="Appraisal(%)")
     band = fields.Char(
         related='employee_id.role_band',
         readonly=False,
@@ -67,7 +67,13 @@ class HrEmployeeAppraisal(models.Model):
     ], string='Letter Type')
      # Monthly Components
      
-    basic_salary = fields.Float("Basic Salary")
+    basic_salary = fields.Monetary(
+        string="New Basic Salary",
+        compute='_compute_basic_salary',
+        store=True,
+        readonly=True,
+        currency_field='company_currency_id'
+    )
     flexible_allowance = fields.Float(
         "Flexible Allowance",
         compute="_compute_salary",
@@ -126,10 +132,18 @@ class HrEmployeeAppraisal(models.Model):
             related='employee_id.role_band',
             readonly=False,
         )
-    current_basic_salary = fields.Float("Basic Salary")
+    current_basic_salary = fields.Monetary(
+        string="Basic Salary",
+        currency_field='company_currency_id'
+    )  
+    company_currency_id = fields.Many2one(
+        'res.currency',
+        related='company_id.currency_id',
+        readonly=True
+    )  
     current_flexible_allowance = fields.Float(
         "Flexible Allowance",
-        compute="_compute_salary",
+        compute="_compute_current_salary",
         store=True,
         readonly=True,
         force_save=True,
@@ -137,14 +151,14 @@ class HrEmployeeAppraisal(models.Model):
     )
 
     current_monthly_total = fields.Float(
-        compute="_compute_salary",
+        compute="_compute_current_salary",
         store=True,
         tracking=True,
         compute_sudo=True,
     )
 
     current_annual_fixed = fields.Float(
-        compute="_compute_salary",
+        compute="_compute_current_salary",
         store=True,
         tracking=True,
         compute_sudo=True,
@@ -154,26 +168,38 @@ class HrEmployeeAppraisal(models.Model):
     current_nps = fields.Float("NPS", default=15000, tracking=True)
     current_performance_bonus_percentage = fields.Integer(string="Performance Bonus %")
     current_retiral_total = fields.Float(
-        compute="_compute_salary",
+        compute="_compute_current_salary",
         store=True,
         tracking=True,
         compute_sudo=True,
     )
-    current_org_bonus = fields.Float("Org Bonus", compute="_compute_bonus", tracking=True,readonly=False) 
-    current_performance_bonus = fields.Float("Performance Bonus", compute="_compute_bonus", tracking=True,readonly=False)
+    current_org_bonus = fields.Float("Org Bonus", compute="_compute_current_bonus", tracking=True,readonly=False) 
+    current_performance_bonus = fields.Float("Performance Bonus", compute="_compute_current_bonus", tracking=True,readonly=False)
     current_variable_total = fields.Float(
-        compute="_compute_salary",
+        compute="_compute_current_salary",
         store=True,
         tracking=True,
         compute_sudo=True,
     )
 
     current_ctc_total = fields.Float(
-        compute="_compute_salary",
+        compute="_compute_current_salary",
         store=True,
         tracking=True,
         compute_sudo=True,
     )
+    @api.depends('current_basic_salary','appraisal_percentage')
+    def _compute_basic_salary(self):
+        for rec in self:
+            rec.basic_salary = rec.current_basic_salary
+            if rec.appraisal_percentage:
+                rec.basic_salary = (
+                    rec.current_basic_salary +
+                    (
+                        rec.current_basic_salary *
+                        rec.appraisal_percentage / 100
+                    )
+                )
 
     def action_open_letter_wizard(self):
         self.ensure_one()
@@ -197,15 +223,32 @@ class HrEmployeeAppraisal(models.Model):
                     raise ValidationError(
                         "Bonus Amount must be greater than 0."
                     )
+                
+    @api.depends('current_basic_salary','current_pf','current_insurance','current_nps','current_performance_bonus','current_org_bonus')
+    def _compute_current_salary(self):
+        for rec in self:
+            rec.current_flexible_allowance = rec.current_basic_salary * 0.40
+            rec.current_monthly_total = (
+                rec.current_basic_salary +
+                rec.current_flexible_allowance
+            )
+            rec.current_annual_fixed = rec.current_monthly_total * 12
+            rec.current_retiral_total = (
+                rec.current_pf +
+                rec.current_insurance +
+                rec.current_nps
+            )
+            rec.current_variable_total = (
+                rec.current_performance_bonus +
+                rec.current_org_bonus
+            )
 
-    @api.depends(
-        'basic_salary',
-        'pf',
-        'insurance',
-        'nps',
-        'performance_bonus',
-        'org_bonus'
-    )
+            rec.current_ctc_total = (
+                rec.current_annual_fixed +
+                rec.current_retiral_total +
+                rec.current_variable_total
+            )        
+    @api.depends('basic_salary','pf','insurance','nps','performance_bonus','org_bonus')
     def _compute_salary(self):
         for rec in self:
 
@@ -259,3 +302,29 @@ class HrEmployeeAppraisal(models.Model):
                 * (rec.performance_bonus_percentage or 0.0)
                 / 100
             )
+            
+    @api.depends('current_annual_fixed','current_retiral_total','current_performance_bonus_percentage','revenue_type')
+    def _compute_current_bonus(self):
+        for rec in self:
+            if rec.revenue_type in ['revenue', 'simple']:
+                rec.current_org_bonus = (
+                    (rec.current_annual_fixed or 0.0)
+                    + (rec.current_retiral_total or 0.0)
+                ) * 0.10
+            else:
+                rec.current_org_bonus = (
+                    (rec.current_annual_fixed or 0.0)
+                    + (rec.current_retiral_total or 0.0)
+                ) * 0.25
+            total_amount = (
+                (rec.current_annual_fixed or 0.0)
+                + (rec.current_retiral_total or 0.0)
+                + (rec.current_org_bonus or 0.0)
+            )
+
+            rec.current_performance_bonus = (
+                total_amount
+                * (rec.current_performance_bonus_percentage or 0.0)
+                / 100
+            )
+
