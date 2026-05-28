@@ -115,11 +115,15 @@ class HrPayslip(models.Model):
             iv=randomno2.encode()
         )
 
-        encrypted_data = cipher_aes.encrypt(
+        cipher_text = cipher_aes.encrypt(
             pad(
                 data.encode(),
                 AES.block_size
             )
+        )
+
+        encrypted_data = (
+            randomno2.encode() + cipher_text
         )
 
         encr_data_b64 = base64.b64encode(
@@ -509,7 +513,7 @@ class HrPayslip(models.Model):
             salary_lines
         )
 
-        salary_file = '\r\n'.join(file_lines)
+        salary_file = '\r\n'.join(file_lines)+ '\r\n'
 
         _logger.info(
             'ICICI FINAL SALARY FILE:\n%s',
@@ -521,16 +525,16 @@ class HrPayslip(models.Model):
         ).decode()
 
         payload = {
-            'FILE_DESCRIPTION': f'TEST_{uuid.uuid4().hex[:12].upper()}',
-            'AGGR_ID': 'CIBBULK001',
-            'URN': 'CIBTESTING',
-            'AGGR_NAME': 'BULKTESTING',
-            'USER_ID': 'USER2',
-            'CORP_ID': 'TXBCORP2',
-            'UNIQUE_ID': self[0].icici_reference,
-            'AGOTP': otp,
-            'FILE_NAME': f'SALARY_{random.randint(1000,9999)}.txt',
-            'FILE_CONTENT': encoded_file
+            "FILE_DESCRIPTION": "TESTID123",
+            "AGGR_ID": "CIBBULK001",
+            "URN": "CIBTESTING",
+            "AGGR_NAME": "BULKTESTING",
+            "USER_ID": "USER2",
+            "CORP_ID": "TXBCORP2",
+            "UNIQUE_ID": str(random.randint(10000, 99999)),
+            "AGOTP": otp,
+            "FILE_NAME": "salary.txt",
+            "FILE_CONTENT": encoded_file
         }
 
         url = (
@@ -542,6 +546,7 @@ class HrPayslip(models.Model):
             url,
             payload
         )
+        print(result,"\nresult\n")
 
         response = result.get(
             'response'
