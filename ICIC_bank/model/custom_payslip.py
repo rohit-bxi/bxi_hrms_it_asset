@@ -17,7 +17,6 @@ from Crypto.Util.Padding import pad, unpad
 
 
 _logger = logging.getLogger(__name__)
-session = requests.Session()
 
 
 class HrPayslip(models.Model):
@@ -213,7 +212,7 @@ class HrPayslip(models.Model):
 
                 try:
 
-                    response = session.post(
+                    response = requests.post(
                         url,
                         headers=headers,
                         json=encrypted_payload,
@@ -473,7 +472,7 @@ class HrPayslip(models.Model):
                 .replace('^', '')
                 .replace('.', '')
                 .replace(',', '')
-                .strip()[:20]
+                .strip()
             )
 
             if ifsc.startswith('ICIC'):
@@ -510,9 +509,7 @@ class HrPayslip(models.Model):
             salary_lines
         )
 
-        salary_file = '\r\n'.join(
-            file_lines
-        ) + '\r\n'
+        salary_file = '\r\n'.join(file_lines)
 
         _logger.info(
             'ICICI FINAL SALARY FILE:\n%s',
@@ -532,7 +529,7 @@ class HrPayslip(models.Model):
             'CORP_ID': 'TXBCORP2',
             'UNIQUE_ID': self[0].icici_reference,
             'AGOTP': otp,
-            'FILE_NAME': f'{uuid.uuid4().hex[:20].upper()}.txt',
+            'FILE_NAME': f'SALARY_{random.randint(1000,9999)}.txt',
             'FILE_CONTENT': encoded_file
         }
 
