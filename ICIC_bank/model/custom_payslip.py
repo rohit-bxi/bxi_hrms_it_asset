@@ -85,11 +85,7 @@ class HrPayslip(models.Model):
 
         rsa_key = self.get_icici_public_key()
 
-        json_data = json.dumps(
-            payload,
-            separators=(',', ':'),
-            ensure_ascii=False
-        )
+        json_data = json.dumps(payload)
 
         randomno1 = self.random_16()
 
@@ -167,6 +163,7 @@ class HrPayslip(models.Model):
             encrypted_data
         )
         iv = encrypted_data_bytes[:16]
+        cipher_text = encrypted_data_bytes[16:]
         cipher_aes = AES.new(
             aes_key,
             AES.MODE_CBC,
@@ -174,9 +171,7 @@ class HrPayslip(models.Model):
         )
         try:
             decrypted = unpad(
-                cipher_aes.decrypt(
-                    encrypted_data_bytes
-                ),
+                cipher_aes.decrypt(cipher_text),
                 AES.block_size
             )
         except Exception:
