@@ -417,7 +417,7 @@ class HrPayslip(models.Model):
     
     def process_bulk_payment(self, otp,payment_date):
         today_date = payment_date.strftime(
-            '%d/%m/%Y'
+            '%m/%d/%Y'
         )
         if not self:
             raise ValidationError(
