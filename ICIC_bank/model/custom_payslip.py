@@ -336,6 +336,11 @@ class HrPayslip(models.Model):
                 )
 
         unique_id = uuid.uuid4().hex[:16].upper()
+        _logger.info(
+                'unique_id: %s',
+                unique_id
+            )
+        
 
         create_payload = {
             "AGGRID": "CIBBULK001",
@@ -345,6 +350,10 @@ class HrPayslip(models.Model):
             "URN": "CIBTESTING",
             "UNIQUEID": unique_id
         }
+        _logger.info(
+            'create_payload : %s',
+            create_payload
+        )
 
         url = (
             'https://apibankingonesandbox.icici.bank.in'
@@ -520,6 +529,11 @@ class HrPayslip(models.Model):
             salary_file.encode()
         ).decode()
 
+        _logger.info(
+            'encoded_file:\n%s',
+            encoded_file
+        )
+
         payload = {
             'FILE_DESCRIPTION': f'TEST_{uuid.uuid4().hex[:12].upper()}',
             'AGGR_ID': 'CIBBULK001',
@@ -532,6 +546,10 @@ class HrPayslip(models.Model):
             'FILE_NAME': f'SALARY_{random.randint(1000,9999)}.txt',
             'FILE_CONTENT': encoded_file
         }
+        _logger.info(
+            'payload:\n%s',
+            payload
+        )
 
         url = (
             'https://apibankingonesandbox.icici.bank.in'
