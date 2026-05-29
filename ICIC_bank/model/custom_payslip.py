@@ -535,7 +535,7 @@ class HrPayslip(models.Model):
         )
 
         payload = {
-            'FILE_DESCRIPTION': f'TEST_{uuid.uuid4().hex[:12].upper()}',
+            'FILE_DESCRIPTION': f'TEST{uuid.uuid4().hex[:12].upper()}',
             'AGGR_ID': 'CIBBULK001',
             'URN': 'CIBTESTING',
             'AGGR_NAME': 'BULKTESTING',
