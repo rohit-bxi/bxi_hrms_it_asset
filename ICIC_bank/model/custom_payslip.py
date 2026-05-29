@@ -485,7 +485,7 @@ class HrPayslip(models.Model):
             else:
 
                 line = (
-                    f'MCO|{bank_account}|0011|'
+                    f'MCW|{bank_account}|0011|'
                     f'{clean_name}|{amount}|'
                     f'INR|salary|NFT|{ifsc}^'
                 )
@@ -494,7 +494,7 @@ class HrPayslip(models.Model):
 
         file_lines = [
             (
-                f'FHR|7|{today_date}|'
+                f'FHR|2|{today_date}|'
                 f'{batch_ref}|{total_amount}|'
                 f'INR|000451000301|0011^'
             ),
