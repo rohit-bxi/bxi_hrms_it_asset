@@ -54,41 +54,6 @@ class HrEmployee(models.Model):
         for data in self:
             data.employee_ctc = (data.wage)*12
 
-    # def _compute_monthly_tds_new_regime(self, annual_ctc):
-    #     if not annual_ctc:
-    #         return 0.0
-
-    #     STANDARD_DEDUCTION = 75000.0
-    #     taxable_income = max(annual_ctc - STANDARD_DEDUCTION, 0.0)
-
-    #     if taxable_income <= 1200000:
-    #         return 0.0
-
-    #     slabs = [
-    #         (400000, 0.00),
-    #         (800000, 0.05),
-    #         (1200000, 0.10),
-    #         (1600000, 0.15),
-    #         (2000000, 0.20),
-    #         (2400000, 0.25),
-    #         (float("inf"), 0.30),
-    #     ]
-
-    #     tax = 0.0
-    #     prev = 0.0
-
-    #     for limit, rate in slabs:
-    #         if taxable_income <= prev:
-    #             break
-    #         amount = min(taxable_income, limit) - prev
-    #         tax += amount * rate
-    #         prev = limit
-
-    #     tax = tax * 1.04
-
-    #     monthly_tds = tax / 12.0
-    #     return round(monthly_tds, 2)
-
     def _compute_monthly_tds_new_regime(self, annual_ctc):
 
         if not annual_ctc:

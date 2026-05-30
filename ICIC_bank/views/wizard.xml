@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_icici_otp_wizard_form" model="ir.ui.view">
+        <field name="name">icici.otp.wizard.form</field>
+        <field name="model">icici.otp.wizard</field>
+        <field name="arch" type="xml">
+            <form string="ICICI OTP Verification">
+                <group>
+                    <field name="otp" password="True"/>
+                    <field name="payment_date"/>
+                </group>
+                <footer>
+                    <button
+                        name="action_confirm_otp"
+                        string="Verify OTP"
+                        type="object"
+                        class="btn-primary"
+                    />
+                    <button string="Cancel" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>
