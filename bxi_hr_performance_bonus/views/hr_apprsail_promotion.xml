@@ -63,7 +63,7 @@
                                 <field name="promotion_job_id" readonly="state == 'released'"/>
                             </group>
                         </page>
-                        <page string="Appraisal Details" invisible="letter_type not in ['appraisal_promotion_letter','appraisal_letter']">
+                        <page string="Appraisal Details" invisible="letter_type not in ['appraisal_promotion_letter','appraisal_letter','promotion_letter']">
                             <group string="Calculator Type">
                                 <field name="revenue_type" widget="radio" options="{'horizontal': true}" readonly="state == 'released'"/>
                             </group>
