@@ -140,9 +140,9 @@ class HrJobAPI(http.Controller):
                     # 🔹 Billed / Unbilled (custom assumption)
                     "billed_unbilled": getattr(job, 'billed_unbilled', ""),
                     # 🔹 Job Type (custom or selection field assumed)
-                    "contract_type_id": dict(job._fields['contract_type_id'].selection).get(job.contract_type_id,
-                                                                                "") if job.contract_type_id else "",
-
+                    "contract_type": {
+                        "name": job.contract_type_id.name,
+                    } if job.contract_type_id else {},
 
                     # 🔹 Candidates
                     "number_of_openings": job.no_of_recruitment,
