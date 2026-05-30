@@ -227,7 +227,7 @@ class HrEmployeeAppraisal(models.Model):
     @api.depends('current_basic_salary','current_pf','current_insurance','current_nps','current_performance_bonus','current_org_bonus')
     def _compute_current_salary(self):
         for rec in self:
-            rec.current_flexible_allowance = rec.current_basic_salary * 0.40
+            rec.current_flexible_allowance = rec.current_basic_salary * 0.70
             rec.current_monthly_total = (
                 rec.current_basic_salary +
                 rec.current_flexible_allowance
@@ -252,7 +252,7 @@ class HrEmployeeAppraisal(models.Model):
     def _compute_salary(self):
         for rec in self:
 
-            rec.flexible_allowance = rec.basic_salary * 0.40
+            rec.flexible_allowance = rec.basic_salary * 0.70
 
             rec.monthly_total = (
                 rec.basic_salary +
