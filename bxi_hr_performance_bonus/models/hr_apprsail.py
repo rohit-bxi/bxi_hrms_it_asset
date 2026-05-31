@@ -100,6 +100,7 @@ class HrEmployeeAppraisal(models.Model):
     insurance = fields.Float("Medical Insurance", default=50000.0, tracking=True) 
     nps = fields.Float("NPS", default=15000, tracking=True)
     performance_bonus_percentage = fields.Integer(string="Performance Bonus %")
+    org_bonus_percentage = fields.Integer(string="Organisation Bonus %")
     retiral_total = fields.Float(
         compute="_compute_salary",
         store=True,
@@ -167,6 +168,7 @@ class HrEmployeeAppraisal(models.Model):
     current_insurance = fields.Float("Medical Insurance", default=50000.0, tracking=True) 
     current_nps = fields.Float("NPS", default=15000, tracking=True)
     current_performance_bonus_percentage = fields.Integer(string="Performance Bonus %")
+    current_org_bonus_percentage = fields.Integer(string="Organisation Bonus %")
     current_retiral_total = fields.Float(
         compute="_compute_current_salary",
         store=True,
@@ -278,53 +280,53 @@ class HrEmployeeAppraisal(models.Model):
                 rec.variable_total
             )
     
-    @api.depends('annual_fixed','retiral_total','performance_bonus_percentage','revenue_type')
+    @api.depends('annual_fixed','retiral_total','performance_bonus_percentage','revenue_type','org_bonus_percentage')
     def _compute_bonus(self):
         for rec in self:
-            if rec.revenue_type in ['revenue', 'simple']:
-                rec.org_bonus = (
-                    (rec.annual_fixed or 0.0)
-                    + (rec.retiral_total or 0.0)
-                ) * 0.10
-            else:
-                rec.org_bonus = (
-                    (rec.annual_fixed or 0.0)
-                    + (rec.retiral_total or 0.0)
-                ) * 0.25
-            total_amount = (
+            # Organization Bonus for all revenue types
+            rec.org_bonus = (
                 (rec.annual_fixed or 0.0)
                 + (rec.retiral_total or 0.0)
-                + (rec.org_bonus or 0.0)
-            )
+            ) * (rec.org_bonus_percentage or 0.0) / 100
 
-            rec.performance_bonus = (
-                total_amount
-                * (rec.performance_bonus_percentage or 0.0)
-                / 100
-            )
+            # Performance Bonus only for Revenue employees
+            if rec.revenue_type == 'revenue':
+                total_amount = (
+                    (rec.annual_fixed or 0.0)
+                    + (rec.retiral_total or 0.0)
+                    + (rec.org_bonus or 0.0)
+                )
+
+                rec.performance_bonus = (
+                    total_amount
+                    * (rec.performance_bonus_percentage or 0.0)
+                    / 100
+                )
+            else:
+                rec.performance_bonus = 0.0
             
-    @api.depends('current_annual_fixed','current_retiral_total','current_performance_bonus_percentage','revenue_type')
+    @api.depends('current_annual_fixed','current_retiral_total','current_performance_bonus_percentage','revenue_type','current_org_bonus_percentage')
     def _compute_current_bonus(self):
         for rec in self:
-            if rec.revenue_type in ['revenue', 'simple']:
-                rec.current_org_bonus = (
-                    (rec.current_annual_fixed or 0.0)
-                    + (rec.current_retiral_total or 0.0)
-                ) * 0.10
-            else:
-                rec.current_org_bonus = (
-                    (rec.current_annual_fixed or 0.0)
-                    + (rec.current_retiral_total or 0.0)
-                ) * 0.25
-            total_amount = (
+            # Organization Bonus for all revenue types
+            rec.current_org_bonus = (
                 (rec.current_annual_fixed or 0.0)
                 + (rec.current_retiral_total or 0.0)
-                + (rec.current_org_bonus or 0.0)
-            )
+            ) * (rec.current_org_bonus_percentage or 0.0) / 100
 
-            rec.current_performance_bonus = (
-                total_amount
-                * (rec.current_performance_bonus_percentage or 0.0)
-                / 100
-            )
+            # Performance Bonus only for Revenue employees
+            if rec.revenue_type == 'revenue':
+                total_amount = (
+                    (rec.current_annual_fixed or 0.0)
+                    + (rec.current_retiral_total or 0.0)
+                    + (rec.current_org_bonus or 0.0)
+                )
+
+                rec.current_performance_bonus = (
+                    total_amount
+                    * (rec.current_performance_bonus_percentage or 0.0)
+                    / 100
+                )
+            else:
+                rec.current_performance_bonus = 0.0
 
