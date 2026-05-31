@@ -94,6 +94,7 @@
                                         <field name="current_performance_bonus"/>
                                         <field name="current_performance_bonus_percentage"/>
                                         <field name="current_org_bonus" readonly="1"/>
+                                        <field name="current_org_bonus_percentage"/>
                                         <field name="current_variable_total" readonly="1" />
                                     </group>
                                     
@@ -125,6 +126,7 @@
                                         <field name="performance_bonus" readonly="state == 'released'"/>
                                         <field name="performance_bonus_percentage" readonly="state == 'released'"/>
                                         <field name="org_bonus" readonly="state == 'released'"/>
+                                         <field name="org_bonus_percentage" readonly="state == 'released'"/>
                                         <field name="variable_total" readonly="1" />
                                     </group>
                                     
