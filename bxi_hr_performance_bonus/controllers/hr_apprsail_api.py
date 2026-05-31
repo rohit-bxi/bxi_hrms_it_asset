@@ -86,7 +86,7 @@ class EmployeeAppraisalAPI(http.Controller):
                     'band': appraisal.band,
                     'emp_category':employee.emp_category,
                     'emp_skill_category':employee.emp_skill_category,
-                    'city':employee.work_location_id,
+                    'city':employee.work_location_id.name,
                     'appraisal_percentage': appraisal.appraisal_percentage,
                     'template_company_name':
                         appraisal.template_company_id.name
