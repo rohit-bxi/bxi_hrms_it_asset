@@ -128,7 +128,8 @@ class EmployeeAppraisalAPI(http.Controller):
 
             if appraisal.letter_type in [
                 'appraisal_letter',
-                'appraisal_promotion_letter'
+                'appraisal_promotion_letter',
+                'promotion_letter'
             ]:
 
                 appraisal_response['salary_details'] = {
