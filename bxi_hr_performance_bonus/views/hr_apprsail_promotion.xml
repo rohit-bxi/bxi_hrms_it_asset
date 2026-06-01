@@ -92,9 +92,9 @@
                                     
                                     <group string="Current Variable Components" col="2">
                                         <field name="current_performance_bonus"/>
-                                        <field name="current_performance_bonus_percentage"/>
-                                        <field name="current_org_bonus" readonly="1"/>
-                                        <field name="current_org_bonus_percentage"/>
+                                        <field name="current_performance_bonus_percentage" invisible="letter_type == 'simple'"/>
+                                        <field name="current_org_bonus"/>
+                                        <field name="current_org_bonus_percentage" invisible="letter_type == 'simple'"/>
                                         <field name="current_variable_total" readonly="1" />
                                     </group>
                                     
@@ -124,9 +124,9 @@
                                     
                                     <group string="Variable Components" col="2">
                                         <field name="performance_bonus" readonly="state == 'released'"/>
-                                        <field name="performance_bonus_percentage" readonly="state == 'released'"/>
+                                        <field name="performance_bonus_percentage" invisible="letter_type == 'simple'"/>
                                         <field name="org_bonus" readonly="state == 'released'"/>
-                                         <field name="org_bonus_percentage" readonly="state == 'released'"/>
+                                         <field name="org_bonus_percentage" invisible="letter_type == 'simple'"/>
                                         <field name="variable_total" readonly="1" />
                                     </group>
                                     
