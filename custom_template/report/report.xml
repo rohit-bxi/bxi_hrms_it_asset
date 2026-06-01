@@ -47,7 +47,7 @@
                 </div>
 
                 <div style="
-                    padding:30px 20px 80px 20px;
+                    padding:30px 20px 100px 20px;
                     box-sizing:border-box;
                 ">
                     <t t-out="0"/>
@@ -56,12 +56,14 @@
                 <!-- FOOTER -->
                 <div style="
                     width:100%;
-                    min-height:70px;
+                    min-height:80px;
                     background:#0b2a6f;
                     color:#ffffff;
+                    font-size:9px;
                     position:fixed;
-                    bottom:0;
+                    bottom:20;
                     left:0;
+                    page-break-inside:avoid;
                 ">
 
                     <table style="
