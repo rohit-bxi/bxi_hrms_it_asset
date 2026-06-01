@@ -392,7 +392,7 @@
                 <br />
 
                 <table
-                    style="width:100%; border-collapse:collapse; border:1px solid #000; table-layout:fixed; font-size:11px;">
+                    style="width:100%; border-collapse:collapse; border:1px solid #000; table-layout:fixed; font-size:12px;">
                     <thead>
                         <tr style="background:#0070c0; color:white;">
                             <th style="border:1px solid #000; padding:8px; width:15%;">Components</th>
