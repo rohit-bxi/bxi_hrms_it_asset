@@ -283,18 +283,17 @@ class HrEmployeeAppraisal(models.Model):
     @api.depends('annual_fixed','retiral_total','performance_bonus_percentage','revenue_type','org_bonus_percentage')
     def _compute_bonus(self):
         for rec in self:
-            # Organization Bonus for all revenue types
-            rec.org_bonus = (
-                (rec.annual_fixed or 0.0)
-                + (rec.retiral_total or 0.0)
-            ) * (rec.org_bonus_percentage or 0.0) / 100
-
-            # Performance Bonus only for Revenue employees
+            # Revenue employees
             if rec.revenue_type == 'revenue':
+                rec.org_bonus = (
+                    (rec.annual_fixed or 0.0)
+                    + (rec.retiral_total or 0.0)
+                ) * (rec.org_bonus_percentage or 0.0) / 100
+
                 total_amount = (
                     (rec.annual_fixed or 0.0)
                     + (rec.retiral_total or 0.0)
-                    + (rec.org_bonus or 0.0)
+                    + rec.org_bonus
                 )
 
                 rec.performance_bonus = (
@@ -302,24 +301,35 @@ class HrEmployeeAppraisal(models.Model):
                     * (rec.performance_bonus_percentage or 0.0)
                     / 100
                 )
-            else:
+
+            # Non-revenue employees
+            elif rec.revenue_type == 'nonrevenue':
+                rec.org_bonus = (
+                    (rec.annual_fixed or 0.0)
+                    + (rec.retiral_total or 0.0)
+                ) * (rec.org_bonus_percentage or 0.0) / 100
+
                 rec.performance_bonus = 0.0
+
+            # Simple employees
+            elif rec.revenue_type == 'simple':
+                # Keep manually entered values
+                pass
             
     @api.depends('current_annual_fixed','current_retiral_total','current_performance_bonus_percentage','revenue_type','current_org_bonus_percentage')
     def _compute_current_bonus(self):
         for rec in self:
-            # Organization Bonus for all revenue types
-            rec.current_org_bonus = (
-                (rec.current_annual_fixed or 0.0)
-                + (rec.current_retiral_total or 0.0)
-            ) * (rec.current_org_bonus_percentage or 0.0) / 100
-
-            # Performance Bonus only for Revenue employees
+            # Revenue employees
             if rec.revenue_type == 'revenue':
+                rec.current_org_bonus = (
+                    (rec.current_annual_fixed or 0.0)
+                    + (rec.current_retiral_total or 0.0)
+                ) * (rec.current_org_bonus_percentage or 0.0) / 100
+
                 total_amount = (
                     (rec.current_annual_fixed or 0.0)
                     + (rec.current_retiral_total or 0.0)
-                    + (rec.current_org_bonus or 0.0)
+                    + rec.current_org_bonus
                 )
 
                 rec.current_performance_bonus = (
@@ -327,6 +337,17 @@ class HrEmployeeAppraisal(models.Model):
                     * (rec.current_performance_bonus_percentage or 0.0)
                     / 100
                 )
-            else:
+
+            # Non-revenue employees
+            elif rec.revenue_type == 'nonrevenue':
+                rec.current_org_bonus = (
+                    (rec.current_annual_fixed or 0.0)
+                    + (rec.current_retiral_total or 0.0)
+                ) * (rec.current_org_bonus_percentage or 0.0) / 100
+
                 rec.current_performance_bonus = 0.0
 
+            # Simple employees
+            elif rec.revenue_type == 'simple':
+                # Keep manually entered values
+                pass
