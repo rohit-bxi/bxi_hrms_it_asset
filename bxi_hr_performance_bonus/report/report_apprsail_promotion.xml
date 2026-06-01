@@ -225,7 +225,7 @@
                             <strong>Skill Category*</strong>
                         </td>
                         <td style="border:1px solid #000; padding:8px;">
-                            <span t-field="o.emp_skill_category" />
+                            <span t-field="o.employee_id.emp_skill_category" />
                         </td>
                     </tr>
                     <tr>
@@ -241,7 +241,7 @@
                             <strong>Category</strong>
                         </td>
                         <td style="border:1px solid #000; padding:8px;">
-                            <span t-field="o.emp_category" />
+                            <span t-field="o.employee_id.emp_category" />
                         </td>
                     </tr>
                     <tr>
