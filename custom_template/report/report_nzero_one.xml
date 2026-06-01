@@ -126,7 +126,7 @@
                                 </div>
                                 <div>
                                     CIN:
-                                    <t t-esc="company.vat or ''"/>
+                                    <t t-esc="company.company_registry or ''"/>
                                 </div>
                             </td>
 
