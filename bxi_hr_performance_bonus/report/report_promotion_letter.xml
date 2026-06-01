@@ -364,12 +364,14 @@
             </div>
 
             <div class="page"
-                style="page-break-before:always; padding:30px; font-family:Arial, sans-serif; font-size:11px; line-height:17px;">
-                <div style="text-align:center; margin-bottom:18px;">
-                    <h2 style="font-weight:bold; margin:0; font-size:22px;">Component Guidelines</h2>
+                style="page-break-before:always; padding:15px 20px; font-family:Arial, sans-serif; font-size:9px; line-height:14px;">
+                <div style="text-align:center; margin-bottom:10px;">
+                    <h2 style="font-weight:bold; margin:0; font-size:16px;">
+                        Component Guidelines
+                    </h2>
                 </div>
 
-                <p style="font-size:13px;text-align:justify;">
+                <p style="font-size:11px;text-align:justify;">
                     We have been working towards providing our employees a distinct advantage by
                     designing a salary structure that is easy to comprehend and significantly
                     beneficial with respect to monetary aspects and cash flow. The key feature
@@ -377,7 +379,7 @@
                     requirements, and organizational expectations in a just and fair manner.
                 </p>
 
-                <p style="font-size:13px;text-align:justify;">
+                <p style="font-size:11px;text-align:justify;">
                     To facilitate understanding, your annual compensation has been categorized under
                     the following broad heads:
                 </p>
@@ -469,7 +471,7 @@
                 <br />
                 <br />
 
-                <p style="font-size:13px;text-align:justify;">
+                <p style="font-size:11px;text-align:justify;">
                     <strong>Additional Notes:</strong> Gratuity payable as per rules. - Year-end
                     Performance Bonus is not payable on a prorated basis if the employee leaves
                     before completion of the performance review cycle. Employees need to be active
@@ -480,7 +482,7 @@
                     compensation details are personal and strictly confidential. This should not be
                     shared with anyone other than your reporting manager and HR. </p>
 
-                <p style="font-size:13px;text-align:justify;">
+                <p style="font-size:11px;text-align:justify;">
                     Your compensation details are strictly confidential. Any breach will be treated
                     as misconduct and necessary disciplinary action will be taken. As in the past,
                     BXITech strives to create a unique employee experience and design an optimal
