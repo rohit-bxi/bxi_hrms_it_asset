@@ -76,9 +76,10 @@
                             <!-- LEFT DETAILS -->
                             <td style="
                                 width:55%;
-                                padding:10px 20px;
+                                padding:8px 15px;
                                 vertical-align:middle;
-                                line-height:14px;
+                                line-height:16px;
+                                font-size:11px;
                             ">
                                 <strong>
                                     <t t-esc="company.name"/>
@@ -114,10 +115,12 @@
                             <!-- RIGHT DETAILS (RESTORED) -->
                             <td style="
                                 width:25%;
-                                padding:10px;
                                 text-align:right;
                                 vertical-align:middle;
-                                line-height:14px;
+                                padding:8px 15px;
+                                line-height:16px;
+                                font-size:11px;
+                                color:#222;
                             ">
 
                                 <div>
@@ -133,13 +136,13 @@
                             <!-- RIGHT LOGO (RESTORED) -->
                             <td style="
                                 width:20%;
-                                text-align:center;
+                                text-align:right;
                                 vertical-align:middle;
-                                padding:10px;
+                                padding:15px;
                             ">
                                 <t t-if="company.logo_web">
                                     <img t-att-src="image_data_uri(company.logo_web)"
-                                         style="max-height:40px; width:auto;"/>
+                                         style="max-height:45px; width:auto;"/>
                                 </t>
                             </td>
 
