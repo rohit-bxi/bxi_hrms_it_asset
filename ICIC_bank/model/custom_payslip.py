@@ -424,101 +424,17 @@ class HrPayslip(models.Model):
             }
         }
     
-    def process_bulk_payment(self, otp,payment_date):
-        today_date = payment_date.strftime(
-            '%m/%d/%Y'
-        )
+    def process_bulk_payment(self, otp, payment_date):
+
         if not self:
-            raise ValidationError(
-                'No payslips selected.'
-            )
-        total_amount = 0
-        salary_lines = []
+            raise ValidationError('No payslips selected.')
 
-
-        batch_ref = f'salsts{random.randint(100,999)}'
-        narration_ref = f'sals{random.randint(1000,9999)}'
-        for slip in self:
-            employee = slip.employee_id
-            bank_account_rec = (
-                employee.bank_account_ids.filtered(
-                    lambda b: b.acc_number
-                )[:1]
-            )
-            if not bank_account_rec:
-                raise ValidationError(
-                    f'Bank account missing for {employee.name}'
-                )
-            bank_account = (
-                (
-                    bank_account_rec.acc_number or ''
-                ).replace(' ', '').replace('-', '')
-            ).strip()
-            if not bank_account:
-                raise ValidationError(
-                    f'Account number missing for {employee.name}'
-                )
-            bank = bank_account_rec.bank_id
-            ifsc = (
-                (
-                    bank.bic or ''
-                ).replace(' ', '')
-            ).upper().strip()
-            if not ifsc:
-                raise ValidationError(
-                    f'IFSC missing for {employee.name}'
-                )
-            amount = 1
-            if amount <= 0:
-                raise ValidationError(
-                    f'Invalid amount for {employee.name}'
-                )
-            total_amount += amount
-
-            clean_name = (
-                employee.name
-                .replace('|', '')
-                .replace('^', '')
-                .replace('.', '')
-                .replace(',', '')
-                .strip()
-            )
-
-            if ifsc.startswith('ICIC'):
-                line = (
-                    f'MCW|{bank_account}|0411|'
-                    f'{clean_name}|{amount}|'
-                    f'INR|salary|{ifsc}|WIB^'
-                )
-
-            else:
-
-                line = (
-                    f'MCW|{bank_account}|0011|'
-                    f'{clean_name}|{amount}|'
-                    f'INR|salary|NFT|{ifsc}^'
-                )
-
-            salary_lines.append(line)
-
-        file_lines = [
-            (
-                f'FHR|2|{today_date}|'
-                f'{batch_ref}|{total_amount}|'
-                f'INR|000451000301|0011^'
-            ),
-            (
-                f'MDR|000451000301|0011|'
-                f'prachicib|{total_amount}|'
-                f'INR|{narration_ref}|'
-                f'ICIC0000011|WIB^'
-            )
-        ]
-        file_lines.extend(
-            salary_lines
+        salary_file = (
+            "FHR|3|06/02/2026|TESTING|10|INR|000451000301|0011^\r\n"
+            "MDR|000451000301|0011|Krisala|10|INR|TestRemark|ICIC0000011|WIB^\r\n"
+            "MCO|000405001257|0011|SteelHouse|5|INR|Steel|NFT|DLXB0000092^\r\n"
+            "MCW|041101518240|0411|Beckam|5|INR|Beckam|ICIC0000011|WIB^\r\n"
         )
-
-        salary_file = '\r\n'.join(file_lines)+ '\r\n'
 
         _logger.info(
             'ICICI FINAL SALARY FILE:\n%s',
@@ -546,6 +462,7 @@ class HrPayslip(models.Model):
             'FILE_NAME': f'SALARY_{random.randint(1000,9999)}.txt',
             'FILE_CONTENT': encoded_file
         }
+
         _logger.info(
             'payload:\n%s',
             payload
@@ -560,20 +477,17 @@ class HrPayslip(models.Model):
             url,
             payload
         )
-        print(result,"result\m")
 
-        response = result.get(
-            'response'
-        )
+        _logger.info("ICICI RESULT: %s", result)
+
+        response = result.get('response')
 
         if not response:
-
             raise ValidationError(
                 'Empty response from ICICI.'
             )
 
         json_start = response.find('{')
-
         json_end = response.rfind('}') + 1
 
         clean_response = response[
@@ -594,7 +508,6 @@ class HrPayslip(models.Model):
         )
 
         if response_code != '0000':
-
             raise ValidationError(
                 response_json.get(
                     'Message',
@@ -611,26 +524,11 @@ class HrPayslip(models.Model):
         )
 
         for slip in self:
-
-            slip.icici_payment_status = (
-                'processing'
-            )
-
-            slip.icici_file_seq_num = (
-                file_seq_num
-            )
-
-            slip.icici_reference = (
-                utr
-            )
-
-            slip.icici_response = (
-                response
-            )
-
-            slip.icici_generated_otp = (
-                False
-            )
+            slip.icici_payment_status = 'processing'
+            slip.icici_file_seq_num = file_seq_num
+            slip.icici_reference = utr
+            slip.icici_response = response
+            slip.icici_generated_otp = False
 
         return True
         
