@@ -265,7 +265,7 @@
                     <tr>
                         <td style="border:1px solid #000; padding:8px;">Basic Salary</td>
                         <td style="border:1px solid #000; padding:8px; text-align:right;">
-                            <span t-field="o.basic_salary" />
+                            <span t-esc="o.basic_salary"/>
                         </td>
                     </tr>
                     <tr>

@@ -107,8 +107,8 @@ class HrEmployeeAppraisal(models.Model):
         tracking=True,
         compute_sudo=True,
     )
-    org_bonus = fields.Float("Org Bonus", compute="_compute_bonus", tracking=True,readonly=False) 
-    performance_bonus = fields.Float("Performance Bonus", compute="_compute_bonus", tracking=True,readonly=False)
+    org_bonus = fields.Float("Org Bonus", compute="_compute_bonus", tracking=True,readonly=False,store=True) 
+    performance_bonus = fields.Float("Performance Bonus", compute="_compute_bonus", tracking=True,readonly=False,store=True)
     variable_total = fields.Float(
         compute="_compute_salary",
         store=True,
@@ -175,8 +175,8 @@ class HrEmployeeAppraisal(models.Model):
         tracking=True,
         compute_sudo=True,
     )
-    current_org_bonus = fields.Float("Org Bonus", compute="_compute_current_bonus", tracking=True,readonly=False) 
-    current_performance_bonus = fields.Float("Performance Bonus", compute="_compute_current_bonus", tracking=True,readonly=False)
+    current_org_bonus = fields.Float("Org Bonus", compute="_compute_current_bonus", tracking=True,store=True,readonly=False) 
+    current_performance_bonus = fields.Float("Performance Bonus", compute="_compute_current_bonus", tracking=True,store=True,readonly=False)
     current_variable_total = fields.Float(
         compute="_compute_current_salary",
         store=True,
