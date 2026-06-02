@@ -35,6 +35,19 @@ class HrPayslip(models.Model):
     icici_response = fields.Text()
     icici_generated_otp = fields.Char()
 
+    def action_open_reverse_wizard(self):
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Reverse Payment',
+            'res_model': 'icici.reverse.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_payslip_id': self.id,
+            }
+        }
+
     def random_16(self):
 
         return ''.join(
@@ -503,18 +516,6 @@ class HrPayslip(models.Model):
             response_json
         )
 
-        response_code = response_json.get(
-            'ResponseCode'
-        )
-
-        if response_code != '0000':
-            raise ValidationError(
-                response_json.get(
-                    'Message',
-                    'ICICI Payment Failed'
-                )
-            )
-
         file_seq_num = response_json.get(
             'FILESEQNUM'
         )
@@ -606,4 +607,73 @@ class HrPayslip(models.Model):
         return {
             'type': 'ir.actions.client',
             'tag': 'reload',
+        }
+    
+    def action_reverse_payment(self):
+        self.ensure_one()
+
+        if not self.icici_file_seq_num:
+            raise ValidationError(
+                "ICICI File Sequence Number missing."
+            )
+
+        payload = {
+            "AGGRID": "CIBBULK001",
+            "CORPID": "TXBCORP1",
+            "USERID": "TXBCORP1.USER1",
+            "URN": "CIBTESTING",
+            "FILESEQNUM": self.icici_file_seq_num,
+            "UNIQUEID" : "797251",
+            "ISENCRYPTED": "N"
+        }
+
+        _logger.info(
+            "ICICI REVERSE PAYLOAD: %s",
+            payload
+        )
+
+        url = (
+            "https://apibankingonesandbox.icici.bank.in"
+            "/api/v1/ReverseMis_sv"
+        )
+
+        result = self.call_icici_api(
+            url,
+            payload
+        )
+
+        response = result.get("response")
+
+        if not response:
+            raise ValidationError(
+                "Empty response from ICICI."
+            )
+
+        self.icici_response = response
+
+        try:
+            json_start = response.find("{")
+            json_end = response.rfind("}") + 1
+
+            clean_response = response[
+                json_start:json_end
+            ]
+
+            response_json = json.loads(
+                clean_response
+            )
+
+        except Exception:
+            raise ValidationError(response)
+
+        _logger.info(
+            "ICICI REVERSE RESPONSE: %s",
+            response_json
+        )
+
+        self.icici_payment_status = "draft"
+
+        return {
+            "type": "ir.actions.client",
+            "tag": "reload",
         }
