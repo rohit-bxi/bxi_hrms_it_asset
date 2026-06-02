@@ -13,6 +13,11 @@
                         type="object"
                         class="btn-primary"
                     />
+                    <button
+            name="action_open_reverse_wizard"
+            string="Reverse Payment"
+            type="object"
+            class="btn-danger"/>
             </xpath>
             <xpath expr="//list" position="inside">
                 <field name="icici_payment_status"/>
@@ -48,6 +53,11 @@
                             or icici_payment_status == 'paid'
                         "
                 />
+                <button
+                    name="action_open_reverse_wizard"
+                    string="Reverse Payment"
+                    type="object"
+                    class="btn-danger"/>
                 <button
                     name="action_check_payment_status"
                     string="Check Payment Status"

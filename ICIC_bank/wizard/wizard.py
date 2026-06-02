@@ -75,3 +75,80 @@ class ICICIOtpWizard(models.TransientModel):
             raise ValidationError(
                 str(e)
             )
+        
+class IciciReverseWizard(models.TransientModel):
+    _name = 'icici.reverse.wizard'
+    _description = 'ICICI Reverse Payment'
+
+    payslip_id = fields.Many2one(
+        'hr.payslip',
+        required=True
+    )
+
+    file_seq_num = fields.Char(
+        string="File Sequence Number",
+        required=True
+    )
+
+    def action_reverse(self):
+
+        self.ensure_one()
+
+        payload = {
+            "AGGRID": "CIBBULK001",
+            "CORPID": "TXBCORP1",
+            "USERID": "TXBCORP1.USER1",
+            "URN": "CIBTESTING",
+            "FILESEQNUM": self.file_seq_num,
+            "UNIQUEID": "797251",
+            "ISENCRYPTED": "N"
+        }
+
+        _logger.info(
+            "ICICI REVERSE PAYLOAD: %s",
+            payload
+        )
+
+        url = (
+            "https://apibankingonesandbox.icici.bank.in"
+            "/api/v1/ReverseMis_sv"
+        )
+
+        result = self.payslip_id.call_icici_api(
+            url,
+            payload
+        )
+
+        response = result.get("response")
+
+        if not response:
+            raise ValidationError(
+                "Empty response from ICICI."
+            )
+
+        self.payslip_id.icici_response = response
+
+        try:
+            json_start = response.find("{")
+            json_end = response.rfind("}") + 1
+
+            clean_response = response[
+                json_start:json_end
+            ]
+
+            response_json = json.loads(
+                clean_response
+            )
+
+        except Exception:
+            raise ValidationError(response)
+
+        _logger.info(
+            "ICICI REVERSE RESPONSE: %s",
+            response_json
+        )
+
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'reload',
+        }
