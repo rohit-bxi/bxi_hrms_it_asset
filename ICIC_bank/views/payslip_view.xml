@@ -14,10 +14,12 @@
                         class="btn-primary"
                     />
                     <button
-            name="action_open_reverse_wizard"
-            string="Reverse Payment"
-            type="object"
-            class="btn-danger"/>
+                        name="action_open_reverse_wizard"
+                        string="Reverse Payment"
+                        type="object"
+                        class="btn-danger"
+                        invisible="icici_payment_status not in ['paid','processing']"
+                    />
             </xpath>
             <xpath expr="//list" position="inside">
                 <field name="icici_payment_status"/>
@@ -58,15 +60,6 @@
                     string="Reverse Payment"
                     type="object"
                     class="btn-danger"/>
-                <button
-                    name="action_check_payment_status"
-                    string="Check Payment Status"
-                    type="object"
-                    class="oe_highlight"
-                    invisible="
-                        icici_payment_status != 'processing'
-                    "
-                />
             </xpath>
             <xpath expr="//group[@name='top']" position="inside">
                 <group string="ICICI Payment">
