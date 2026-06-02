@@ -52,6 +52,19 @@ class ApplicantCreation(http.Controller):
 
             resume_file = kwargs.get('resume_file')
 
+            if not email:
+                return self._response("error", "Email is required")
+
+            existing_applicant = request.env['hr.applicant'].sudo().search([
+                ('email_from', '=ilike', email.strip()),
+                ('job_id', '=', job_id)
+            ], limit=1)
+
+            if existing_applicant:
+                return self._response(
+                    "error",
+                    "An applicant with this email address already exists."
+                )
 
             if not partner_name:
                 return self._response("error", "Applicant name is required")
