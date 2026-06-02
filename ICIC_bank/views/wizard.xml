@@ -29,7 +29,8 @@
         <field name="arch" type="xml">
             <form string="Reverse Payment">
                 <group>
-                    <field name="file_seq_num"/>
+                   <field name="file_seq_num"
+       placeholder="Enter ICICI File Sequence Number"/>
                 </group>
 
                 <footer>

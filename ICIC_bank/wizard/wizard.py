@@ -87,11 +87,11 @@ class IciciReverseWizard(models.TransientModel):
 
     file_seq_num = fields.Char(
         string="File Sequence Number",
-        required=True
+        required=True,
+        default=lambda self: self.env.context.get('default_file_seq_num')
     )
 
     def action_reverse(self):
-
         self.ensure_one()
 
         payload = {
@@ -100,44 +100,26 @@ class IciciReverseWizard(models.TransientModel):
             "USERID": "TXBCORP1.USER1",
             "URN": "CIBTESTING",
             "FILESEQNUM": self.file_seq_num,
-            "UNIQUEID": "797251",
+            "UNIQUEID": self.payslip_id.icici_reference,
             "ISENCRYPTED": "N"
         }
 
-        _logger.info(
-            "ICICI REVERSE PAYLOAD: %s",
-            payload
-        )
-
-        url = (
-            "https://apibankingonesandbox.icici.bank.in"
-            "/api/v1/ReverseMis_sv"
-        )
-
         result = self.payslip_id.call_icici_api(
-            url,
+            "https://apibankingonesandbox.icici.bank.in/api/v1/ReverseMis_sv",
             payload
         )
 
         response = result.get("response")
 
         if not response:
-            raise ValidationError(
-                "Empty response from ICICI."
-            )
-
-        self.payslip_id.icici_response = response
+            raise ValidationError("Empty response from ICICI.")
 
         try:
             json_start = response.find("{")
             json_end = response.rfind("}") + 1
 
-            clean_response = response[
-                json_start:json_end
-            ]
-
             response_json = json.loads(
-                clean_response
+                response[json_start:json_end]
             )
 
         except Exception:
@@ -147,6 +129,12 @@ class IciciReverseWizard(models.TransientModel):
             "ICICI REVERSE RESPONSE: %s",
             response_json
         )
+
+        self.payslip_id.write({
+            'icici_payment_status': 'reversed',
+            'icici_response': response,
+            'icici_generated_otp': False,
+        })
 
         return {
             'type': 'ir.actions.client',

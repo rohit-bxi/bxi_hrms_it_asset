@@ -25,9 +25,9 @@ class HrPayslip(models.Model):
     icici_payment_status = fields.Selection([
         ('draft', 'Draft'),
         ('otp_pending', 'OTP Pending'),
-        ('processing', 'Processing'),
         ('paid', 'Paid'),
-        ('failed', 'Failed')
+        ('failed', 'Failed'),
+        ('reversed', 'Reversed')
     ], default='draft')
 
     icici_reference = fields.Char()
@@ -45,6 +45,7 @@ class HrPayslip(models.Model):
             'target': 'new',
             'context': {
                 'default_payslip_id': self.id,
+                'default_file_seq_num': self.icici_file_seq_num,
             }
         }
 
@@ -361,7 +362,7 @@ class HrPayslip(models.Model):
             "CORPID": "TXBCORP2",
             "USERID": "USER2",
             "URN": "CIBTESTING",
-            "UNIQUEID": unique_id
+            "UNIQUEID": self.icici_reference
         }
         _logger.info(
             'create_payload : %s',
@@ -517,7 +518,7 @@ class HrPayslip(models.Model):
         )
 
         file_seq_num = response_json.get(
-            'FILESEQNUM'
+            'FILE_SEQUENCE_NUM'
         )
 
         utr = response_json.get(
@@ -525,7 +526,7 @@ class HrPayslip(models.Model):
         )
 
         for slip in self:
-            slip.icici_payment_status = 'processing'
+            slip.icici_payment_status = 'paid'
             slip.icici_file_seq_num = file_seq_num
             slip.icici_reference = utr
             slip.icici_response = response
@@ -592,8 +593,7 @@ class HrPayslip(models.Model):
         )
 
         if (
-            response_code == '0000'
-            and payment_status == 'SUCCESS'
+            response_code == '200'
         ):
 
             self.icici_payment_status = 'paid'
@@ -609,71 +609,3 @@ class HrPayslip(models.Model):
             'tag': 'reload',
         }
     
-    def action_reverse_payment(self):
-        self.ensure_one()
-
-        if not self.icici_file_seq_num:
-            raise ValidationError(
-                "ICICI File Sequence Number missing."
-            )
-
-        payload = {
-            "AGGRID": "CIBBULK001",
-            "CORPID": "TXBCORP1",
-            "USERID": "TXBCORP1.USER1",
-            "URN": "CIBTESTING",
-            "FILESEQNUM": self.icici_file_seq_num,
-            "UNIQUEID" : "797251",
-            "ISENCRYPTED": "N"
-        }
-
-        _logger.info(
-            "ICICI REVERSE PAYLOAD: %s",
-            payload
-        )
-
-        url = (
-            "https://apibankingonesandbox.icici.bank.in"
-            "/api/v1/ReverseMis_sv"
-        )
-
-        result = self.call_icici_api(
-            url,
-            payload
-        )
-
-        response = result.get("response")
-
-        if not response:
-            raise ValidationError(
-                "Empty response from ICICI."
-            )
-
-        self.icici_response = response
-
-        try:
-            json_start = response.find("{")
-            json_end = response.rfind("}") + 1
-
-            clean_response = response[
-                json_start:json_end
-            ]
-
-            response_json = json.loads(
-                clean_response
-            )
-
-        except Exception:
-            raise ValidationError(response)
-
-        _logger.info(
-            "ICICI REVERSE RESPONSE: %s",
-            response_json
-        )
-
-        self.icici_payment_status = "draft"
-
-        return {
-            "type": "ir.actions.client",
-            "tag": "reload",
-        }
