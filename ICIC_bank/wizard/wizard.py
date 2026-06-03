@@ -121,6 +121,7 @@ class IciciReverseWizard(models.TransientModel):
             'icici_payment_status': 'reversed',
             'icici_response': response,
             'icici_generated_otp': False,
+            'icici_file_seq_num': False,
         })
 
         return {
