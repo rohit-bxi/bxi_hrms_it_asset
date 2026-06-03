@@ -34,6 +34,7 @@ class HrPayslip(models.Model):
     icici_file_seq_num = fields.Char()
     icici_response = fields.Text()
     icici_generated_otp = fields.Char()
+    icici_utr = fields.Char()
 
     def random_16(self):
 
@@ -115,15 +116,11 @@ class HrPayslip(models.Model):
             iv=randomno2.encode()
         )
 
-        cipher_text = cipher_aes.encrypt(
+        encrypted_data = cipher_aes.encrypt(
             pad(
                 data.encode(),
                 AES.block_size
             )
-        )
-
-        encrypted_data = (
-            randomno2.encode() + cipher_text
         )
 
         encr_data_b64 = base64.b64encode(
@@ -349,8 +346,8 @@ class HrPayslip(models.Model):
         create_payload = {
             "AGGRID": "CIBBULK001",
             "AGGRNAME": "BULKTESTING",
-            "CORPID": "TXBCORP2",
-            "USERID": "USER2",
+            "CORPID": "TXBCORP1",
+            "USERID": "USER1",
             "URN": "CIBTESTING",
             "UNIQUEID": unique_id
         }
@@ -460,7 +457,7 @@ class HrPayslip(models.Model):
             "AGGR_NAME": "BULKTESTING",
             "USER_ID": "USER1",
             "CORP_ID": "TXBCORP1",
-            "UNIQUE_ID": self[0].icici_reference,
+            "UNIQUE_ID": self.payslip_id.icici_reference,
             "AGOTP": otp,
             "FILE_NAME": f"SALARY{random.randint(1000,9999)}.txt",
             "FILE_CONTENT": encoded_file
@@ -529,7 +526,7 @@ class HrPayslip(models.Model):
         for slip in self:
             slip.icici_payment_status = 'processing'
             slip.icici_file_seq_num = file_seq_num
-            slip.icici_reference = utr
+            slip.icici_utr = utr
             slip.icici_response = response
             slip.icici_generated_otp = False
 
