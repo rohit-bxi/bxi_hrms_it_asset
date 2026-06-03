@@ -103,6 +103,10 @@ class IciciReverseWizard(models.TransientModel):
             "UNIQUEID": self.payslip_id.icici_reference,
             "ISENCRYPTED": "N"
         }
+        _logger.info(
+            "PAYMENT UNIQUE_ID = %s",
+            self.payslip_id.icici_reference
+        )
 
         result = self.payslip_id.call_icici_api(
             "https://apibankingonesandbox.icici.bank.in/api/v1/ReverseMis_sv",
@@ -129,6 +133,13 @@ class IciciReverseWizard(models.TransientModel):
             "ICICI REVERSE RESPONSE: %s",
             response_json
         )
+        if response_json.get("Response") != "Success":
+            raise ValidationError(
+                response_json.get(
+                    "Message",
+                    "Reverse failed"
+                )
+            )
 
         self.payslip_id.write({
             'icici_payment_status': 'reversed',

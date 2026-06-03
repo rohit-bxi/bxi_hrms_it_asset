@@ -34,6 +34,8 @@ class HrPayslip(models.Model):
     icici_file_seq_num = fields.Char()
     icici_response = fields.Text()
     icici_generated_otp = fields.Char()
+    icici_unique_id = fields.Char()
+    icici_utr = fields.Char()
 
     def action_open_reverse_wizard(self):
         self.ensure_one()
@@ -362,7 +364,7 @@ class HrPayslip(models.Model):
             "CORPID": "TXBCORP2",
             "USERID": "USER2",
             "URN": "CIBTESTING",
-            "UNIQUEID": self.icici_reference
+            "UNIQUEID": unique_id
         }
         _logger.info(
             'create_payload : %s',
@@ -425,7 +427,7 @@ class HrPayslip(models.Model):
         self.write({
             'icici_generated_otp': otp,
             'icici_payment_status': 'otp_pending',
-            'icici_reference': unique_id
+            'icici_unique_id': unique_id
         })
 
         return {
@@ -511,6 +513,10 @@ class HrPayslip(models.Model):
         response_json = json.loads(
             clean_response
         )
+        if response_json.get("Response") != "Success":
+            raise ValidationError(
+                response_json.get("Message", "ICICI payment failed")
+            )
 
         _logger.info(
             'ICICI BULK PAYMENT RESPONSE: %s',
@@ -528,7 +534,7 @@ class HrPayslip(models.Model):
         for slip in self:
             slip.icici_payment_status = 'paid'
             slip.icici_file_seq_num = file_seq_num
-            slip.icici_reference = utr
+            slip.icici_utr = utr
             slip.icici_response = response
             slip.icici_generated_otp = False
 
