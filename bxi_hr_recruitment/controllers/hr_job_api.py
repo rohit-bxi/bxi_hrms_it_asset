@@ -146,6 +146,7 @@ class HrJobAPI(http.Controller):
 
                     # 🔹 Candidates
                     "number_of_openings": job.no_of_recruitment,
+                    "company_id":job.company_id.name
                 })
 
             return {

@@ -48,83 +48,24 @@ class ICICIOtpWizard(models.TransientModel):
 
         except Exception as e:
             _logger.exception(
-                'ICICI BULK PAYMENT ERROR'
+                "ICICI BULK PAYMENT ERROR"
             )
             raise ValidationError(str(e))
-        
+
+
 class IciciReverseWizard(models.TransientModel):
     _name = 'icici.reverse.wizard'
-    _description = 'ICICI Reverse Payment'
 
-    payslip_id = fields.Many2one(
-        'hr.payslip',
-        required=True
-    )
-
-    file_seq_num = fields.Char(
-        string="File Sequence Number",
-        required=True,
-        default=lambda self: self.env.context.get('default_file_seq_num')
-    )
-
+    payslip_id = fields.Many2one('hr.payslip')
+    file_seq_num = fields.Char(required=True)    
     def action_reverse(self):
         self.ensure_one()
 
-        payload = {
-            "AGGRID": "CIBBULK001",
-            "CORPID": "TXBCORP1",
-            "USERID": "TXBCORP1.USER1",
-            "URN": "CIBTESTING",
-            "FILESEQNUM": self.file_seq_num,
-            "UNIQUEID": self.payslip_id.icici_unique_id,
-            "ISENCRYPTED": "N"
-        }
-        _logger.info(
-            "PAYMENT UNIQUE_ID = %s",
-            self.payslip_id.icici_unique_id
-        )
-
-        result = self.payslip_id.call_icici_api(
-            "https://apibankingonesandbox.icici.bank.in/api/v1/ReverseMis_sv",
-            payload
-        )
-
-        response = result.get("response")
-
-        if not response:
-            raise ValidationError("Empty response from ICICI.")
-
-        try:
-            json_start = response.find("{")
-            json_end = response.rfind("}") + 1
-
-            response_json = json.loads(
-                response[json_start:json_end]
-            )
-
-        except Exception:
-            raise ValidationError(response)
-
-        _logger.info(
-            "ICICI REVERSE RESPONSE: %s",
-            response_json
-        )
-        if response_json.get("Response") != "Success":
-            raise ValidationError(
-                response_json.get(
-                    "Message",
-                    "Reverse failed"
+        if not self.file_seq_num:
+                raise ValidationError(
+                    "Please enter File Sequence Number."
                 )
-            )
-
-        self.payslip_id.write({
-            'icici_payment_status': 'reversed',
-            'icici_response': response,
-            'icici_generated_otp': False,
-            'icici_file_seq_num': False,
-        })
-
-        return {
-            'type': 'ir.actions.client',
-            'tag': 'reload',
-        }
+        
+        return self.payslip_id.action_reverse_payment(
+            self.file_seq_num
+        )
