@@ -440,7 +440,7 @@ class HrPayslip(models.Model):
             }
         }
     
-    def process_bulk_payment(self, otp, payment_date):
+    def process_bulk_payment(self, otp):
 
         if not self:
             raise ValidationError('No payslips selected.')
@@ -517,11 +517,7 @@ class HrPayslip(models.Model):
         response_json = json.loads(
             clean_response
         )
-        if response_json.get("Response") != "Success":
-            raise ValidationError(
-                response_json.get("Message", "ICICI payment failed")
-            )
-
+       
         _logger.info(
             'ICICI BULK PAYMENT RESPONSE: %s',
             response_json
