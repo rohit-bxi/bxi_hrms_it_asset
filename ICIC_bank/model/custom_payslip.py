@@ -530,3 +530,66 @@ class HrPayslip(models.Model):
             slip.icici_generated_otp = False
 
         return True
+    
+    def action_reverse_payment(self,file_seq_num):
+
+        if not file_seq_num:
+            raise ValidationError(
+                "File Sequence Number missing."
+            )
+
+        payload = {
+            "AGGRID": "CIBBULK001",
+            "CORPID": "TXBCORP1",
+            "USERID": "TXBCORP1.USER1",
+            "URN": "CIBTESTING",
+            "FILESEQNUM": file_seq_num,
+            "UNIQUEID": self.icici_reference,
+            "ISENCRYPTED": "N"
+        }
+
+        result = self.call_icici_api(
+            "https://apibankingonesandbox.icici.bank.in/api/v1/ReverseMis_sv",
+            payload
+        )
+
+        response = result.get("response")
+
+        if not response:
+            raise ValidationError(
+                "Empty response from ICICI."
+            )
+
+        response_json = json.loads(response)
+
+        if response_json.get("Response") != "Success":
+            raise ValidationError(
+                response_json.get(
+                    "Message",
+                    "Reverse failed"
+                )
+            )
+
+        self.write({
+            'icici_payment_status': 'reversed',
+            'icici_response': response,
+            'icici_generated_otp': False,
+            'icici_file_seq_num': False,
+        })
+
+        return True
+    
+    def action_open_reverse_wizard(self):
+        self.ensure_one()
+
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Reverse Payment',
+            'res_model': 'icici.reverse.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_payslip_id': self.id,
+                'default_file_seq_num': self.icici_file_seq_num,
+            }
+        }

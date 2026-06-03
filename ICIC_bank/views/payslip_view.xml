@@ -13,12 +13,6 @@
                         type="object"
                         class="btn-primary"
                     />
-                    <button
-                        name="action_open_reverse_wizard"
-                        string="Reverse Payment"
-                        type="object"
-                        class="btn-danger"
-                    />
             </xpath>
             <xpath expr="//list" position="inside">
                 <field name="icici_payment_status"/>
