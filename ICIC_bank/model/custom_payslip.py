@@ -452,6 +452,7 @@ class HrPayslip(models.Model):
         )
 
         payload = {
+            "FILE_DESCRIPTION": "TESTING",
             "AGGR_ID": "CIBBULK001",
             "URN": "CIBTESTING",
             "AGGR_NAME": "BULKTESTING",
