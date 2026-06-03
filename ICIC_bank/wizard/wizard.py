@@ -39,6 +39,7 @@ class ICICIOtpWizard(models.TransientModel):
         try:
             self.payslip_ids.process_bulk_payment(
                 self.otp,
+                self.payment_date
             )
 
             return {

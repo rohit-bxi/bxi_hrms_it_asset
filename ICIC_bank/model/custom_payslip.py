@@ -1,3 +1,5 @@
+from odoo.fields import Date
+
 from odoo import models, fields
 from odoo.exceptions import ValidationError
 
@@ -425,13 +427,23 @@ class HrPayslip(models.Model):
             }
         }
 
-    def process_bulk_payment(self, otp):
+    def process_bulk_payment(self, otp,payment_date):
+
+        payment_date_obj = Date.to_date(payment_date)
+
+        payment_date_str = payment_date_obj.strftime(
+            "%d/%m/%Y"
+        )
+        _logger.info(
+            "PAYMENT DATE = %s",
+            payment_date_str
+        )
 
         if not self:
             raise ValidationError('No payslips selected.')
 
         salary_file = (
-            "FHR|3|06/02/2026|TESTING|10|INR|000451000301|0011^\r\n"
+            f"FHR|3|{payment_date_str}|TESTING|10|INR|000451000301|0011^\r\n"
             "MDR|000451000301|0011|Krisala|10|INR|TestRemark|ICIC0000011|WIB^\r\n"
             "MCO|000405001257|0011|SteelHouse|5|INR|Steel|NFT|DLXB0000092^\r\n"
             "MCW|041101518240|0411|Beckam|5|INR|Beckam|ICIC0000011|WIB^\r\n"
