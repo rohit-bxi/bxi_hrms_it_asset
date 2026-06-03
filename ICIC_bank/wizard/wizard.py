@@ -35,46 +35,23 @@ class ICICIOtpWizard(models.TransientModel):
     def action_confirm_otp(self):
 
         self.ensure_one()
-        slips = self.payslip_ids
-        if not slips:
-            raise ValidationError(
-                'No payslips selected.'
-            )
-        for slip in slips:
-            if slip.icici_payment_status == 'paid':
-                raise ValidationError(
-                    f'Salary already released for '
-                    f'{slip.employee_id.name}'
-                )
-            if not slip.icici_generated_otp:
-
-                raise ValidationError(
-                    f'No OTP generated for '
-                    f'{slip.employee_id.name}'
-                )
-
-            if self.otp != slip.icici_generated_otp:
-
-                raise ValidationError(
-                    'Invalid OTP.'
-                )
 
         try:
-            slips.process_bulk_payment(
+            self.payslip_ids.process_bulk_payment(
                 self.otp,
                 self.payment_date
             )
+
             return {
                 'type': 'ir.actions.client',
                 'tag': 'reload',
             }
+
         except Exception as e:
             _logger.exception(
                 'ICICI BULK PAYMENT ERROR'
             )
-            raise ValidationError(
-                str(e)
-            )
+            raise ValidationError(str(e))
         
 class IciciReverseWizard(models.TransientModel):
     _name = 'icici.reverse.wizard'
@@ -100,12 +77,12 @@ class IciciReverseWizard(models.TransientModel):
             "USERID": "TXBCORP1.USER1",
             "URN": "CIBTESTING",
             "FILESEQNUM": self.file_seq_num,
-            "UNIQUEID": self.payslip_id.icici_reference,
+            "UNIQUEID": self.payslip_id.icici_unique_id,
             "ISENCRYPTED": "N"
         }
         _logger.info(
             "PAYMENT UNIQUE_ID = %s",
-            self.payslip_id.icici_reference
+            self.payslip_id.icici_unique_id
         )
 
         result = self.payslip_id.call_icici_api(
