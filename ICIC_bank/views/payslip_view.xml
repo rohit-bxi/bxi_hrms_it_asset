@@ -18,7 +18,6 @@
                         string="Reverse Payment"
                         type="object"
                         class="btn-danger"
-                        invisible="icici_payment_status not in ['paid','processing']"
                     />
             </xpath>
             <xpath expr="//list" position="inside">
