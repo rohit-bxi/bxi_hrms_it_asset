@@ -35,43 +35,37 @@ class ICICIOtpWizard(models.TransientModel):
     def action_confirm_otp(self):
 
         self.ensure_one()
-        slips = self.payslip_ids
-        if not slips:
-            raise ValidationError(
-                'No payslips selected.'
-            )
-        for slip in slips:
-            if slip.icici_payment_status == 'paid':
-                raise ValidationError(
-                    f'Salary already released for '
-                    f'{slip.employee_id.name}'
-                )
-            if not slip.icici_generated_otp:
-
-                raise ValidationError(
-                    f'No OTP generated for '
-                    f'{slip.employee_id.name}'
-                )
-
-            if self.otp != slip.icici_generated_otp:
-
-                raise ValidationError(
-                    'Invalid OTP.'
-                )
 
         try:
-            slips.process_bulk_payment(
+            self.payslip_ids.process_bulk_payment(
                 self.otp,
-                self.payment_date
             )
+
             return {
                 'type': 'ir.actions.client',
                 'tag': 'reload',
             }
+
         except Exception as e:
             _logger.exception(
-                'ICICI BULK PAYMENT ERROR'
+                "ICICI BULK PAYMENT ERROR"
             )
-            raise ValidationError(
-                str(e)
-            )
+            raise ValidationError(str(e))
+
+
+class IciciReverseWizard(models.TransientModel):
+    _name = 'icici.reverse.wizard'
+
+    payslip_id = fields.Many2one('hr.payslip')
+    file_seq_num = fields.Char(required=True)    
+    def action_reverse(self):
+        self.ensure_one()
+
+        if not self.file_seq_num:
+                raise ValidationError(
+                    "Please enter File Sequence Number."
+                )
+        
+        return self.payslip_id.action_reverse_payment(
+            self.file_seq_num
+        )

@@ -22,4 +22,29 @@
             </form>
         </field>
     </record>
+
+    <record id="view_icici_reverse_wizard_form" model="ir.ui.view">
+        <field name="name">icici.reverse.wizard.form</field>
+        <field name="model">icici.reverse.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Reverse Payment">
+                <group>
+                   <field name="file_seq_num"
+       placeholder="Enter ICICI File Sequence Number"/>
+                </group>
+
+                <footer>
+                    <button
+                        name="action_reverse"
+                        string="Reverse"
+                        type="object"
+                        class="btn-primary"/>
+
+                    <button
+                        string="Cancel"
+                        special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
 </odoo>

@@ -61,7 +61,7 @@ class HrPayslip(models.Model):
             key_data
         )
         return cls._icici_public_key_cache
-    
+
     _private_key_cache = None
 
     def get_private_key(self):
@@ -115,11 +115,15 @@ class HrPayslip(models.Model):
             iv=randomno2.encode()
         )
 
-        encrypted_data = cipher_aes.encrypt(
+        cipher_text = cipher_aes.encrypt(
             pad(
                 data.encode(),
                 AES.block_size
             )
+        )
+
+        encrypted_data = (
+            randomno2.encode() + cipher_text
         )
 
         encr_data_b64 = base64.b64encode(
@@ -136,7 +140,7 @@ class HrPayslip(models.Model):
             'clientInfo': '',
             'optionalParam': ''
         }
-    
+
     def decrypt_response(self, response_data):
         encrypted_key = response_data.get(
             'encryptedKey'
@@ -181,7 +185,7 @@ class HrPayslip(models.Model):
             )
         final_response = decrypted[16:]
         return final_response.decode()
-    
+
     def call_icici_api(self, url, payload):
         headers = {
             'accept': '*/*',
@@ -291,7 +295,7 @@ class HrPayslip(models.Model):
                 'Unable to connect to ICICI server.'
             )
 
-            
+
     def action_release_salary(self):
 
         if not self:
@@ -340,7 +344,7 @@ class HrPayslip(models.Model):
                 'unique_id: %s',
                 unique_id
             )
-        
+
 
         create_payload = {
             "AGGRID": "CIBBULK001",
@@ -423,102 +427,18 @@ class HrPayslip(models.Model):
                 'default_payslip_ids': self.ids
             }
         }
-    
-    def process_bulk_payment(self, otp,payment_date):
-        today_date = payment_date.strftime(
-            '%m/%d/%Y'
-        )
+
+    def process_bulk_payment(self, otp):
+
         if not self:
-            raise ValidationError(
-                'No payslips selected.'
-            )
-        total_amount = 0
-        salary_lines = []
+            raise ValidationError('No payslips selected.')
 
-
-        batch_ref = f'salsts{random.randint(100,999)}'
-        narration_ref = f'sals{random.randint(1000,9999)}'
-        for slip in self:
-            employee = slip.employee_id
-            bank_account_rec = (
-                employee.bank_account_ids.filtered(
-                    lambda b: b.acc_number
-                )[:1]
-            )
-            if not bank_account_rec:
-                raise ValidationError(
-                    f'Bank account missing for {employee.name}'
-                )
-            bank_account = (
-                (
-                    bank_account_rec.acc_number or ''
-                ).replace(' ', '').replace('-', '')
-            ).strip()
-            if not bank_account:
-                raise ValidationError(
-                    f'Account number missing for {employee.name}'
-                )
-            bank = bank_account_rec.bank_id
-            ifsc = (
-                (
-                    bank.bic or ''
-                ).replace(' ', '')
-            ).upper().strip()
-            if not ifsc:
-                raise ValidationError(
-                    f'IFSC missing for {employee.name}'
-                )
-            amount = 1
-            if amount <= 0:
-                raise ValidationError(
-                    f'Invalid amount for {employee.name}'
-                )
-            total_amount += amount
-
-            clean_name = (
-                employee.name
-                .replace('|', '')
-                .replace('^', '')
-                .replace('.', '')
-                .replace(',', '')
-                .strip()
-            )
-
-            if ifsc.startswith('ICIC'):
-                line = (
-                    f'MCW|{bank_account}|0411|'
-                    f'{clean_name}|{amount}|'
-                    f'INR|salary|{ifsc}|WIB^'
-                )
-
-            else:
-
-                line = (
-                    f'MCW|{bank_account}|0011|'
-                    f'{clean_name}|{amount}|'
-                    f'INR|salary|NFT|{ifsc}^'
-                )
-
-            salary_lines.append(line)
-
-        file_lines = [
-            (
-                f'FHR|2|{today_date}|'
-                f'{batch_ref}|{total_amount}|'
-                f'INR|000451000301|0011^'
-            ),
-            (
-                f'MDR|000451000301|0011|'
-                f'prachicib|{total_amount}|'
-                f'INR|{narration_ref}|'
-                f'ICIC0000011|WIB^'
-            )
-        ]
-        file_lines.extend(
-            salary_lines
+        salary_file = (
+            "FHR|3|06/02/2026|TESTING|10|INR|000451000301|0011^\r\n"
+            "MDR|000451000301|0011|Krisala|10|INR|TestRemark|ICIC0000011|WIB^\r\n"
+            "MCO|000405001257|0011|SteelHouse|5|INR|Steel|NFT|DLXB0000092^\r\n"
+            "MCW|041101518240|0411|Beckam|5|INR|Beckam|ICIC0000011|WIB^\r\n"
         )
-
-        salary_file = '\r\n'.join(file_lines)+ '\r\n'
 
         _logger.info(
             'ICICI FINAL SALARY FILE:\n%s',
@@ -535,17 +455,17 @@ class HrPayslip(models.Model):
         )
 
         payload = {
-            'FILE_DESCRIPTION': f'TEST{uuid.uuid4().hex[:12].upper()}',
-            'AGGR_ID': 'CIBBULK001',
-            'URN': 'CIBTESTING',
-            'AGGR_NAME': 'BULKTESTING',
-            'USER_ID': 'USER1',
-            'CORP_ID': 'TXBCORP1',
-            'UNIQUE_ID': self[0].icici_reference,
-            'AGOTP': otp,
-            'FILE_NAME': f'SALARY_{random.randint(1000,9999)}.txt',
-            'FILE_CONTENT': encoded_file
+            "AGGR_ID": "CIBBULK001",
+            "URN": "CIBTESTING",
+            "AGGR_NAME": "BULKTESTING",
+            "USER_ID": "USER1",
+            "CORP_ID": "TXBCORP1",
+            "UNIQUE_ID": self[0].icici_reference,
+            "AGOTP": otp,
+            "FILE_NAME": f"SALARY{random.randint(1000,9999)}.txt",
+            "FILE_CONTENT": encoded_file
         }
+
         _logger.info(
             'payload:\n%s',
             payload
@@ -560,20 +480,17 @@ class HrPayslip(models.Model):
             url,
             payload
         )
-        print(result,"result\m")
 
-        response = result.get(
-            'response'
-        )
+        _logger.info("ICICI RESULT: %s", result)
+
+        response = result.get('response')
 
         if not response:
-
             raise ValidationError(
                 'Empty response from ICICI.'
             )
 
         json_start = response.find('{')
-
         json_end = response.rfind('}') + 1
 
         clean_response = response[
@@ -594,7 +511,6 @@ class HrPayslip(models.Model):
         )
 
         if response_code != '0000':
-
             raise ValidationError(
                 response_json.get(
                     'Message',
@@ -611,101 +527,73 @@ class HrPayslip(models.Model):
         )
 
         for slip in self:
-
-            slip.icici_payment_status = (
-                'processing'
-            )
-
-            slip.icici_file_seq_num = (
-                file_seq_num
-            )
-
-            slip.icici_reference = (
-                utr
-            )
-
-            slip.icici_response = (
-                response
-            )
-
-            slip.icici_generated_otp = (
-                False
-            )
+            slip.icici_payment_status = 'processing'
+            slip.icici_file_seq_num = file_seq_num
+            slip.icici_reference = utr
+            slip.icici_response = response
+            slip.icici_generated_otp = False
 
         return True
-        
-    def action_check_payment_status(self):
+    
+    def action_reverse_payment(self,file_seq_num):
 
-        self.ensure_one()
-
-        if not self.icici_file_seq_num:
-
+        if not file_seq_num:
             raise ValidationError(
-                'ICICI File Sequence Number missing.'
+                "File Sequence Number missing."
             )
 
         payload = {
-            'AGGRID': 'CIBBULK001',
-            'CORPID': 'TXBCORP2',
-            'USERID': 'TXBCORP2.USER2',
-            'URN': 'CIBTESTING',
-            'FILESEQNUM': self.icici_file_seq_num,
-            'ISENCRYPTED': 'N'
+            "AGGRID": "CIBBULK001",
+            "CORPID": "TXBCORP1",
+            "USERID": "TXBCORP1.USER1",
+            "URN": "CIBTESTING",
+            "FILESEQNUM": file_seq_num,
+            "UNIQUEID": self.icici_reference,
+            "ISENCRYPTED": "N"
         }
 
-        url = (
-            'https://apibankingonesandbox.icici.bank.in'
-            '/api/v1/ReverseMis_sv'
-        )
-
         result = self.call_icici_api(
-            url,
+            "https://apibankingonesandbox.icici.bank.in/api/v1/ReverseMis_sv",
             payload
         )
 
-        response = result.get('response')
+        response = result.get("response")
 
-        self.icici_response = response
-
-        try:
-
-            json_start = response.find('{')
-
-            json_end = response.rfind('}') + 1
-
-            clean_response = response[
-                json_start:json_end
-            ]
-
-            response_json = json.loads(
-                clean_response
+        if not response:
+            raise ValidationError(
+                "Empty response from ICICI."
             )
-        except Exception:
 
-            raise ValidationError(response)
+        response_json = json.loads(response)
 
-        response_code = response_json.get(
-            'ResponseCode'
-        )
+        if response_json.get("Response") != "Success":
+            raise ValidationError(
+                response_json.get(
+                    "Message",
+                    "Reverse failed"
+                )
+            )
 
-        payment_status = response_json.get(
-            'STATUS'
-        )
+        self.write({
+            'icici_payment_status': 'reversed',
+            'icici_response': response,
+            'icici_generated_otp': False,
+            'icici_file_seq_num': False,
+        })
 
-        if (
-            response_code == '0000'
-            and payment_status == 'SUCCESS'
-        ):
-
-            self.icici_payment_status = 'paid'
-
-            self.state = 'paid'
-
-        elif payment_status == 'FAILED':
-
-            self.icici_payment_status = 'failed'
+        return True
+    
+    def action_open_reverse_wizard(self):
+        self.ensure_one()
 
         return {
-            'type': 'ir.actions.client',
-            'tag': 'reload',
+            'type': 'ir.actions.act_window',
+            'name': 'Reverse Payment',
+            'res_model': 'icici.reverse.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_payslip_id': self.id,
+                'default_file_seq_num': self.icici_file_seq_num,
+            }
         }
