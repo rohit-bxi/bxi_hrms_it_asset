@@ -446,7 +446,7 @@ class HrPayslip(models.Model):
             raise ValidationError('No payslips selected.')
 
         salary_file = (
-            "FHR|3|10/06/2026|TESTING|10|INR|000451000301|0011^\r\n"
+            "FHR|3|06/02/2026|TESTING|10|INR|000451000301|0011^\r\n"
             "MDR|000451000301|0011|Krisala|10|INR|TestRemark|ICIC0000011|WIB^\r\n"
             "MCO|000405001257|0011|SteelHouse|5|INR|Steel|NFT|DLXB0000092^\r\n"
             "MCW|041101518240|0411|Beckam|5|INR|Beckam|ICIC0000011|WIB^\r\n"
@@ -475,8 +475,8 @@ class HrPayslip(models.Model):
             "AGGR_ID": "CIBBULK001",
             "URN": "CIBTESTING",
             "AGGR_NAME": "BULKTESTING",
-            "USER_ID": "USER2",
-            "CORP_ID": "TXBCORP2",
+            "USER_ID": "USER1",
+            "CORP_ID": "TXBCORP1",
             "UNIQUE_ID": self[0].icici_unique_id,
             "AGOTP": otp,
             "FILE_NAME": f"SALARY{random.randint(1000,9999)}.txt",
