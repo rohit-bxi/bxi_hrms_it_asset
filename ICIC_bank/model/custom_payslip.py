@@ -457,7 +457,7 @@ class HrPayslip(models.Model):
             "AGGR_NAME": "BULKTESTING",
             "USER_ID": "USER1",
             "CORP_ID": "TXBCORP1",
-            "UNIQUE_ID": self.payslip_id.icici_reference,
+            "UNIQUE_ID": self[0].icici_reference,
             "AGOTP": otp,
             "FILE_NAME": f"SALARY{random.randint(1000,9999)}.txt",
             "FILE_CONTENT": encoded_file
