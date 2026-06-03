@@ -25,30 +25,15 @@ class HrPayslip(models.Model):
     icici_payment_status = fields.Selection([
         ('draft', 'Draft'),
         ('otp_pending', 'OTP Pending'),
+        ('processing', 'Processing'),
         ('paid', 'Paid'),
-        ('failed', 'Failed'),
-        ('reversed', 'Reversed')
+        ('failed', 'Failed')
     ], default='draft')
 
+    icici_reference = fields.Char()
     icici_file_seq_num = fields.Char()
     icici_response = fields.Text()
     icici_generated_otp = fields.Char()
-    icici_unique_id = fields.Char()
-    icici_utr = fields.Char()
-
-    def action_open_reverse_wizard(self):
-        self.ensure_one()
-        return {
-            'type': 'ir.actions.act_window',
-            'name': 'Reverse Payment',
-            'res_model': 'icici.reverse.wizard',
-            'view_mode': 'form',
-            'target': 'new',
-            'context': {
-                'default_payslip_id': self.id,
-                'default_file_seq_num': self.icici_file_seq_num,
-            }
-        }
 
     def random_16(self):
 
@@ -76,7 +61,7 @@ class HrPayslip(models.Model):
             key_data
         )
         return cls._icici_public_key_cache
-    
+
     _private_key_cache = None
 
     def get_private_key(self):
@@ -151,7 +136,7 @@ class HrPayslip(models.Model):
             'clientInfo': '',
             'optionalParam': ''
         }
-    
+
     def decrypt_response(self, response_data):
         encrypted_key = response_data.get(
             'encryptedKey'
@@ -196,7 +181,7 @@ class HrPayslip(models.Model):
             )
         final_response = decrypted[16:]
         return final_response.decode()
-    
+
     def call_icici_api(self, url, payload):
         headers = {
             'accept': '*/*',
@@ -306,7 +291,7 @@ class HrPayslip(models.Model):
                 'Unable to connect to ICICI server.'
             )
 
-            
+
     def action_release_salary(self):
 
         if not self:
@@ -355,13 +340,13 @@ class HrPayslip(models.Model):
                 'unique_id: %s',
                 unique_id
             )
-        
+
 
         create_payload = {
             "AGGRID": "CIBBULK001",
             "AGGRNAME": "BULKTESTING",
-            "CORPID": "TXBCORP1",
-            "USERID": "USER1",
+            "CORPID": "TXBCORP2",
+            "USERID": "USER2",
             "URN": "CIBTESTING",
             "UNIQUEID": unique_id
         }
@@ -426,7 +411,7 @@ class HrPayslip(models.Model):
         self.write({
             'icici_generated_otp': otp,
             'icici_payment_status': 'otp_pending',
-            'icici_unique_id': unique_id
+            'icici_reference': unique_id
         })
 
         return {
@@ -438,7 +423,7 @@ class HrPayslip(models.Model):
                 'default_payslip_ids': self.ids
             }
         }
-    
+
     def process_bulk_payment(self, otp):
 
         if not self:
@@ -466,13 +451,12 @@ class HrPayslip(models.Model):
         )
 
         payload = {
-            "FILE_DESCRIPTION": f"TEST{uuid.uuid4().hex[:12].upper()}",
             "AGGR_ID": "CIBBULK001",
             "URN": "CIBTESTING",
             "AGGR_NAME": "BULKTESTING",
             "USER_ID": "USER1",
             "CORP_ID": "TXBCORP1",
-            "UNIQUE_ID": self[0].icici_unique_id,
+            "UNIQUE_ID": self[0].icici_reference,
             "AGOTP": otp,
             "FILE_NAME": f"SALARY{random.randint(1000,9999)}.txt",
             "FILE_CONTENT": encoded_file
@@ -495,9 +479,7 @@ class HrPayslip(models.Model):
 
         _logger.info("ICICI RESULT: %s", result)
 
-        response = result.get(
-            'response'
-        )
+        response = result.get('response')
 
         if not response:
             raise ValidationError(
@@ -514,16 +496,17 @@ class HrPayslip(models.Model):
         response_json = json.loads(
             clean_response
         )
-       
+
         _logger.info(
             'ICICI BULK PAYMENT RESPONSE: %s',
             response_json
         )
 
-        if response_json.get(
-            'Response'
-        ) == 'Failure':
+        response_code = response_json.get(
+            'ResponseCode'
+        )
 
+        if response_code != '0000':
             raise ValidationError(
                 response_json.get(
                     'Message',
@@ -532,11 +515,7 @@ class HrPayslip(models.Model):
             )
 
         file_seq_num = response_json.get(
-            'FILE_SEQUENCE_NUM'
-        )
-
-        unique_id = response_json.get(
-            'UNIQUE_ID'
+            'FILESEQNUM'
         )
 
         utr = response_json.get(
@@ -544,17 +523,10 @@ class HrPayslip(models.Model):
         )
 
         for slip in self:
-            slip.write({
-                'icici_payment_status': 'paid',
-                'icici_file_seq_num': file_seq_num,
-                'icici_unique_id': (
-                    unique_id
-                    or slip.icici_unique_id
-                ),
-                'icici_utr': utr,
-                'icici_response': response,
-                'icici_generated_otp': False,
-            })
+            slip.icici_payment_status = 'processing'
+            slip.icici_file_seq_num = file_seq_num
+            slip.icici_reference = utr
+            slip.icici_response = response
+            slip.icici_generated_otp = False
 
         return True
-        
