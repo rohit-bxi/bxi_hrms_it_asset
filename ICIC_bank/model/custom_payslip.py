@@ -115,11 +115,15 @@ class HrPayslip(models.Model):
             iv=randomno2.encode()
         )
 
-        encrypted_data = cipher_aes.encrypt(
+        cipher_text = cipher_aes.encrypt(
             pad(
                 data.encode(),
                 AES.block_size
             )
+        )
+
+        encrypted_data = (
+            randomno2.encode() + cipher_text
         )
 
         encr_data_b64 = base64.b64encode(
