@@ -30,7 +30,6 @@ class HrPayslip(models.Model):
         ('reversed', 'Reversed')
     ], default='draft')
 
-    icici_reference = fields.Char()
     icici_file_seq_num = fields.Char()
     icici_response = fields.Text()
     icici_generated_otp = fields.Char()
@@ -361,8 +360,8 @@ class HrPayslip(models.Model):
         create_payload = {
             "AGGRID": "CIBBULK001",
             "AGGRNAME": "BULKTESTING",
-            "CORPID": "TXBCORP2",
-            "USERID": "USER2",
+            "CORPID": "TXBCORP1",
+            "USERID": "USER1",
             "URN": "CIBTESTING",
             "UNIQUEID": unique_id
         }
@@ -446,7 +445,7 @@ class HrPayslip(models.Model):
             raise ValidationError('No payslips selected.')
 
         salary_file = (
-            "FHR|3|30/06/2026|TESTING|10|INR|000451000301|0011^\r\n"
+            "FHR|3|06/02/2026|TESTING|10|INR|000451000301|0011^\r\n"
             "MDR|000451000301|0011|Krisala|10|INR|TestRemark|ICIC0000011|WIB^\r\n"
             "MCO|000405001257|0011|SteelHouse|5|INR|Steel|NFT|DLXB0000092^\r\n"
             "MCW|041101518240|0411|Beckam|5|INR|Beckam|ICIC0000011|WIB^\r\n"
@@ -464,10 +463,6 @@ class HrPayslip(models.Model):
         _logger.info(
             'encoded_file:\n%s',
             encoded_file
-        )
-        _logger.info(
-            "ICICI UNIQUE ID = %s",
-            self[0].icici_unique_id
         )
 
         payload = {
@@ -500,7 +495,9 @@ class HrPayslip(models.Model):
 
         _logger.info("ICICI RESULT: %s", result)
 
-        response = result.get('response')
+        response = result.get(
+            'response'
+        )
 
         if not response:
             raise ValidationError(
@@ -523,8 +520,23 @@ class HrPayslip(models.Model):
             response_json
         )
 
+        if response_json.get(
+            'Response'
+        ) == 'Failure':
+
+            raise ValidationError(
+                response_json.get(
+                    'Message',
+                    'ICICI Payment Failed'
+                )
+            )
+
         file_seq_num = response_json.get(
             'FILE_SEQUENCE_NUM'
+        )
+
+        unique_id = response_json.get(
+            'UNIQUE_ID'
         )
 
         utr = response_json.get(
@@ -532,86 +544,17 @@ class HrPayslip(models.Model):
         )
 
         for slip in self:
-            slip.icici_payment_status = 'paid'
-            slip.icici_file_seq_num = file_seq_num
-            slip.icici_utr = utr
-            slip.icici_response = response
-            slip.icici_generated_otp = False
+            slip.write({
+                'icici_payment_status': 'paid',
+                'icici_file_seq_num': file_seq_num,
+                'icici_unique_id': (
+                    unique_id
+                    or slip.icici_unique_id
+                ),
+                'icici_utr': utr,
+                'icici_response': response,
+                'icici_generated_otp': False,
+            })
 
         return True
         
-    def action_check_payment_status(self):
-
-        self.ensure_one()
-
-        if not self.icici_file_seq_num:
-
-            raise ValidationError(
-                'ICICI File Sequence Number missing.'
-            )
-
-        payload = {
-            'AGGRID': 'CIBBULK001',
-            'CORPID': 'TXBCORP2',
-            'USERID': 'TXBCORP2.USER2',
-            'URN': 'CIBTESTING',
-            'FILESEQNUM': self.icici_file_seq_num,
-            'ISENCRYPTED': 'N'
-        }
-
-        url = (
-            'https://apibankingonesandbox.icici.bank.in'
-            '/api/v1/ReverseMis_sv'
-        )
-
-        result = self.call_icici_api(
-            url,
-            payload
-        )
-
-        response = result.get('response')
-
-        self.icici_response = response
-
-        try:
-
-            json_start = response.find('{')
-
-            json_end = response.rfind('}') + 1
-
-            clean_response = response[
-                json_start:json_end
-            ]
-
-            response_json = json.loads(
-                clean_response
-            )
-        except Exception:
-
-            raise ValidationError(response)
-
-        response_code = response_json.get(
-            'ResponseCode'
-        )
-
-        payment_status = response_json.get(
-            'STATUS'
-        )
-
-        if (
-            response_code == '200'
-        ):
-
-            self.icici_payment_status = 'paid'
-
-            self.state = 'paid'
-
-        elif payment_status == 'FAILED':
-
-            self.icici_payment_status = 'failed'
-
-        return {
-            'type': 'ir.actions.client',
-            'tag': 'reload',
-        }
-    
