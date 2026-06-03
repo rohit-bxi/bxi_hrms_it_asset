@@ -516,34 +516,31 @@ class HrPayslip(models.Model):
             response_json
         )
 
-        response_code = response_json.get(
-            'ResponseCode'
-        )
-
-        if response_code != '0000':
-            raise ValidationError(
-                response_json.get(
-                    'Message',
-                    'ICICI Payment Failed'
-                )
-            )
-
         file_seq_num = response_json.get(
-            'FILESEQNUM'
+            'FILE_SEQUENCE_NUM'
         )
-
         utr = response_json.get(
             'UTR'
         )
 
-        for slip in self:
-            slip.icici_payment_status = 'processing'
-            slip.icici_file_seq_num = file_seq_num
-            slip.icici_utr = utr
-            slip.icici_response = response
-            slip.icici_generated_otp = False
+        if file_seq_num:
 
-        return True
+            for slip in self:
+                slip.write({
+                    'icici_payment_status': 'processing',
+                    'icici_file_seq_num': file_seq_num,
+                    'icici_utr': utr,
+                    'icici_response': response,
+                    'icici_generated_otp': False,
+                })
+
+            return True
+
+        raise ValidationError(
+            response_json.get('MESSAGE_DESC')
+            or response_json.get('Message')
+            or 'ICICI Payment Failed'
+        )
     
     def action_reverse_payment(self,file_seq_num):
 
@@ -557,7 +554,7 @@ class HrPayslip(models.Model):
             "CORPID": "TXBCORP1",
             "USERID": "TXBCORP1.USER1",
             "URN": "CIBTESTING",
-            "FILESEQNUM": file_seq_num,
+            "FILE_SEQUENCE_NUM": file_seq_num,
             "UNIQUEID": self.icici_reference,
             "ISENCRYPTED": "N"
         }
