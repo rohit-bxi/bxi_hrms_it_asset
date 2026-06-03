@@ -465,15 +465,19 @@ class HrPayslip(models.Model):
             'encoded_file:\n%s',
             encoded_file
         )
+        _logger.info(
+            "ICICI UNIQUE ID = %s",
+            self[0].icici_unique_id
+        )
 
         payload = {
             "FILE_DESCRIPTION": f"TEST{uuid.uuid4().hex[:12].upper()}",
             "AGGR_ID": "CIBBULK001",
             "URN": "CIBTESTING",
             "AGGR_NAME": "BULKTESTING",
-            "USER_ID": "USER1",
-            "CORP_ID": "TXBCORP1",
-            "UNIQUE_ID": self[0].icici_reference,
+            "USER_ID": "USER2",
+            "CORP_ID": "TXBCORP2",
+            "UNIQUE_ID": self[0].icici_unique_id,
             "AGOTP": otp,
             "FILE_NAME": f"SALARY{random.randint(1000,9999)}.txt",
             "FILE_CONTENT": encoded_file
