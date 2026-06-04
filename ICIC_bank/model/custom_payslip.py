@@ -443,7 +443,7 @@ class HrPayslip(models.Model):
             raise ValidationError('No payslips selected.')
 
         salary_file = (
-            "FHR|3|06/02/2026|TESTING|10|INR|000451000301|0011^\r\n"
+            "FHR|3|04/06/2026|TESTING|10|INR|000451000301|0011^\r\n"
             "MDR|000451000301|0011|Krisala|10|INR|TestRemark|ICIC0000011|WIB^\r\n"
             "MCO|000405001257|0011|SteelHouse|5|INR|Steel|NFT|DLXB0000092^\r\n"
             "MCW|041101518240|0411|Beckam|5|INR|Beckam|ICIC0000011|WIB^\r\n"
