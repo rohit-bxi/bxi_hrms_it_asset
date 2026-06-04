@@ -548,16 +548,25 @@ class HrPayslip(models.Model):
             raise ValidationError(
                 "File Sequence Number missing."
             )
+        
+        _logger.info(
+            'file_seq_num: %s',
+            file_seq_num
+        )
 
         payload = {
             "AGGRID": "CIBBULK001",
             "CORPID": "TXBCORP1",
             "USERID": "TXBCORP1.USER1",
             "URN": "CIBTESTING",
-            "FILE_SEQUENCE_NUM": file_seq_num,
+            "FILESEQNUM": file_seq_num,
             "UNIQUEID": self.icici_reference,
             "ISENCRYPTED": "N"
         }
+        _logger.info(
+            'payload: %s',
+            payload
+        )
 
         result = self.call_icici_api(
             "https://apibankingonesandbox.icici.bank.in/api/v1/ReverseMis_sv",
