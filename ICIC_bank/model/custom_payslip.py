@@ -581,15 +581,18 @@ class HrPayslip(models.Model):
             )
 
         response_json = json.loads(response)
-
-        if response_json.get("Response") != "Success":
+        xml_data = response_json.get("XML", {})
+        if xml_data.get("RESPONSE") != "SUCCESS":
             raise ValidationError(
-                response_json.get(
-                    "Message",
+                xml_data.get(
+                    "MESSAGE",
                     "Reverse failed"
                 )
             )
-
+        _logger.info(
+            "ICICI REVERSE RESPONSE: %s",
+            response_json
+        )
         self.write({
             'icici_payment_status': 'reversed',
             'icici_response': response,
