@@ -29,7 +29,8 @@ class HrPayslip(models.Model):
         ('otp_pending', 'OTP Pending'),
         ('processing', 'Processing'),
         ('paid', 'Paid'),
-        ('failed', 'Failed')
+        ('failed', 'Failed'),
+        ('reversed', 'Reversed'),
     ], default='draft')
 
     icici_reference = fields.Char()
