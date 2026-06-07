@@ -1,3 +1,5 @@
+from odoo.fields import Date
+
 from odoo import models, fields
 from odoo.exceptions import ValidationError
 
@@ -27,13 +29,15 @@ class HrPayslip(models.Model):
         ('otp_pending', 'OTP Pending'),
         ('processing', 'Processing'),
         ('paid', 'Paid'),
-        ('failed', 'Failed')
+        ('failed', 'Failed'),
+        ('reversed', 'Reversed'),
     ], default='draft')
 
     icici_reference = fields.Char()
     icici_file_seq_num = fields.Char()
     icici_response = fields.Text()
     icici_generated_otp = fields.Char()
+    icici_utr = fields.Char()
 
     def random_16(self):
 
@@ -115,15 +119,11 @@ class HrPayslip(models.Model):
             iv=randomno2.encode()
         )
 
-        cipher_text = cipher_aes.encrypt(
+        encrypted_data = cipher_aes.encrypt(
             pad(
                 data.encode(),
                 AES.block_size
             )
-        )
-
-        encrypted_data = (
-            randomno2.encode() + cipher_text
         )
 
         encr_data_b64 = base64.b64encode(
@@ -349,8 +349,8 @@ class HrPayslip(models.Model):
         create_payload = {
             "AGGRID": "CIBBULK001",
             "AGGRNAME": "BULKTESTING",
-            "CORPID": "TXBCORP2",
-            "USERID": "USER2",
+            "CORPID": "TXBCORP1",
+            "USERID": "USER1",
             "URN": "CIBTESTING",
             "UNIQUEID": unique_id
         }
@@ -428,13 +428,23 @@ class HrPayslip(models.Model):
             }
         }
 
-    def process_bulk_payment(self, otp):
+    def process_bulk_payment(self, otp,payment_date):
+
+        payment_date_obj = Date.to_date(payment_date)
+
+        payment_date_str = payment_date_obj.strftime(
+            "%d/%m/%Y"
+        )
+        _logger.info(
+            "PAYMENT DATE = %s",
+            payment_date_str
+        )
 
         if not self:
             raise ValidationError('No payslips selected.')
 
         salary_file = (
-            "FHR|3|06/02/2026|TESTING|10|INR|000451000301|0011^\r\n"
+            "FHR|3|06/05/2026|TESTING|10|INR|000451000301|0011^\r\n"
             "MDR|000451000301|0011|Krisala|10|INR|TestRemark|ICIC0000011|WIB^\r\n"
             "MCO|000405001257|0011|SteelHouse|5|INR|Steel|NFT|DLXB0000092^\r\n"
             "MCW|041101518240|0411|Beckam|5|INR|Beckam|ICIC0000011|WIB^\r\n"
@@ -455,6 +465,7 @@ class HrPayslip(models.Model):
         )
 
         payload = {
+            "FILE_DESCRIPTION": "TESTING",
             "AGGR_ID": "CIBBULK001",
             "URN": "CIBTESTING",
             "AGGR_NAME": "BULKTESTING",
@@ -506,34 +517,31 @@ class HrPayslip(models.Model):
             response_json
         )
 
-        response_code = response_json.get(
-            'ResponseCode'
-        )
-
-        if response_code != '0000':
-            raise ValidationError(
-                response_json.get(
-                    'Message',
-                    'ICICI Payment Failed'
-                )
-            )
-
         file_seq_num = response_json.get(
-            'FILESEQNUM'
+            'FILE_SEQUENCE_NUM'
         )
-
         utr = response_json.get(
             'UTR'
         )
 
-        for slip in self:
-            slip.icici_payment_status = 'processing'
-            slip.icici_file_seq_num = file_seq_num
-            slip.icici_reference = utr
-            slip.icici_response = response
-            slip.icici_generated_otp = False
+        if file_seq_num:
 
-        return True
+            for slip in self:
+                slip.write({
+                    'icici_payment_status': 'processing',
+                    'icici_file_seq_num': file_seq_num,
+                    'icici_utr': utr,
+                    'icici_response': response,
+                    'icici_generated_otp': False,
+                })
+
+            return True
+
+        raise ValidationError(
+            response_json.get('MESSAGE_DESC')
+            or response_json.get('Message')
+            or 'ICICI Payment Failed'
+        )
     
     def action_reverse_payment(self,file_seq_num):
 
@@ -541,6 +549,11 @@ class HrPayslip(models.Model):
             raise ValidationError(
                 "File Sequence Number missing."
             )
+        
+        _logger.info(
+            'file_seq_num: %s',
+            file_seq_num
+        )
 
         payload = {
             "AGGRID": "CIBBULK001",
@@ -551,6 +564,10 @@ class HrPayslip(models.Model):
             "UNIQUEID": self.icici_reference,
             "ISENCRYPTED": "N"
         }
+        _logger.info(
+            'payload: %s',
+            payload
+        )
 
         result = self.call_icici_api(
             "https://apibankingonesandbox.icici.bank.in/api/v1/ReverseMis_sv",
@@ -565,15 +582,18 @@ class HrPayslip(models.Model):
             )
 
         response_json = json.loads(response)
-
-        if response_json.get("Response") != "Success":
+        xml_data = response_json.get("XML", {})
+        if xml_data.get("RESPONSE") != "SUCCESS":
             raise ValidationError(
-                response_json.get(
-                    "Message",
+                xml_data.get(
+                    "MESSAGE",
                     "Reverse failed"
                 )
             )
-
+        _logger.info(
+            "ICICI REVERSE RESPONSE: %s",
+            response_json
+        )
         self.write({
             'icici_payment_status': 'reversed',
             'icici_response': response,
