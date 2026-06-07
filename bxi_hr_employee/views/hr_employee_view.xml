@@ -58,7 +58,7 @@
 
             <group>
                 <field name="template_company_id"/>
-                <field name="month_year" required='1'/>
+                <field name="month_year"/>
                 <field name="meeting_qty"/>
                 <field name="meeting_rate"/>
                 <field name="script_qty"/>
