@@ -105,55 +105,67 @@
 
 <table style="width:100%; border-collapse:collapse; border:1px solid black;">
     <tr style="background:#d9e2f3;">
-        <td colspan="4"
-            style="border:1px solid black; padding:8px; font-weight:bold; text-align:center;">
+        <td colspan="3"
+            style="background:#2f5597;color:white; border:1px solid black; padding:8px; font-weight:bold; text-align:center;">
             CONTRACT DETAILS
         </td>
     </tr>
 
+    <tr style="background:#f2f2f2;">
+        <td style="border:1px solid black; padding:6px; font-weight:bold; text-align:center;">
+            Standard
+        </td>
+        <td style="border:1px solid black; padding:6px; font-weight:bold; text-align:center;">
+            Quantity
+        </td>
+        <td style="border:1px solid black; padding:6px; font-weight:bold; text-align:center;">
+            Rate(INR)
+        </td>
+    </tr>
+
     <tr>
-        <td style="border:1px solid black; padding:5px;"><b>Meetings Conducted</b></td>
-        <td style="border:1px solid black; padding:5px;">
+        <td style="border:1px solid black; padding:6px;">
+            Consultation
+        </td>
+        <td style="border:1px solid black; padding:6px; text-align:center;">
             <span t-field="o.meeting_qty"/>
         </td>
-
-        <td style="border:1px solid black; padding:5px;"><b>Meeting Rate</b></td>
-        <td style="border:1px solid black; padding:5px;">
-           <span t-esc="o.meeting_rate"/>
+        <td style="border:1px solid black; padding:6px; text-align:right;">
+            <span t-field="o.meeting_rate"/>
         </td>
     </tr>
 
     <tr>
-        <td style="border:1px solid black; padding:5px;"><b>Scripts Completed</b></td>
-        <td style="border:1px solid black; padding:5px;">
-           <span t-esc="o.script_qty"/>
+        <td style="border:1px solid black; padding:6px;">
+            Content Writing
         </td>
-
-        <td style="border:1px solid black; padding:5px;"><b>Script Rate</b></td>
-        <td style="border:1px solid black; padding:5px;">
-            <span t-esc="o.script_rate"/>
+        <td style="border:1px solid black; padding:6px; text-align:center;">
+            <span t-field="o.script_qty"/>
+        </td>
+        <td style="border:1px solid black; padding:6px; text-align:right;">
+            <span t-field="o.script_rate"/>
         </td>
     </tr>
 
     <tr>
-        <td style="border:1px solid black; padding:5px;"><b>Videos Created</b></td>
-        <td style="border:1px solid black; padding:5px;">
+        <td style="border:1px solid black; padding:6px;">
+            Video Production
+        </td>
+        <td style="border:1px solid black; padding:6px; text-align:center;">
             <span t-field="o.video_qty"/>
         </td>
-
-        <td style="border:1px solid black; padding:5px;"><b>Video Rate</b></td>
-        <td style="border:1px solid black; padding:5px;">
-            <span t-esc="o.video_rate"/>
+        <td style="border:1px solid black; padding:6px; text-align:right;">
+            <span t-field="o.video_rate"/>
         </td>
     </tr>
 
     <tr style="background:#f2f2f2;">
-        <td colspan="3"
-            style="border:1px solid black; padding:8px; text-align:right;">
-            <b>Total Amount</b>
+        <td colspan="2"
+            style="border:1px solid black; padding:8px; text-align:right; font-weight:bold;">
+            Total Amount
         </td>
-        <td style="border:1px solid black; padding:8px;">
-            <span t-esc="o.total_amount"/>
+        <td style="border:1px solid black; padding:8px; text-align:right; font-weight:bold;">
+            <span t-field="o.total_amount"/>
         </td>
     </tr>
 </table>
@@ -164,12 +176,6 @@
     <div style="font-size:8px; color:#555; line-height:12px;">
         <p style="margin:0;">
             *This is a computer-generated payslip and does not require a signature or company seal.
-        </p>
-        <p style="margin:0;">
-            *One-time payments are subject to applicable tax slab.
-        </p>
-        <p style="margin:0;">
-            *Refer EPF portal for Pension details.
         </p>
     </div>
 </div>
