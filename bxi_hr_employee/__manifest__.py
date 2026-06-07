@@ -7,9 +7,10 @@
     'author': 'BXI',
     'summary': 'Employee form customization',
     'description': 'Employee View Modification',
-    'depends': ['hr'],
+    'depends': ['hr','custom_template'],
     'data': [
         'views/hr_employee_view.xml',
+        'report/payslip_contact_employee.xml',
     ],
     'installable': True,
     'application': False,

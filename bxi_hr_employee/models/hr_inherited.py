@@ -1,4 +1,4 @@
-from odoo import models, fields, _
+from odoo import models, fields, _, api
 from odoo.exceptions import UserError
 from datetime import date
 
@@ -116,3 +116,39 @@ class HrEmployee(models.Model):
         self.get_employee_earning()
         for emp in self:
             emp.l10n_in_tds = emp._compute_monthly_tds_new_regime(emp.employee_ctc)
+
+
+    meeting_qty = fields.Integer()
+    meeting_rate = fields.Float()
+
+    script_qty = fields.Integer()
+    script_rate = fields.Float()
+
+    video_qty = fields.Integer()
+    video_rate = fields.Float()
+
+    total_amount = fields.Float(
+        compute="_compute_total",
+        store=True,
+    )
+    template_company_id = fields.Many2one(
+        'res.company',
+    )
+    month_year = fields.Date(string="Release Month & Year")
+
+    @api.depends(
+        'meeting_qty','meeting_rate',
+        'script_qty','script_rate',
+        'video_qty','video_rate'
+    )
+    def _compute_total(self):
+        for rec in self:
+            rec.total_amount = (
+                rec.meeting_qty * rec.meeting_rate
+                + rec.script_qty * rec.script_rate
+                + rec.video_qty * rec.video_rate
+            )
+    def action_download_contract_payslip(self):
+        return self.env.ref(
+            'bxi_hr_employee.action_contract_payslip_report'
+        ).report_action(self)
