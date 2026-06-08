@@ -47,7 +47,6 @@
                <t t-if="o.month_year">
                 <span t-esc="o.month_year.strftime('%B %Y')"/>
                 <br/>
-                <span t-esc="o.employee_id.name"/>
             </t>
             </td>
         </tr>
