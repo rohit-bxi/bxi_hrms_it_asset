@@ -346,7 +346,7 @@ class HrHire(models.Model):
         if not self.email_from:
             raise UserError(_("Applicant email is missing."))
 
-        base_url = "https://dev.careers.bxiventures.com/application-form/"
+        base_url = "https://careers.bxiventures.com/application-form/"
 
         # Generate secure token (optional for your side)
         token_string = f"{self.id}-{self.create_date}"
