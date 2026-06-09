@@ -336,16 +336,8 @@ class HrHire(models.Model):
                     template = self.env.ref('bxi_hr_recruitment.email_stage_offer_letter')
 
                 if template:
-                    # template.send_mail(rec.id, force_send=True)
-                    mail_id = template.send_mail(rec.id, force_send=True)
-                    mail = self.env['mail.mail'].browse(mail_id)
-                    _logger.info(
-                        "Applicant=%s Mail=%s Message=%s State=%s",
-                        rec.id,
-                        mail.id,
-                        mail.mail_message_id.id if mail.mail_message_id else False,
-                        mail.state,
-                    )
+                    template.send_mail(rec.id, force_send=True)
+
         return res
 
     def action_send_application_form(self):
