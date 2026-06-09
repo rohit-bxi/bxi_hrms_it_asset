@@ -253,35 +253,6 @@ class HrHire(models.Model):
             'url': f'/web/content/{attachment.id}?download=true',
             'target': 'self',
         }
-    # def action_generate_offer_letter(self):
-    #     self.ensure_one()
-    #
-    #     if not self.partner_name:
-    #         raise UserError(_("Please enter Full Name."))
-    #
-    #     report = self.env.ref('bxi_hr_recruitment.action_report_offer_letter')
-    #
-    #     pdf_content, _ = report._render_qweb_pdf(report.id, res_ids=[self.id])
-    #
-    #     attachment = self.env['ir.attachment'].create({
-    #         'name': f'Offer Letter - {self.partner_name}.pdf',
-    #         'type': 'binary',
-    #         'datas': base64.b64encode(pdf_content),
-    #         'res_model': self._name,
-    #         'res_id': self.id,
-    #         'mimetype': 'application/pdf',
-    #     })
-    #
-    #     self.write({
-    #         'offer_letter_attachment_id': attachment.id
-    #     })
-    #
-    #     return {
-    #         'type': 'ir.actions.act_url',
-    #         'url': f'/web/content/{attachment.id}?download=true',
-    #         'target': 'self',
-    #     }
-
 
     def action_view_offer_letter(self):
         self.ensure_one()
@@ -312,20 +283,6 @@ class HrHire(models.Model):
             'url': f'/web/content/{attachment.id}?download=false',
             'target': 'self',
         }
-
-
-    # def action_view_offer_letter(self):
-    #     self.ensure_one()
-    #
-    #     if not self.offer_letter_attachment_id:
-    #         raise UserError(_("Please generate the offer letter first."))
-    #
-    #     return {
-    #         'type': 'ir.actions.act_url',
-    #         'url': f'/web/content/{self.offer_letter_attachment_id.id}?download=false',
-    #         'target': 'new',
-    #     }
-
 
     def write(self, vals):
         if 'stage_id' in vals:
@@ -379,8 +336,16 @@ class HrHire(models.Model):
                     template = self.env.ref('bxi_hr_recruitment.email_stage_offer_letter')
 
                 if template:
-                    template.send_mail(rec.id, force_send=True)
-
+                    # template.send_mail(rec.id, force_send=True)
+                    mail_id = template.send_mail(rec.id, force_send=True)
+                    mail = self.env['mail.mail'].browse(mail_id)
+                    _logger.info(
+                        "Applicant=%s Mail=%s Message=%s State=%s",
+                        rec.id,
+                        mail.id,
+                        mail.mail_message_id.id if mail.mail_message_id else False,
+                        mail.state,
+                    )
         return res
 
     def action_send_application_form(self):
