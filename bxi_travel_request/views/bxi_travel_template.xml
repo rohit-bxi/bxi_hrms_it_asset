@@ -211,7 +211,7 @@
                                         <div class="mb-3">
                                             <label>Request Return Date</label>
                                             <input type="date" name="return_date"
-                                                class="form-control" required="True" />
+                                                class="form-control"/>
                                         </div>
                                         <div class="mb-3">
                                             <label>Request Mode of Travel</label>
