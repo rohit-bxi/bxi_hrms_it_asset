@@ -187,9 +187,18 @@ class ApplicantCreation(http.Controller):
             # =====================
             for exp in data.get('experience', []):
 
+                company_name = exp.get('company_name')
+                company = request.env['hr.applicant.company'].sudo().search(
+                    [('name', '=', company_name)],
+                    limit=1
+                )
+                if not company:
+                    company = request.env['hr.applicant.company'].sudo().create({
+                        'name': company_name
+                    })
                 request.env['hr.applicant.experience'].sudo().create({
                     'applicant_id': applicant.id,
-                    'company_name': exp.get('company_name'),
+                    'company_name': company.id,
                     'years': exp.get('years'),
                 })
 

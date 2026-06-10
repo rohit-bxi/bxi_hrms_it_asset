@@ -36,7 +36,12 @@ class HrHire(models.Model):
         'hr.recruitment.stage',
         string="Sent Stage Emails"
     )
-
+    template_company_id = fields.Many2one(
+        'res.company',
+        string='Template Company',
+        related='company_id',
+        readonly=True,
+    )
     sign_request_id = fields.Many2one('sign.request', string="Sign Request")
 
     reporting_manager_id = fields.Many2one('res.users', string="Reporting Manager")
@@ -414,13 +419,20 @@ class HrHire(models.Model):
                 data.variable_total = data.performance_bonus + data.org_bonus
                 data.ctc_total = data.annual_fixed + data.retiral_total + data.variable_total
 
+class HrApplicantCompany(models.Model):
+    _name = 'hr.applicant.company'
+    _description = 'Previous Company'
+    name = fields.Char(required=True)
 
 class HrApplicantExperience(models.Model):
     _name = 'hr.applicant.experience'
     _description = 'Applicant Experience'
 
     applicant_id = fields.Many2one('hr.applicant')
-    company_name = fields.Many2one('res.company', string='Company Name')
+    company_name = fields.Many2one(
+            'hr.applicant.company',
+            string='Company Name'
+        )    
     years = fields.Float("Years")
     experience_certificate = fields.Binary(
         "Experience Certificate", attachment=True
