@@ -144,7 +144,6 @@ class TravelRequest(models.Model):
     )
     return_date = fields.Date(
         string='Request Return Date',
-        required=True,
         tracking=True
     )
 
