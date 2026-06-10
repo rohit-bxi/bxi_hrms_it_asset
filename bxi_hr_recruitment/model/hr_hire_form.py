@@ -431,7 +431,8 @@ class HrApplicantExperience(models.Model):
     applicant_id = fields.Many2one('hr.applicant')
     company_name = fields.Many2one(
             'hr.applicant.company',
-            string='Company Name'
+            string='Company Name',
+            ondelete='set null'
         )    
     years = fields.Float("Years")
     experience_certificate = fields.Binary(
