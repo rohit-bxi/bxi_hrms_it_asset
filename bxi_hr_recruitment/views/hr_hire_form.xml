@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <record id="view_hr_job_list" model="ir.ui.view">
+        <field name="name">hr.recruitment.tree</field>
+        <field name="model">hr.job</field>
+        <field name="inherit_id" ref="hr_recruitment.hr_job_view_tree_inherit"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='no_of_employee']" position="after">
+                 <field name="requisition_id"/>
+           </xpath>
+        </field>
+    </record>
 
     <record id="view_hr_applicant_form_inherit_proposal" model="ir.ui.view">
         <field name="name">hr.applicant.form.proposal.clean</field>
