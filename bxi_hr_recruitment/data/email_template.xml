@@ -1,10 +1,53 @@
 <odoo>
     <data>
+        <record id="email_template_applicant_submitted" model="mail.template">
+            <field name="name">Applicant Submitted Notification</field>
+            <field name="model_id" ref="hr_recruitment.model_hr_applicant"/>
+            <field name="subject">New Application Submitted - {{ object.partner_name }}</field>
+            <field name="email_from">hrsupport@bxitech.com</field>
+            <field name="email_to">hrsupport@bxitech.com</field>
+            <field name="auto_delete" eval="False"/>
+            <field name="body_html" type="html">
+                <div>
+                    <p>Hello HR Team,</p>
+                    <p>
+                        A new applicant has successfully submitted the application form for the
+                        <strong t-out="object.job_id.name"/>
+                        position.
+                    </p>
+                    <table border="1" cellpadding="5" cellspacing="0"
+                        style="border-collapse:collapse;">
+                        <tr>
+                            <td><strong>Name</strong></td>
+                            <td><span t-out="object.partner_name"/></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Email</strong></td>
+                            <td><span t-out="object.email_from"/></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Position</strong></td>
+                            <td><span t-out="object.job_id.name"/></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Stage</strong></td>
+                            <td><span t-out="object.stage_id.name"/></td>
+                        </tr>
+                    </table>
+                    <br/>
+                    <p>Please review the application.</p>
+                    <p>
+                        Best Regards,<br/>
+                        HR Team
+                    </p>
+                </div>
+            </field>
+        </record>
 
         <!-- 1️⃣ Qualification -->
         <record id="email_stage_qualification" model="mail.template">
             <field name="name">Qualification Stage</field>
-            <field name="model_id" ref="hr_recruitment.model_hr_applicant"/>
+            <field name="model_id" ref="hr_recruitment.model_hr_applicant" />
             <field name="subject">Application Shortlisted</field>
             <field name="email_from">hrsupport@bxitech.com</field>
             <field name="email_to">${object.email_from}</field>
@@ -31,7 +74,7 @@
         <!-- 2️⃣ First Interview (Schedule) -->
         <record id="email_stage_first_interview" model="mail.template">
             <field name="name">First Interview Stage</field>
-            <field name="model_id" ref="hr_recruitment.model_hr_applicant"/>
+            <field name="model_id" ref="hr_recruitment.model_hr_applicant" />
             <field name="subject">Interview Scheduled</field>
             <field name="email_from">hrsupport@bxitech.com</field>
             <field name="auto_delete">False</field>
@@ -59,7 +102,7 @@
         <!-- 3️⃣ Second Interview -->
         <record id="email_stage_second_interview" model="mail.template">
             <field name="name">Second Interview Stage</field>
-            <field name="model_id" ref="hr_recruitment.model_hr_applicant"/>
+            <field name="model_id" ref="hr_recruitment.model_hr_applicant" />
             <field name="subject">Second Interview Round</field>
             <field name="email_from">hrsupport@bxitech.com</field>
             <field name="auto_delete">False</field>
@@ -83,7 +126,7 @@
         <!-- 4️⃣ Final Interview -->
         <record id="email_stage_final_interview" model="mail.template">
             <field name="name">Final Interview Stage</field>
-            <field name="model_id" ref="hr_recruitment.model_hr_applicant"/>
+            <field name="model_id" ref="hr_recruitment.model_hr_applicant" />
             <field name="subject">Final Interview Round</field>
             <field name="email_from">hrsupport@bxitech.com</field>
             <field name="auto_delete">False</field>
@@ -107,7 +150,7 @@
         <!-- 5️⃣ Final Selection -->
         <record id="email_stage_contract_proposal" model="mail.template">
             <field name="name">Final Selection</field>
-            <field name="model_id" ref="hr_recruitment.model_hr_applicant"/>
+            <field name="model_id" ref="hr_recruitment.model_hr_applicant" />
             <field name="subject">Congratulations - Final Selection</field>
             <field name="email_from">hrsupport@bxitech.com</field>
             <field name="auto_delete">False</field>
@@ -130,7 +173,7 @@
         <!-- 6️⃣ Offer Letter (Contract Proposal Stage) -->
         <record id="email_stage_offer_letter" model="mail.template">
             <field name="name">Offer Letter Mail</field>
-            <field name="model_id" ref="hr_recruitment.model_hr_applicant"/>
+            <field name="model_id" ref="hr_recruitment.model_hr_applicant" />
             <field name="subject">Official Job Offer</field>
             <field name="email_from">hrsupport@bxitech.com</field>
             <field name="auto_delete">False</field>

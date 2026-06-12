@@ -94,6 +94,15 @@ class ApplicantCreation(http.Controller):
 
             applicant = request.env['hr.applicant'].sudo().create(applicant_vals)
 
+            template = request.env.ref(
+                'bxi_hr_recruitment.email_template_applicant_submitted',
+                raise_if_not_found=False
+            )
+            if template:
+                template.sudo().send_mail(
+                    applicant.id,
+                    force_send=True
+                )                
             return self._response(
                 "success",
                 "Applicant created successfully",
