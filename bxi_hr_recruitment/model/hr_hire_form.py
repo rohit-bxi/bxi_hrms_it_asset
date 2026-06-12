@@ -137,29 +137,36 @@ class HrHire(models.Model):
     ], string="Type", default='revenue', tracking=True)
     # Basic Info
     band = fields.Char("Band")
+    company_currency_id = fields.Many2one(
+        'res.currency',
+        related='company_id.currency_id',
+        readonly=True
+    )
 
     # Monthly Components
-    basic_salary = fields.Float("Basic Salary")
-    flexible_allowance = fields.Float("Flexible Allowance", readonly=1, force_save="1")
+    basic_salary = fields.Monetary(string="Basic Salary",store=True,currency_field='company_currency_id',readonly=False)
+    flexible_allowance = fields.Float("Flexible Allowance",compute="_compute_salary",store=True,readonly=True,force_save=True,compute_sudo=True,)
 
-    monthly_total = fields.Float(compute="_compute_salary", store=True, tracking=True)
-    annual_fixed = fields.Float(compute="_compute_salary", store=True, tracking=True)
+    monthly_total = fields.Float(compute="_compute_salary", store=True, tracking=True,compute_sudo=True,)
+    annual_fixed = fields.Float(compute="_compute_salary", store=True, tracking=True,compute_sudo=True,)
 
     # Retirals
     pf = fields.Float("Provident Fund", default=21600.0, tracking=True)
     insurance = fields.Float("Medical Insurance", default=50000.0, tracking=True)
     nps = fields.Float("NPS", default=15000, tracking=True)
 
-    retiral_total = fields.Float(compute="_compute_salary", store=True, tracking=True)
+    retiral_total = fields.Float(compute="_compute_salary", store=True, tracking=True,compute_sudo=True,)
 
     # Variable
-    org_bonus = fields.Float("Org Bonus", compute="_compute_bonus", tracking=True)
-    performance_bonus = fields.Float("Performance Bonus", compute="_compute_bonus", tracking=True)
+    performance_bonus_percentage = fields.Integer(string="Performance Bonus %")
+    org_bonus_percentage = fields.Integer(string="Organisation Bonus %")
+    org_bonus = fields.Float("Org Bonus", compute="_compute_bonus", tracking=True,readonly=False,store=True)
+    performance_bonus = fields.Float("Performance Bonus", compute="_compute_bonus", tracking=True,readonly=False,store=True)
 
-    variable_total = fields.Float(compute="_compute_salary", store=True, tracking=True)
+    variable_total = fields.Float(compute="_compute_salary", store=True, tracking=True,readonly=False)
 
     # Final CTC
-    ctc_total = fields.Float(compute="_compute_salary", store=True, tracking=True)
+    ctc_total = fields.Float(compute="_compute_salary", store=True, tracking=True,readonly=False)
 
     location_ids = fields.Many2one(
         'hr.location',
@@ -375,50 +382,74 @@ class HrHire(models.Model):
             if data.basic_salary:
                 data.flexible_allowance = data.basic_salary * 0.70
 
-    @api.depends('annual_fixed', 'retiral_total')
+    @api.depends('annual_fixed','retiral_total','performance_bonus_percentage','revenue_type','org_bonus_percentage')
     def _compute_bonus(self):
         for rec in self:
-            if rec.revenue_type in ['revenue','simple']:
-                rec.org_bonus = (rec.annual_fixed + rec.retiral_total) * 0.10
+            # Revenue employees
+            if rec.revenue_type == 'revenue':
+                rec.org_bonus = (
+                    (rec.annual_fixed or 0.0)
+                    + (rec.retiral_total or 0.0)
+                ) * (rec.org_bonus_percentage or 0.0) / 100
+
+                total_amount = (
+                    (rec.annual_fixed or 0.0)
+                    + (rec.retiral_total or 0.0)
+                    + rec.org_bonus
+                )
 
                 rec.performance_bonus = (
-                    rec.annual_fixed + rec.retiral_total + rec.org_bonus
-                ) * 0.10
-            else:
-                rec.org_bonus = (rec.annual_fixed + rec.retiral_total) * 0.25
+                    total_amount
+                    * (rec.performance_bonus_percentage or 0.0)
+                    / 100
+                )
 
-                rec.performance_bonus = 0.00
+            # Non-revenue employees
+            elif rec.revenue_type == 'nonrevenue':
+                rec.org_bonus = (
+                    (rec.annual_fixed or 0.0)
+                    + (rec.retiral_total or 0.0)
+                ) * (rec.org_bonus_percentage or 0.0) / 100
 
-    @api.depends(
-        'basic_salary', 'flexible_allowance',
-        'pf', 'insurance', 'nps',
-        'performance_bonus', 'org_bonus'
-    )
+                rec.performance_bonus = 0.0
+
+            # Simple employees
+            elif rec.revenue_type == 'simple':
+                # Keep manually entered values
+                pass
+            
+
+    @api.depends('basic_salary','pf','insurance','nps','performance_bonus','org_bonus')
     def _compute_salary(self):
         for rec in self:
 
-            # Monthly Total
-            rec.monthly_total = rec.basic_salary + rec.flexible_allowance
+            rec.flexible_allowance = rec.basic_salary * 0.70
 
-            # Annual Fixed
+            rec.monthly_total = (
+                rec.basic_salary +
+                rec.flexible_allowance
+            )
+
             rec.annual_fixed = rec.monthly_total * 12
 
-            # Retirals
-            rec.retiral_total = rec.pf + rec.insurance + rec.nps
+            rec.retiral_total = (
+                rec.pf +
+                rec.insurance +
+                rec.nps
+            )
 
-            # Variable
-            rec.variable_total = rec.performance_bonus + rec.org_bonus
+            rec.variable_total = (
+                rec.performance_bonus +
+                rec.org_bonus
+            )
 
-            # Final CTC
-            rec.ctc_total = rec.annual_fixed + rec.retiral_total + rec.variable_total
+            rec.ctc_total = (
+                rec.annual_fixed +
+                rec.retiral_total +
+                rec.variable_total
+            )
 
-    @api.onchange('performance_bonus')
-    def onchange_performance_bonus(self):
-        for data in self:
-            if data.performance_bonus:
-                data.variable_total = data.performance_bonus + data.org_bonus
-                data.ctc_total = data.annual_fixed + data.retiral_total + data.variable_total
-
+    
 class HrApplicantCompany(models.Model):
     _name = 'hr.applicant.company'
     _description = 'Previous Company'

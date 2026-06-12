@@ -82,9 +82,11 @@
                     </group>
 
                     <group string="Variable Components" col="2">
-                        <field name="org_bonus"/>
-                        <field name="performance_bonus"/>
-                        <field name="variable_total" readonly="1"/>
+                        <field name="performance_bonus" readonly="revenue_type in ['nonrevenue']"/>
+                        <field name="performance_bonus_percentage" readonly="revenue_type in ['simple', 'nonrevenue']"/>
+                        <field name="org_bonus" readonly="revenue_type == 'nonrevenue'"/>
+                        <field name="org_bonus_percentage" readonly="revenue_type == 'simple'"/>
+                        <field name="variable_total" readonly="1" />
                     </group>
 
                     <group string="Final CTC">
