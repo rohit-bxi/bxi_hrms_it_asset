@@ -157,6 +157,10 @@
                     </div>
 
                     <group>
+                        <group>
+                            <field name="lead_id"/>
+                            <field name="sale_order_ids" widget="many2many_tags"/>
+                        </group>
                         <group string="Project and Client">
                             <field name="project_ids" widget="many2many_tags"/>
                             <field name="client_ids" widget="many2many_tags"/>
@@ -165,6 +169,7 @@
                         <group string="Contract Type">
                             <field name="contract_type"/>
                             <field name="billing_cycle"/>
+                            <field name="milestone_no" invisible="billing_cycle != 'milestone'"/>
                         </group>
                     </group>
 
