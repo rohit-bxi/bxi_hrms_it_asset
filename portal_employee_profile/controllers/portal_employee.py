@@ -129,59 +129,59 @@ class EmployeePortal(http.Controller):
         return request.redirect('/?profile_updated=1')
 
 
-    @http.route(['/my/payslips'], type='http', auth='user', website=True)
-    def portal_my_payslips(self, **kw):
-        employee = self._get_employee()
+    # @http.route(['/my/payslips'], type='http', auth='user', website=True)
+    # def portal_my_payslips(self, **kw):
+    #     employee = self._get_employee()
 
-        if not employee:
-            return request.redirect('/my/home')
+    #     if not employee:
+    #         return request.redirect('/my/home')
 
-        payslips = request.env['hr.payslip'].sudo().search(
-            [('employee_id', '=', employee.id)],
-            order='date_from desc'
-        )
+    #     payslips = request.env['hr.payslip'].sudo().search(
+    #         [('employee_id', '=', employee.id)],
+    #         order='date_from desc'
+    #     )
 
-        return request.render(
-            'portal_employee_profile.portal_my_payslips',
-            {
-                'payslips': payslips,
-                'employee': employee,
-            }
-        )
+    #     return request.render(
+    #         'portal_employee_profile.portal_my_payslips',
+    #         {
+    #             'payslips': payslips,
+    #             'employee': employee,
+    #         }
+    #     )
 
 
-    @http.route(
-        ['/my/payslip/<int:payslip_id>/download'],
-        type='http',
-        auth='user',
-        website=True
-    )
-    def portal_download_payslip(self, payslip_id):
+    # @http.route(
+    #     ['/my/payslip/<int:payslip_id>/download'],
+    #     type='http',
+    #     auth='user',
+    #     website=True
+    # )
+    # def portal_download_payslip(self, payslip_id):
 
-        payslip = request.env['hr.payslip'].sudo().browse(payslip_id)
-        employee = self._get_employee()
+    #     payslip = request.env['hr.payslip'].sudo().browse(payslip_id)
+    #     employee = self._get_employee()
 
-        if not payslip.exists() or payslip.employee_id != employee:
-            return request.redirect('/my')
+    #     if not payslip.exists() or payslip.employee_id != employee:
+    #         return request.redirect('/my')
 
-        # XML ID of your custom report
-        report_xmlid = 'custom_payslip_report.action_custom_payslip_pdf'
+    #     # XML ID of your custom report
+    #     report_xmlid = 'custom_payslip_report.action_custom_payslip_pdf'
 
-        report = request.env.ref(report_xmlid).sudo()
+    #     report = request.env.ref(report_xmlid).sudo()
 
-        pdf, _ = report._render_qweb_pdf(
-            report_xmlid,
-            res_ids=[payslip.id]
-        )
+    #     pdf, _ = report._render_qweb_pdf(
+    #         report_xmlid,
+    #         res_ids=[payslip.id]
+    #     )
 
-        return request.make_response(
-            pdf,
-            headers=[
-                ('Content-Type', 'application/pdf'),
-                (
-                    'Content-Disposition',
-                    f'attachment; filename="Payslip-{payslip.name or payslip.id}.pdf"'
-                ),
-            ]
-        )
+    #     return request.make_response(
+    #         pdf,
+    #         headers=[
+    #             ('Content-Type', 'application/pdf'),
+    #             (
+    #                 'Content-Disposition',
+    #                 f'attachment; filename="Payslip-{payslip.name or payslip.id}.pdf"'
+    #             ),
+    #         ]
+    #     )
 
