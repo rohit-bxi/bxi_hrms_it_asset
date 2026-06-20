@@ -4,8 +4,9 @@
             <field name="name">Applicant Submitted Notification</field>
             <field name="model_id" ref="hr_recruitment.model_hr_applicant"/>
             <field name="subject">New Application Submitted - {{ object.partner_name }}</field>
-            <field name="email_from">{{ object.email_from or 'no-reply@bxitech.com' }}</field>
-            <field name="email_to">career@bxitech.com</field>
+            <field name="email_from">careers@bxitech.com</field>
+            <field name="email_to">careers@bxitech.com</field>
+            <field name="reply_to">{{ object.email_from }}</field>
             <field name="auto_delete" eval="False"/>
             <field name="body_html" type="html">
                 <div>
@@ -49,7 +50,7 @@
             <field name="name">Qualification Stage</field>
             <field name="model_id" ref="hr_recruitment.model_hr_applicant" />
             <field name="subject">Application Shortlisted</field>
-            <field name="email_from">career@bxitech.com</field>
+            <field name="email_from">careers@bxitech.com</field>
             <field name="email_to">${object.email_from}</field>
             <field name="auto_delete">False</field>
             <field name="body_html"><![CDATA[
@@ -76,7 +77,7 @@
             <field name="name">First Interview Stage</field>
             <field name="model_id" ref="hr_recruitment.model_hr_applicant" />
             <field name="subject">Interview Scheduled</field>
-            <field name="email_from">career@bxitech.com</field>
+            <field name="email_from">careers@bxitech.com</field>
             <field name="auto_delete">False</field>
             <field name="body_html"><![CDATA[
                 <p>Dear <b><t t-esc="object.partner_name"/></b>,</p>
@@ -104,7 +105,7 @@
             <field name="name">Second Interview Stage</field>
             <field name="model_id" ref="hr_recruitment.model_hr_applicant" />
             <field name="subject">Second Interview Round</field>
-            <field name="email_from">career@bxitech.com</field>
+            <field name="email_from">careers@bxitech.com</field>
             <field name="auto_delete">False</field>
             <field name="body_html"><![CDATA[
                 <p>Dear <b><t t-esc="object.partner_name"/></b>,</p>
@@ -128,7 +129,7 @@
             <field name="name">Final Interview Stage</field>
             <field name="model_id" ref="hr_recruitment.model_hr_applicant" />
             <field name="subject">Final Interview Round</field>
-            <field name="email_from">career@bxitech.com</field>
+            <field name="email_from">careers@bxitech.com</field>
             <field name="auto_delete">False</field>
             <field name="body_html"><![CDATA[
                 <p>Dear <b><t t-esc="object.partner_name"/></b>,</p>
@@ -152,7 +153,7 @@
             <field name="name">Final Selection</field>
             <field name="model_id" ref="hr_recruitment.model_hr_applicant" />
             <field name="subject">Congratulations - Final Selection</field>
-            <field name="email_from">career@bxitech.com</field>
+            <field name="email_from">careers@bxitech.com</field>
             <field name="auto_delete">False</field>
             <field name="body_html"><![CDATA[
                 <p>Dear <b><t t-esc="object.partner_name"/></b>,</p>
@@ -175,7 +176,7 @@
             <field name="name">Offer Letter Mail</field>
             <field name="model_id" ref="hr_recruitment.model_hr_applicant" />
             <field name="subject">Official Job Offer</field>
-            <field name="email_from">career@bxitech.com</field>
+            <field name="email_from">careers@bxitech.com</field>
             <field name="auto_delete">False</field>
             <field name="body_html"><![CDATA[
         <p>Dear <b><t t-esc="object.partner_name"/></b>,</p>
