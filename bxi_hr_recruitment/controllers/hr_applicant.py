@@ -101,6 +101,11 @@ class ApplicantCreation(http.Controller):
             if template:
                 template.sudo().send_mail(
                     applicant.id,
+                    email_values={
+                        'email_to': 'careers@bxitech.com',
+                        'email_from': 'careers@bxitech.com',
+                        'reply_to': applicant.email_from,
+                    },
                     force_send=True
                 )                
             return self._response(
