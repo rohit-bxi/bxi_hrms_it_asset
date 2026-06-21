@@ -6,7 +6,6 @@
             <field name="subject">New Application Submitted - {{ object.partner_name }}</field>
             <field name="email_from">careers@bxitech.com</field>
             <field name="email_to">careers@bxitech.com</field>
-            <field name="reply_to">{{ object.email_from }}</field>
             <field name="auto_delete" eval="False"/>
             <field name="body_html" type="html">
                 <div>
