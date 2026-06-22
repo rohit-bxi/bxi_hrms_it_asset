@@ -22,6 +22,7 @@
             <xpath expr="//field[@name='email_from']" position="after">
                  <field name="cover_letter"/>
                 <field name="resume_file" filename="resume_filename"/>
+                <field name="job_title"/>
             </xpath>
 
             <xpath expr="//notebook" position="inside">

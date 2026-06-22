@@ -26,6 +26,7 @@ class HrHire(models.Model):
         string="Resume",
         attachment=True
     )
+    job_title = fields.Char(string="Job title")
     cover_letter = fields.Text(String="Cover Letter")
     resume_filename = fields.Char(
         string="File Name"
