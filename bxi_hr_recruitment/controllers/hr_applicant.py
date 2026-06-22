@@ -190,9 +190,7 @@ class ApplicantCreation(http.Controller):
                 'doc_graduation_id': m2m(data.get('doc_graduation')),
                 'doc_master_id': m2m(data.get('doc_master')),
 
-                'form_16_id': m2m(data.get('form_16')),
-                'bank_statement_id': m2m(data.get('bank_statement')),
-                'salary_slip_id': m2m(data.get('salary_slips')),
+                'any_certificate': m2m(data.get('any_certificate')),
                 'photograph': m2m(data.get('photograph')),
             })
 
