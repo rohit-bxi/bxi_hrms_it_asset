@@ -48,9 +48,9 @@
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="o">
                 <!-- ===================== PAGE 1 ===================== -->
-                <div class="page" style="min-height:950px;padding:15px 20px; font-family:Arial, sans-serif; font-size:14px; line-height:1.6;">   
+                <div class="page" style="min-height:950px;padding:15px 20px; font-family:Arial, sans-serif; font-size:18px; line-height:1.8;">   
                     <div class="offer-title"
-                        style="text-align: center; font-weight: bold; font-size: 32px; color: #1e90ff;">
+                        style="text-align: center; font-weight: bold; font-size: 28px; color: #1e90ff;">
                         OFFER LETTER
                     </div>
                     <!-- Offer Release Date -->
@@ -95,7 +95,8 @@
                         we are pleased to inform you that you have been selected for employment in
                         our organization as <strong>
                             <t t-esc="o.job_id.name" />
-                        </strong>. You will
+                        </strong>. 
+                        Your designated Job Title will be <t t-esc="o.job_title"/>. You will
                         be reporting directly to <strong>
                             <t t-esc="o.reporting_manager_id.name" />
                         </strong>
@@ -2104,7 +2105,6 @@
                             discretion.
                         </p>
                     </div>
-                    <div style="height:730px;"></div>
                 </div>
             </t>
         </t>
