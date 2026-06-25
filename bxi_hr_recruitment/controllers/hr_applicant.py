@@ -101,6 +101,11 @@ class ApplicantCreation(http.Controller):
             if template:
                 template.sudo().send_mail(
                     applicant.id,
+                    email_values={
+                        'email_to': 'careers@bxitech.com',
+                        'email_from': 'careers@bxitech.com',
+                        'reply_to': applicant.email_from,
+                    },
                     force_send=True
                 )                
             return self._response(
@@ -123,20 +128,23 @@ class ApplicantCreation(http.Controller):
     def submit_application(self, **kwargs):
         try:
             data = kwargs
-            print("data +++++++++++++++++++++++++", data)
             odoo_id = data.get('odoo_id')
-            print("ODOO ID +++++++++++++++++++++++++", odoo_id)
             if not odoo_id:
-                return {"status": "error", "message": "Missing odoo_id"}
-
+                return {
+                    "status": "error",
+                    "message": "Missing odoo_id"
+                }
             applicant = request.env['hr.applicant'].sudo().browse(int(odoo_id))
-
             if not applicant.exists():
-                return {"status": "error", "message": "Invalid applicant"}
-
-            # =====================
-            # BASIC FIELDS
-            # =====================
+                return {
+                    "status": "error",
+                    "message": "Invalid applicant"
+                }
+            if applicant.is_application_submitted:
+                return {
+                    "status": "error",
+                    "message": "You have already submitted your application."
+                }
             applicant.write({
                 'partner_name': data.get('partner_name'),
                 'contact_number': data.get('contact_number'),
@@ -149,71 +157,124 @@ class ApplicantCreation(http.Controller):
                 'joining_date': data.get('joining_date'),
             })
 
-            # =====================
-            # SAFE ATTACHMENT CREATOR
-            # =====================
             def create_attachment(file_obj):
                 if not file_obj or not file_obj.get('data'):
                     return False
 
-                try:
-                    data_b64 = file_obj.get('data')
+                attachment = request.env['ir.attachment'].sudo().create({
+                    'name': file_obj.get('name') or 'file',
+                    'type': 'binary',
+                    'datas': file_obj.get('data'),
+                    'res_model': 'hr.applicant',
+                    'res_id': applicant.id,
+                })
 
-                    return request.env['ir.attachment'].sudo().create({
-                        'name': file_obj.get('name') or 'file',
-                        'type': 'binary',
-                        'datas': data_b64,
-                        'res_model': 'hr.applicant',
-                        'res_id': applicant.id,
-                    }).id
-
-                except:
-                    return False
+                return attachment.id
 
             def m2m(file_obj):
                 attachment_id = create_attachment(file_obj)
                 if attachment_id:
                     return [(4, attachment_id)]
-                return False
-
-            # =====================
-            # DOCUMENTS (FIXED FIELD NAMES)
-            # =====================
+                return []
             applicant.write({
                 'doc_10th_id': m2m(data.get('doc_10th')),
                 'doc_12th_id': m2m(data.get('doc_12th')),
                 'doc_graduation_id': m2m(data.get('doc_graduation')),
                 'doc_master_id': m2m(data.get('doc_master')),
-
-                'form_16_id': m2m(data.get('form_16')),
-                'bank_statement_id': m2m(data.get('bank_statement')),
-                'salary_slip_id': m2m(data.get('salary_slips')),
+                'any_certificate': m2m(data.get('any_certificate')),
                 'photograph': m2m(data.get('photograph')),
             })
+            def create_exp_attachment(file_obj, exp_record):
+                if not file_obj or not file_obj.get('data'):
+                    return False
 
-            # =====================
-            # EXPERIENCE
-            # =====================
+                attachment = request.env['ir.attachment'].sudo().create({
+                    'name': file_obj.get('name') or 'file',
+                    'type': 'binary',
+                    'datas': file_obj.get('data'),
+                    'res_model': 'hr.applicant.experience',
+                    'res_id': exp_record.id,
+                })
+
+                return attachment.id
             for exp in data.get('experience', []):
-
                 company_name = exp.get('company_name')
+
+                if not company_name:
+                    continue
+
                 company = request.env['hr.applicant.company'].sudo().search(
                     [('name', '=', company_name)],
                     limit=1
                 )
+
                 if not company:
                     company = request.env['hr.applicant.company'].sudo().create({
                         'name': company_name
                     })
-                request.env['hr.applicant.experience'].sudo().create({
+
+                exp_record = request.env['hr.applicant.experience'].sudo().create({
                     'applicant_id': applicant.id,
                     'company_name': company.id,
-                    'years': exp.get('years'),
+                    'years': exp.get('years', 0),
+
+                    'experience_certificate':
+                        (exp.get('experience_certificate') or {}).get('data'),
+
+                    'experience_certificate_filename':
+                        (exp.get('experience_certificate') or {}).get('name'),
+
+                    'joining_letter':
+                        (exp.get('joining_letter') or {}).get('data'),
+
+                    'joining_letter_filename':
+                        (exp.get('joining_letter') or {}).get('name'),
+
+                    'relieving_letter':
+                        (exp.get('relieving_letter') or {}).get('data'),
+
+                    'relieving_letter_filename':
+                        (exp.get('relieving_letter') or {}).get('name'),
+
+                    'other_certificate':
+                        (exp.get('other_certificate') or {}).get('data'),
+
+                    'other_certificate_filename':
+                        (exp.get('other_certificate') or {}).get('name'),
                 })
+
+                # Bank Statement
+                bank_attachment_id = create_exp_attachment(
+                    exp.get('bank_statement'),
+                    exp_record
+                )
+
+                if bank_attachment_id:
+                    exp_record.write({
+                        'bank_statement_id': [(4, bank_attachment_id)]
+                    })
+
+                # Salary Slip
+                salary_attachment_id = create_exp_attachment(
+                    exp.get('salary_slip'),
+                    exp_record
+                )
+
+                if salary_attachment_id:
+                    exp_record.write({
+                        'salary_slip_id': [(4, salary_attachment_id)]
+                    })
+
+            # ==========================================
+            # MARK AS SUBMITTED
+            # ==========================================
+            applicant.write({
+                'is_application_submitted': True
+            })
 
             return {
                 "status": "success",
-                "message": "Application updated successfully",
+                "message": "Application submitted successfully",
                 "applicant_id": applicant.id
             }
 

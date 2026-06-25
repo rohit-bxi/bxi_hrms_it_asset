@@ -16,10 +16,13 @@
         <field name="model">hr.applicant</field>
         <field name="inherit_id" ref="hr_recruitment.hr_applicant_view_form"/>
         <field name="arch" type="xml">
-
+            <xpath expr="//field[@name='user_id']" position="replace">
+                <field name='hr_user_id'/>
+            </xpath>
             <xpath expr="//field[@name='email_from']" position="after">
                  <field name="cover_letter"/>
                 <field name="resume_file" filename="resume_filename"/>
+                <field name="job_title"/>
             </xpath>
 
             <xpath expr="//notebook" position="inside">
@@ -132,7 +135,7 @@
                             <field name="email_from"/>
                             <field name="cover_letter"/>
                             <field name="resume_file" filename="resume_filename"/>
-
+                            <field name="photograph" widget="many2many_binary"/>
                         </group>
 
                         <group>
@@ -153,18 +156,12 @@
                     <!-- ===================== -->
                     <!-- DOCUMENTS -->
                     <!-- ===================== -->
-                    <group string="Educational Documents">
+                    <group string="Educational Qualification">
                         <field name="doc_10th_id" widget="many2many_binary"/>
                         <field name="doc_12th_id" widget="many2many_binary"/>
                         <field name="doc_graduation_id" widget="many2many_binary"/>
                         <field name="doc_master_id" widget="many2many_binary"/>
-                    </group>
-
-                    <group string="Other Documents">
-                        <field name="form_16_id" widget="many2many_binary"/>
-                        <field name="bank_statement_id" widget="many2many_binary"/>
-                        <field name="salary_slip_id" widget="many2many_binary"/>
-                        <field name="photograph" widget="many2many_binary"/>
+                        <field name="any_certificate" widget="many2many_binary"/>
                     </group>
 
                     <!-- ===================== -->
@@ -191,17 +188,18 @@
                                     </group>
 
                                     <group string="Documents" col="2">
-                                        <field name="experience_certificate"
-                                               filename="experience_certificate_filename"/>
-
                                         <field name="joining_letter"
                                                filename="joining_letter_filename"/>
+                                        <field name="experience_certificate"
+                                               filename="experience_certificate_filename"/>
 
                                         <field name="relieving_letter"
                                                filename="relieving_letter_filename"/>
 
                                         <field name="other_certificate"
-                                               filename="other_certificate_filename"/>
+                                               filename="apprsail_letter_filename"/>
+                                        <field name="bank_statement_id" widget="many2many_binary"/>
+                                        <field name="salary_slip_id" widget="many2many_binary"/>
                                     </group>
                                 </sheet>
                             </form>

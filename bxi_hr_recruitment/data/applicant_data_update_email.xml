@@ -4,7 +4,7 @@
             <field name="name">Qualification Stage Application Form Email</field>
             <field name="model_id" ref="hr_recruitment.model_hr_applicant"/>
             <field name="subject">Complete Your Application Form</field>
-            <field name="email_from">hrsupport@bxitech.com</field>
+            <field name="email_from">careers@bxitech.com</field>
             <field name="auto_delete">False</field>
             <field name="body_html"><![CDATA[
         <p>Dear <b><t t-esc="object.partner_name"/></b>,</p>

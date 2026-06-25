@@ -1,7 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
     <template id="bxi_custom_layout">
+<style>
+.footer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: -5px;
+}
 
+.page:last-child {
+    page-break-after: auto !important;
+}
+</style>
             <!-- COMPANY -->
             <t t-set="company"
                t-value="o.template_company_id or res_company"/>
@@ -47,22 +58,21 @@
                 </div>
 
                 <div style="
-                    padding:20px 20px 60px 20px;
+                    padding:20px 20px 10px 20px;
                     box-sizing:border-box;
                 ">
                     <t t-out="0"/>
                 </div>
 
                 <!-- FOOTER -->
-                <div style="
-                    width:100%;
-                    min-height:80px;
-                    background:#0b2a6f;
-                    color:#ffffff;
-                    font-size:9px;
-                    position:fixed;
-                    bottom:0;
-                    left:0;
+                <div class="footer"
+                    style="
+                        width:100%;
+                        background:#0b2a6f;
+                        color:#ffffff;
+                        font-size:9px;
+                        -webkit-print-color-adjust:exact;
+                        print-color-adjust:exact;
                 ">
 
                     <table style="
