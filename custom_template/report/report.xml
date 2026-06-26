@@ -71,6 +71,8 @@
                         background:#0b2a6f;
                         color:#ffffff;
                         font-size:9px;
+                        -webkit-print-color-adjust:exact;
+                        print-color-adjust:exact;
                 ">
 
                     <table style="
