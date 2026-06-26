@@ -93,10 +93,9 @@
                         </span>" or "Company")
                         we are pleased to inform you that you have been selected for employment in
                         our organization as <strong>
-                            <t t-esc="o.job_id.name" />
+                            <t t-esc="o.job_title" />
                         </strong>. 
-                        Your designated Job Title will be <t t-esc="o.job_title"/>. You will
-                        be reporting directly to <strong>
+                        You will be reporting directly to <strong>
                             <t t-esc="o.reporting_manager_id.name" />
                         </strong>
                         . </p>

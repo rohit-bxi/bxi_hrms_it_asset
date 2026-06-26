@@ -1,3 +1,5 @@
+from dataclasses import fields
+
 from odoo import http
 from odoo.http import request
 import base64
@@ -155,6 +157,10 @@ class ApplicantCreation(http.Controller):
                 'pan_number': data.get('pan_number'),
                 'full_address': data.get('full_address'),
                 'joining_date': data.get('joining_date'),
+                'cur_pre_hr_name': data.get('cur_pre_hr_name'),
+                'cur_pre_hr_contact': data.get('cur_pre_hr_contact'),
+                'cur_pre_reporting_manager': data.get('cur_pre_reporting_manager'),
+                'cur_pre_reporting_manager_contact': data.get('cur_pre_reporting_manager_contact'),
             })
 
             def create_attachment(file_obj):
@@ -272,11 +278,33 @@ class ApplicantCreation(http.Controller):
                 'is_application_submitted': True
             })
 
-            return {
-                "status": "success",
-                "message": "Application submitted successfully",
-                "applicant_id": applicant.id
+            mail_values = {
+                'subject': 'Application Submitted Successfully',
+                'email_to': 'careers@bxitech.com',
+                'body_html': """
+                    <p>Hello Team,</p>
+                    <p>
+                        The applicant has successfully submitted all the required application details.
+                    </p>
+                    <p>
+                        The candidate has completed the application form and uploaded the required documents.
+                        You may now review the submitted information and proceed with the next stage of the recruitment process.
+                    </p>
+                    <p>
+                        <strong>Applicant Name:</strong> %s<br/>
+                        <strong>Email:</strong> %s<br/>
+                        <strong>Contact Number:</strong> %s
+                    </p>
+                    <br/>
+                    <p>Best Regards,<br/>HR Portal</p>
+                """ % (
+                    applicant.partner_name or '',
+                    applicant.email_from or '',
+                    applicant.contact_number or '',
+                )
             }
+
+            request.env['mail.mail'].sudo().create(mail_values).send()
 
         except Exception as e:
             return {
