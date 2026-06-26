@@ -305,7 +305,11 @@ class ApplicantCreation(http.Controller):
             }
 
             request.env['mail.mail'].sudo().create(mail_values).send()
-
+            return {
+                    "status": "success",
+                    "message": "Application submitted successfully",
+                    "applicant_id": applicant.id
+                }
         except Exception as e:
             return {
                 "status": "error",

@@ -17,10 +17,10 @@ class HrHire(models.Model):
     _inherit = 'hr.applicant'
     _description = "HR Applicant Extension for Offer Letter"
 
-    cur_pre_hr_name = fields.Char("Current HR Name")
-    cur_pre_hr_contact = fields.Char("Current HR Contact")
-    cur_pre_reporting_manager = fields.Char("Current Reporting Manager")
-    cur_pre_reporting_manager_contact = fields.Char("Current Reporting Manager Contact")
+    cur_pre_hr_name = fields.Char("Current/Previous HR Name")
+    cur_pre_hr_contact = fields.Char("Current/Previous HR Contact")
+    cur_pre_reporting_manager = fields.Char("Current/Previous Reporting Manager Name")
+    cur_pre_reporting_manager_contact = fields.Char("Current/Previous Reporting Manager Contact")
 
     first_interview_id = fields.Many2one('hr.employee',string="First Interviewer")
     second_interview_id = fields.Many2one('hr.employee',string="Second Interviewer")
