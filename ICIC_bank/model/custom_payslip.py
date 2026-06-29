@@ -1,20 +1,15 @@
 from datetime import datetime
 import uuid
-
 import requests
-
 from odoo import _, fields, models
 from odoo.fields import Date
 from odoo.exceptions import ValidationError
 from secrets import choice
-
-
 import base64
 import json
 import logging
 import os
 import string
-
 from Cryptodome.Cipher import AES, PKCS1_v1_5
 from Cryptodome.PublicKey import RSA
 from Cryptodome.Util.Padding import pad, unpad
@@ -88,8 +83,9 @@ class HrPayslip(models.Model):
         if cls._icici_public_key_cache:
             return cls._icici_public_key_cache
 
+        module_path = os.path.dirname(os.path.abspath(__file__))
         key_path = os.path.join(
-            os.path.dirname(__file__),
+            module_path,
             "..",
             "icici_public.pem",
         )
@@ -159,6 +155,7 @@ class HrPayslip(models.Model):
             payload,
             separators=(",", ":"),
             ensure_ascii=False,
+            sort_keys=True,
         )
 
         aes_key = self.random_16()
@@ -219,13 +216,14 @@ class HrPayslip(models.Model):
                 None,
             )
 
-            if not aes_key:
+            if not aes_key or len(aes_key) != 16:
                 raise ValidationError(
-                    _("Unable to decrypt AES key.")
+                    _("Invalid AES key received from ICICI.")
                 )
 
             encrypted_bytes = base64.b64decode(
-                encrypted_data
+                encrypted_data,
+                validate=True,
             )
 
             iv = encrypted_bytes[:16]
@@ -498,6 +496,12 @@ class HrPayslip(models.Model):
         )
 
         response = result.get("response")
+        if not response:
+            raise ValidationError(
+                _("Empty response received from ICICI.")
+            )
+
+        response = result.get("response")
 
         if not response:
             raise ValidationError(
@@ -507,11 +511,39 @@ class HrPayslip(models.Model):
         try:
             response_json = json.loads(response)
         except json.JSONDecodeError:
-                json_start = response.find("{")
-                json_end = response.rfind("}") + 1
-                response_json = json.loads(
-                    response[json_start:json_end]
+
+            json_start = response.find("{")
+            json_end = response.rfind("}")
+            if json_start == -1 or json_end == -1:
+                _logger.error(
+                    "Invalid ICICI Create API Response:\n%s",
+                    response,
                 )
+                raise ValidationError(
+                    _(
+                        "ICICI returned an invalid response.\n\n%s"
+                    ) % response
+                )
+            clean_response = response[
+                json_start: json_end + 1
+            ]
+
+            try:
+                response_json = json.loads(clean_response)
+
+            except json.JSONDecodeError:
+
+                _logger.error(
+                    "Unable to parse ICICI response:\n%s",
+                    clean_response,
+                )
+
+                raise ValidationError(
+                    _(
+                        "Unable to parse ICICI response.\n\n%s"
+                    ) % clean_response
+                )
+
         response_status = (
             response_json.get("RESPONSE")
             or response_json.get("Response")
@@ -654,8 +686,6 @@ class HrPayslip(models.Model):
         return salary_file
     
     def process_bulk_payment(self, otp, payment_date):
-        self.ensure_one()
-
         if not self:
             raise ValidationError(
                 _("No payslips selected.")
@@ -724,10 +754,22 @@ class HrPayslip(models.Model):
 
         except json.JSONDecodeError:
             json_start = response.find("{")
-            json_end = response.rfind("}") + 1
+            json_end = response.rfind("}")
+            if json_start == -1 or json_end == -1:
+                _logger.error(
+                    "Invalid ICICI response: %s",
+                    response,
+                )
+                raise ValidationError(
+                    _("Invalid response received from ICICI.\n\n%s")
+                    % response
+                )
+            clean_response = response[
+                json_start: json_end + 1
+            ]
 
             response_json = json.loads(
-                response[json_start:json_end]
+                clean_response
             )
 
         _logger.info(
