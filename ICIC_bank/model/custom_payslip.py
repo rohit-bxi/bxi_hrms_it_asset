@@ -11,10 +11,10 @@ import logging
 import requests
 import uuid
 
-from Crypto.PublicKey import RSA
-from Crypto.Cipher import AES
-from Crypto.Cipher import PKCS1_v1_5
-from Crypto.Util.Padding import pad, unpad
+from Cryptodome.PublicKey import RSA
+from Cryptodome.Cipher import AES
+from Cryptodome.Cipher import PKCS1_v1_5
+from Cryptodome.Util.Padding import pad, unpad
 
 _logger = logging.getLogger(__name__)
 
