@@ -49,7 +49,7 @@
                     string="Release Salary"
                     type="object"
                     class="btn-primary"
-                    invisible="state != 'validated' or icici_payment_status == in ('processing','paid','reversed')"/>
+                    invisible="state != 'validated' or icici_payment_status in ('processing','paid','reversed')"/>
                 <button
                     name="action_open_reverse_wizard"
                     string="Reverse Payment"
