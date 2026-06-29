@@ -15,8 +15,13 @@
 
             </xpath>
             <xpath expr="//list" position="inside">
-                <field name="icici_payment_status"/>
-                <field name="icici_reference"/>
+                <field name="icici_payment_status"
+                    decoration-success="icici_payment_status == 'paid'"
+                    decoration-warning="icici_payment_status == 'processing'"
+                    decoration-danger="icici_payment_status == 'failed'"
+                    decoration-info="icici_payment_status == 'reversed'"
+                />
+                <field name="icici_reference" optional="hide"/>
                 <field name="icici_file_seq_num"/>
                 <field name="icici_utr"/>
             </xpath>
@@ -44,16 +49,13 @@
                     string="Release Salary"
                     type="object"
                     class="btn-primary"
-                    invisible="
-                            state != 'validated'
-                            or icici_payment_status == 'paid'
-                        "
-                />
+                    invisible="state != 'validated' or icici_payment_status == in ('processing','paid','reversed')"/>
                 <button
                     name="action_open_reverse_wizard"
                     string="Reverse Payment"
                     type="object"
-                    class="btn-danger"/>
+                    class="btn-danger"
+                    invisible="icici_payment_status != 'processing'"/>
             </xpath>
 
             <xpath expr="//group[@name='top']" position="inside">
