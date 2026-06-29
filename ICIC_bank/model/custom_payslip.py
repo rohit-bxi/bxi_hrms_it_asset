@@ -326,6 +326,17 @@ class HrPayslip(models.Model):
                 decrypted_response = self.decrypt_response(
                     response_json
                 )
+                try:
+                    response_dict = json.loads(decrypted_response)
+                    _logger.info(
+                        "ICICI RESPONSE JSON:\n%s",
+                        json.dumps(response_dict, indent=4),
+                    )
+                except Exception:
+                    _logger.info(
+                        "ICICI RESPONSE TEXT:\n%s",
+                        decrypted_response,
+                    )
 
                 _logger.info(
                     "ICICI API CALL SUCCESS [%s]",
@@ -487,8 +498,12 @@ class HrPayslip(models.Model):
         }
 
         _logger.info(
-            "ICICI Create API Request Started."
+            "ICICI Create API Request Started %s",create_payload,
         )
+        _logger.info("=" * 80)
+        _logger.info("FINAL CREATE PAYLOAD")
+        _logger.info(json.dumps(create_payload, indent=4))
+        _logger.info("=" * 80)
 
         result = self[0].call_icici_api(
             "https://apibankingone.icici.bank.in/api/Corporate/CIB/v1/Create",
@@ -717,10 +732,9 @@ class HrPayslip(models.Model):
         ).decode()
 
         payload = {
-            "FILE_DESCRIPTION": (
-                f"Salary Payment {payment_date.strftime('%B %Y')}"
-            ),
+            "FILE_DESCRIPTION": "Salary Payment",
             "AGGR_ID": "BULK0173",
+            "URN": "SR283346233",
             "AGGR_NAME": "BXITECH",
             "USER_ID": "VAIBHAVP",
             "CORP_ID": "601902129",
