@@ -550,90 +550,98 @@ class HrPayslip(models.Model):
         }
     
     def generate_salary_file(self, payment_date):
-        """
-        Generate ICICI salary file in the format shared by ICICI Bank.
-        """
-        total_amount = 0
-        transaction_count = 0
-        detail_lines = []
+        """Generate ICICI Salary File."""
+
         debit_account = "693905601661"
+        debit_branch = "6939"
+
+        transaction_count = 0
+        total_amount = 0.00
+        detail_lines = []
+
         for slip in self:
+
             employee = slip.employee_id
+
             bank_account = employee.bank_account_ids.filtered(
-                lambda b: b.acc_number
+                lambda b: b.acc_number and b.bank_id
             )[:1]
+
             if not bank_account:
                 raise ValidationError(
-                    _("Bank account is missing for %s.")
+                    _("Bank account missing for %s.")
                     % employee.name
                 )
+
             account_number = bank_account.acc_number.strip()
-            if not account_number:
-                raise ValidationError(
-                    _("Bank account number is missing for %s.")
-                    % employee.name
-                )
-            if not bank_account.bank_id:
-                raise ValidationError(
-                    _("Bank is missing for %s.")
-                    % employee.name
-                )
-            ifsc = (
-                bank_account.bank_id.bic or ""
-            ).strip()
+
+            ifsc = (bank_account.bank_id.bic or "").strip().upper()
+
             if not ifsc:
                 raise ValidationError(
-                    _("IFSC Code is missing for %s.")
+                    _("IFSC Code missing for %s.")
                     % employee.name
                 )
-            amount = round(slip.net_wage or 0, 2)
+
+            amount = round(float(slip.net_wage or 0.0), 2)
+
             if amount <= 0:
                 raise ValidationError(
                     _("Invalid salary amount for %s.")
                     % employee.name
                 )
-            total_amount += amount
+
             transaction_count += 1
-            transaction_type = (
-                "MCW"
-                if ifsc.startswith("ICIC")
-                else "MCO"
+            total_amount += amount
+
+            if ifsc.startswith("ICIC"):
+                transaction_type = "MCW"
+                network = "WIB"
+            else:
+                transaction_type = "MCO"
+                network = "NFT"
+
+            branch_code = ifsc[-4:]
+
+            _logger.info(
+                "Employee=%s | IFSC=%s | TYPE=%s | NETWORK=%s | Branch=%s",
+                employee.name,
+                ifsc,
+                transaction_type,
+                network,
+                branch_code,
             )
-            network = (
-                "WIB"
-                if ifsc.startswith("ICIC")
-                else "NFT"
-            )
-            ICICI_BRANCH_CODE = "6939"
-            employee_branch = ifsc[-4:]
+
             detail_lines.append(
                 "|".join([
                     transaction_type,
                     account_number,
-                    employee_branch,
+                    branch_code,
                     employee.name.strip()[:35],
-                    str(amount),
+                    f"{amount:.2f}",
                     "INR",
                     "Salary",
                     network,
                     ifsc,
                 ]) + "^"
             )
+
         header = (
             f"FHR|{transaction_count}|"
             f"{payment_date}|"
             f"SALARY|"
-            f"{total_amount}|"
+            f"{total_amount:.2f}|"
             f"INR|"
             f"{debit_account}|"
-            f"{ICICI_BRANCH_CODE}^"
+            f"{debit_branch}^"
         )
+
         maker = (
             f"MDR|"
             f"{debit_account}|"
-            f"{ICICI_BRANCH_CODE}|"
+            f"{debit_branch}|"
             f"Salary|"
-            f"{total_amount}|"
+            f"{total_amount:.2f}|"
             f"INR|"
             f"Salary Batch|"
             f"ICIC0000011|"
@@ -644,134 +652,12 @@ class HrPayslip(models.Model):
             [header, maker] + detail_lines
         )
 
+        _logger.info("=" * 80)
+        _logger.info("FINAL SALARY FILE")
+        _logger.info("\n%s", salary_file)
+        _logger.info("=" * 80)
+
         return salary_file
-    
-    def process_bulk_payment(self, otp, payment_date):
-        if not self:
-            raise ValidationError(
-                _("No payslips selected.")
-            )
-
-        if not self[0].icici_reference:
-            raise ValidationError(
-                _("ICICI Reference is missing.")
-            )
-
-        payment_date = Date.to_date(payment_date)
-        payment_date_str = payment_date.strftime("%m/%d/%Y")
-
-        _logger.info(
-            "Payment Date : %s",
-            payment_date_str,
-        )
-
-        salary_file = self.generate_salary_file(
-            payment_date_str
-        )
-
-        _logger.info(
-            "ICICI Salary File Generated.%s",salary_file,
-        )
-
-        encoded_file = base64.b64encode(
-            salary_file.encode("utf-8")
-        ).decode()
-
-        payload = {
-            "FILE_DESCRIPTION": "Salary Payment",
-            "AGGR_ID": "BULK0173",
-            "URN": "SR283346233",
-            "AGGR_NAME": "BXITECH",
-            "USER_ID": "BALCHAND",
-            "CORP_ID": "601902129",
-            "UNIQUE_ID": self[0].icici_reference,
-            "AGOTP": otp,
-            "FILE_NAME": (
-                f"SALARY_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
-            ),
-            "FILE_CONTENT": encoded_file,
-        }
-
-        _logger.info(
-            "Submitting ICICI Bulk Payment."
-        )
-
-        result = self[0].call_icici_api(
-            "https://apibankingone.icici.bank.in/api/v1/cibbulkpayment/bulkPayment",
-            payload,
-        )
-
-        response = result.get("response")
-
-        if not response:
-            raise ValidationError(
-                _("Empty response received from ICICI.")
-            )
-
-        response = response.strip()
-        json_start = response.find("{")
-        json_end = response.rfind("}")
-        if json_start == -1 or json_end == -1:
-            _logger.error(
-                "Invalid ICICI Response:\n%s",
-                response,
-            )
-            raise ValidationError(
-                _("Invalid ICICI response.\n\n%s") % response
-            )
-        clean_response = response[
-            json_start: json_end + 1
-        ]
-
-        try:
-            response_json = json.loads(clean_response)
-
-        except json.JSONDecodeError as exc:
-            _logger.exception(
-                "Unable to parse ICICI response."
-            )
-            raise ValidationError(
-                _("Unable to parse ICICI response.\n\n%s")
-                % clean_response
-            ) from exc
-
-        _logger.info(
-            "ICICI Bulk Payment Response : %s",
-            response_json,
-        )
-
-        file_seq_num = (
-            response_json.get("FILE_SEQUENCE_NUM")
-            or response_json.get("FILESEQNUM")
-        )
-
-        utr = (
-            response_json.get("UTR")
-            or response_json.get("UTRNO")
-        )
-
-        if not file_seq_num:
-            raise ValidationError(
-                response_json.get("MESSAGE_DESC")
-                or response_json.get("Message")
-                or _("ICICI Payment Failed.")
-            )
-
-        self.write({
-            "icici_payment_status": "processing",
-            "icici_file_seq_num": str(file_seq_num),
-            "icici_utr": utr or False,
-            "icici_response": response,
-            "icici_generated_otp": False,
-        })
-
-        _logger.info(
-            "Bulk payment submitted successfully. File Sequence Number : %s",
-            file_seq_num,
-        )
-
-        return True
-
 
     def action_reverse_payment(self, file_seq_num):
         self.ensure_one()
