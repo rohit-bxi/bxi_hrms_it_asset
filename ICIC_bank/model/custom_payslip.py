@@ -492,7 +492,7 @@ class HrPayslip(models.Model):
             "AGGRID": "BULK0173",
             "AGGRNAME": "BXITECH",
             "CORPID": "601902129",
-            "USERID": "VAIBHAVP",
+            "USERID": "BALCHAND",
             "URN": "SR283346233",
             "UNIQUEID": unique_id,
         }
@@ -736,11 +736,10 @@ class HrPayslip(models.Model):
             "AGGR_ID": "BULK0173",
             "URN": "SR283346233",
             "AGGR_NAME": "BXITECH",
-            "USER_ID": "VAIBHAVP",
+            "USER_ID": "BALCHAND",
             "CORP_ID": "601902129",
             "UNIQUE_ID": self[0].icici_reference,
             "AGOTP": otp,
-            "URN": "SR283346233",
             "FILE_NAME": (
                 f"SALARY_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
             ),
@@ -848,10 +847,9 @@ class HrPayslip(models.Model):
         payload = {
             "AGGRID": "BULK0173",
             "CORPID": "601902129",
-            "USERID": "VAIBHAVP",
+            "USERID": "601902129.BALCHAND",
             "URN": "SR283346233",
             "FILESEQNUM": file_seq_num,
-            "UNIQUEID": self.icici_reference,
             "ISENCRYPTED": "N",
         }
 
