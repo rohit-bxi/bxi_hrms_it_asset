@@ -31,8 +31,6 @@ class ICICIOtpWizard(models.TransientModel):
     )
 
     def action_confirm_otp(self):
-        self.ensure_one()
-
         if not self.payslip_ids:
             raise ValidationError(
                 _("No payslips selected.")

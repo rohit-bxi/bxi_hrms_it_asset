@@ -355,6 +355,13 @@ class HrPayslip(models.Model):
 
                 if response.status_code != 200:
 
+                    _logger.error("=" * 80)
+                    _logger.error("ICICI HTTP ERROR")
+                    _logger.error("Status Code : %s", response.status_code)
+                    _logger.error("Headers : %s", response.headers)
+                    _logger.error("Body : %s", response.text)
+                    _logger.error("=" * 80)
+
                     try:
                         error_json = response.json()
 
@@ -593,8 +600,6 @@ class HrPayslip(models.Model):
     def generate_salary_file(self, payment_date):
         """Generate ICICI Salary File."""
 
-        self.ensure_one()
-
         debit_account = "693905601661"
         debit_branch = "6939"
 
@@ -831,9 +836,6 @@ class HrPayslip(models.Model):
     
     def process_bulk_payment(self, otp, payment_date):
         """Submit salary file to ICICI after OTP verification."""
-
-        self.ensure_one()
-
         payment_date = fields.Date.to_date(
             payment_date
         ).strftime("%m/%d/%Y")
