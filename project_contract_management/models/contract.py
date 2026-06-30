@@ -9,6 +9,19 @@ class ProjectContract(models.Model):
 
     name = fields.Char("Contract Name", required=True, tracking=True)
 
+    lead_id = fields.Many2one(
+        'crm.lead',
+        string='Opportunity'
+    )
+
+    sale_order_ids = fields.Many2many(
+        'sale.order',
+        'contract_sale_order_rel',
+        'contract_id',
+        'sale_order_id',
+        string="Sales Orders"
+    )
+    
     project_ids = fields.Many2many(
         'project.project',
         'contract_project_rel',
@@ -33,6 +46,7 @@ class ProjectContract(models.Model):
     contract_tenure = fields.Float("Tenure (Years)", compute="_compute_tenure", store=True)
 
     contract_amount = fields.Float("Contract Amount")
+    milestone_no = fields.Integer("No. Of Milestones")
     currency_id = fields.Many2one('res.currency', default=lambda self: self.env.company.currency_id)
 
     contract_type = fields.Selection([
@@ -43,7 +57,8 @@ class ProjectContract(models.Model):
     billing_cycle = fields.Selection([
         ('monthly', 'Monthly'),
         ('quarterly', 'Quarterly'),
-        ('yearly', 'Yearly')
+        ('yearly', 'Yearly'),
+        ('milestone', 'Milestone'),
     ], string="Billing Cycle")
 
     stage_id = fields.Many2one(
