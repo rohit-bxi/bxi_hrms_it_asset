@@ -45,7 +45,6 @@
         </t>
     </template>
     <template id="_report_offer_letter">
-        <t t-call="web.html_container">
             <t t-foreach="docs" t-as="o">
                 <!-- ===================== PAGE 1 ===================== -->
                 <div class="page" style="min-height:950px;padding:15px 20px; font-family:Arial, sans-serif; font-size:18px; line-height:1.8;">   
@@ -94,10 +93,9 @@
                         </span>" or "Company")
                         we are pleased to inform you that you have been selected for employment in
                         our organization as <strong>
-                            <t t-esc="o.job_id.name" />
+                            <t t-esc="o.job_title" />
                         </strong>. 
-                        Your designated Job Title will be <t t-esc="o.job_title"/>. You will
-                        be reporting directly to <strong>
+                        You will be reporting directly to <strong>
                             <t t-esc="o.reporting_manager_id.name" />
                         </strong>
                         . </p>
@@ -2107,6 +2105,5 @@
                     </div>
                 </div>
             </t>
-        </t>
     </template>
 </odoo>

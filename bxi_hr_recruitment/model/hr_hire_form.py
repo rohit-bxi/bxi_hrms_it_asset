@@ -17,6 +17,11 @@ class HrHire(models.Model):
     _inherit = 'hr.applicant'
     _description = "HR Applicant Extension for Offer Letter"
 
+    cur_pre_hr_name = fields.Char("Current/Previous HR Name")
+    cur_pre_hr_contact = fields.Char("Current/Previous HR Contact")
+    cur_pre_reporting_manager = fields.Char("Current/Previous Reporting Manager Name")
+    cur_pre_reporting_manager_contact = fields.Char("Current/Previous Reporting Manager Contact")
+
     first_interview_id = fields.Many2one('hr.employee',string="First Interviewer")
     second_interview_id = fields.Many2one('hr.employee',string="Second Interviewer")
     final_interview_id = fields.Many2one('hr.employee',string="Final Interviewer")
@@ -50,7 +55,7 @@ class HrHire(models.Model):
     )
     sign_request_id = fields.Many2one('sign.request', string="Sign Request")
 
-    reporting_manager_id = fields.Many2one('res.users', string="Reporting Manager")
+    reporting_manager_id = fields.Many2one('hr.employee', string="Reporting Manager")
     hr_user_id = fields.Many2one('hr.employee', string="HR Responsible")
 
     father_name = fields.Char("Father Name")
