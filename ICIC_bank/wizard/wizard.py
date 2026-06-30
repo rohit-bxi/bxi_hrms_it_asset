@@ -31,16 +31,30 @@ class ICICIOtpWizard(models.TransientModel):
     )
 
     def action_confirm_otp(self):
+        """Submit Bulk Payment after OTP verification."""
+
+        self.ensure_one()
+
         if not self.payslip_ids:
             raise ValidationError(
                 _("No payslips selected.")
             )
 
         otp = (self.otp or "").strip()
+
         if not otp:
             raise ValidationError(
                 _("Please enter the OTP.")
             )
+
+        if not self.payment_date:
+            raise ValidationError(
+                _("Please select the Payment Date.")
+            )
+
+        # ------------------------------------------------------
+        # Validate Payslips
+        # ------------------------------------------------------
 
         for slip in self.payslip_ids:
 
@@ -60,6 +74,12 @@ class ICICIOtpWizard(models.TransientModel):
                     % slip.employee_id.name
                 )
 
+        _logger.info("=" * 80)
+        _logger.info("ICICI OTP VERIFIED")
+        _logger.info("Payment Date : %s", self.payment_date)
+        _logger.info("Payslips : %s", self.payslip_ids.ids)
+        _logger.info("=" * 80)
+
         try:
 
             self.payslip_ids.process_bulk_payment(
@@ -68,7 +88,7 @@ class ICICIOtpWizard(models.TransientModel):
             )
 
             _logger.info(
-                "ICICI bulk payment completed successfully."
+                "ICICI Bulk Payment submitted successfully."
             )
 
             return {
@@ -79,16 +99,17 @@ class ICICIOtpWizard(models.TransientModel):
         except ValidationError:
             raise
 
-        except Exception:
+        except Exception as exc:
+
             _logger.exception(
-                "Unexpected ICICI bulk payment error."
+                "Unexpected ICICI Bulk Payment Error."
             )
 
             raise ValidationError(
                 _(
                     "An unexpected error occurred while processing the salary payment."
                 )
-            )
+            ) from exc
 
 
 class IciciReverseWizard(models.TransientModel):
@@ -109,6 +130,8 @@ class IciciReverseWizard(models.TransientModel):
     )
 
     def action_reverse(self):
+        """Reverse ICICI Salary Payment."""
+
         self.ensure_one()
 
         if not self.payslip_id:
@@ -128,6 +151,13 @@ class IciciReverseWizard(models.TransientModel):
                 )
             )
 
+        _logger.info("=" * 80)
+        _logger.info(
+            "ICICI Reverse Started : %s",
+            self.payslip_id.number,
+        )
+        _logger.info("=" * 80)
+
         try:
 
             self.payslip_id.action_reverse_payment(
@@ -146,13 +176,14 @@ class IciciReverseWizard(models.TransientModel):
         except ValidationError:
             raise
 
-        except Exception:
+        except Exception as exc:
+
             _logger.exception(
-                "Unexpected ICICI reverse payment error."
+                "Unexpected ICICI Reverse Payment Error."
             )
 
             raise ValidationError(
                 _(
                     "An unexpected error occurred while reversing the payment."
                 )
-            )
+            ) from exc
