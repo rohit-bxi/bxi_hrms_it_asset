@@ -240,21 +240,20 @@ class HrPayslip(models.Model):
                 cipher_aes.decrypt(cipher_text),
                 AES.block_size,
             )
+
             _logger.info(
                 "FULL DECRYPTED RAW = %r",
                 decrypted,
             )
 
+            full_response = decrypted.decode("utf-8")
+
             _logger.info(
                 "FULL DECRYPTED STRING = %s",
-                decrypted.decode("utf-8", errors="replace"),
-            )
-            _logger.info(
-                "FINAL STRING : %s",
-                decrypted[16:].decode("utf-8", errors="replace"),
+                full_response,
             )
 
-            return decrypted[16:].decode("utf-8")
+            return full_response
 
         except ValidationError:
             raise
@@ -279,7 +278,7 @@ class HrPayslip(models.Model):
         headers = {
             "accept": "*/*",
             "content-type": "application/json",
-            "APIKEY": "Xz1K4tKqhYwWEbo0qeTQ30XbRtdJtCNP", 
+            "APIKEY": "Xz1K4tKqhYwWEbo0qeTQ30XbRtdJtCNP",
         }
 
         encrypted_payload = self.encrypt_payload(payload)
@@ -287,6 +286,8 @@ class HrPayslip(models.Model):
         _logger.info("=" * 80)
         _logger.info("ICICI API CALL STARTED")
         _logger.info("URL : %s", url)
+
+        response = None
 
         for attempt in range(1, 4):
 
@@ -298,7 +299,6 @@ class HrPayslip(models.Model):
                     json=encrypted_payload,
                     timeout=(10, 60),
                 )
-                response.raise_for_status()
 
                 _logger.info(
                     "ICICI Response Status : %s",
@@ -306,55 +306,35 @@ class HrPayslip(models.Model):
                 )
 
                 if response.status_code != 200:
-                    error_message = response.text
+
                     try:
                         error_json = response.json()
+
                         error_message = (
                             error_json.get("errormessage")
                             or error_json.get("message")
                             or error_json.get("MESSAGE")
                             or response.text
                         )
+
                     except Exception:
-                        pass
+                        error_message = response.text
 
                     raise ValidationError(
                         _("ICICI API Error:\n%s") % error_message
                     )
-                
-                try:
-                    response_json = response.json()
-                    if not isinstance(response_json, dict):
-                        raise ValidationError(
-                            _("Invalid response received from ICICI.")
-                        )
-                except ValueError as exc:
-                    _logger.exception(
-                        "Invalid JSON received from ICICI."
-                    )
-                    raise ValidationError(
-                        _("Invalid JSON received from ICICI.")
-                    ) from exc
+
+                response_json = response.json()
 
                 decrypted_response = self.decrypt_response(
                     response_json
                 )
-                try:
-                    response_dict = json.loads(decrypted_response)
-                    _logger.info(
-                        "ICICI RESPONSE JSON:\n%s",
-                        json.dumps(response_dict, indent=4),
-                    )
-                except Exception:
-                    _logger.info(
-                        "ICICI RESPONSE TEXT:\n%s",
-                        decrypted_response,
-                    )
 
                 _logger.info(
-                    "ICICI API CALL SUCCESS [%s]",
-                    url,
+                    "RETURNING RESPONSE = %s",
+                    decrypted_response,
                 )
+
                 return {
                     "status_code": response.status_code,
                     "response": decrypted_response,
@@ -369,49 +349,13 @@ class HrPayslip(models.Model):
 
                 if attempt == 3:
                     raise ValidationError(
-                        _(
-                            "ICICI server is taking too long to respond. Please try again."
-                        )
+                        _("ICICI server timeout. Please try again.")
                     )
 
             except requests.exceptions.ConnectionError as exc:
-
-                _logger.exception(
-                    "Unable to connect to ICICI."
-                )
-
                 raise ValidationError(
-                    _(
-                        "Unable to connect to ICICI server. Please check your internet connection or contact the administrator."
-                    )
+                    _("Unable to connect to ICICI server.")
                 ) from exc
-
-            except requests.exceptions.HTTPError:
-
-                error_message = response.text
-
-                try:
-                    error_json = response.json()
-
-                    error_message = (
-                        error_json.get("errormessage")
-                        or error_json.get("message")
-                        or error_json.get("MESSAGE")
-                        or response.text
-                    )
-
-                except Exception:
-                    pass
-
-                _logger.error(
-                    "ICICI HTTP Error [%s]: %s",
-                    response.status_code,
-                    error_message,
-                )
-
-                raise ValidationError(
-                    _("ICICI API Error:\n%s") % error_message
-                )
 
             except ValidationError:
                 raise
@@ -419,19 +363,17 @@ class HrPayslip(models.Model):
             except Exception as exc:
 
                 _logger.exception(
-                    "Unexpected ICICI API Error."
+                    "Unexpected ICICI API Error"
                 )
 
                 raise ValidationError(
-                    _(
-                        "Unexpected error occurred while communicating with ICICI Bank."
-                    )
+                    _("Unexpected error while communicating with ICICI.")
                 ) from exc
 
         raise ValidationError(
-            _("Unable to process the ICICI request.")
+            _("Unable to process ICICI request.")
         )
-        
+               
     def action_release_salary(self):
         """Generate ICICI OTP for salary payment."""
 
@@ -529,13 +471,6 @@ class HrPayslip(models.Model):
                 _("Empty response received from ICICI.")
             )
 
-        response = result.get("response")
-
-        if not response:
-            raise ValidationError(
-                _("Empty response received from ICICI.")
-            )
-
         try:
             response_json = json.loads(response)
         except json.JSONDecodeError:
@@ -589,6 +524,10 @@ class HrPayslip(models.Model):
             or response_json.get("otp")
             or response_json.get("AgOtp")
         )
+        if not otp:
+            raise ValidationError(
+                _("OTP was not received from ICICI.")
+            )
 
         if otp:
             self.write({
