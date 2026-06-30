@@ -375,7 +375,7 @@ class HrPayslip(models.Model):
         )
                
     def action_release_salary(self):
-        """Generate ICICI OTP for salary payment."""
+        """Generate ICICI reference and open OTP wizard."""
 
         for slip in self:
 
@@ -387,23 +387,20 @@ class HrPayslip(models.Model):
                 raise ValidationError(
                     _(
                         "Salary payment has already been initiated for %s."
-                    )
-                    % slip.employee_id.name
+                    ) % slip.employee_id.name
                 )
 
             if slip.state != "validated":
                 raise ValidationError(
                     _(
                         "%s payslip must be validated before salary release."
-                    )
-                    % slip.employee_id.name
+                    ) % slip.employee_id.name
                 )
 
             employee = slip.employee_id
+
             bank_account = employee.bank_account_ids.filtered(
-                lambda account:
-                    account.acc_number
-                    and account.bank_id
+                lambda account: account.acc_number and account.bank_id
             )[:1]
 
             if not bank_account:
@@ -430,14 +427,16 @@ class HrPayslip(models.Model):
                     % employee.name
                 )
 
-            amount = int(slip.net_wage or 0)
+            amount = round(slip.net_wage or 0, 2)
+
             if amount <= 0:
                 raise ValidationError(
                     _("Invalid salary amount for %s.")
                     % employee.name
                 )
-            
+
         unique_id = uuid.uuid4().hex[:16].upper()
+
         while self.search_count([
             ("icici_reference", "=", unique_id)
         ]):
@@ -452,12 +451,12 @@ class HrPayslip(models.Model):
             "UNIQUEID": unique_id,
         }
 
-        _logger.info(
-            "ICICI Create API Request Started %s",create_payload,
-        )
         _logger.info("=" * 80)
-        _logger.info("FINAL CREATE PAYLOAD")
-        _logger.info(json.dumps(create_payload, indent=4))
+        _logger.info("ICICI Create API Request Started")
+        _logger.info(
+            "Payload:\n%s",
+            json.dumps(create_payload, indent=4),
+        )
         _logger.info("=" * 80)
 
         result = self[0].call_icici_api(
@@ -466,57 +465,56 @@ class HrPayslip(models.Model):
         )
 
         response = result.get("response")
+
         if not response:
             raise ValidationError(
                 _("Empty response received from ICICI.")
             )
 
+        response = response.strip()
+
+        json_start = response.find("{")
+        json_end = response.rfind("}")
+
+        if json_start == -1 or json_end == -1:
+            raise ValidationError(
+                _("Invalid response received from ICICI.\n\n%s")
+                % response
+            )
+
+        clean_response = response[
+            json_start: json_end + 1
+        ]
+
         try:
-            response_json = json.loads(response)
-        except json.JSONDecodeError:
+            response_json = json.loads(clean_response)
 
-            json_start = response.find("{")
-            json_end = response.rfind("}")
-            if json_start == -1 or json_end == -1:
-                _logger.error(
-                    "Invalid ICICI Create API Response:\n%s",
-                    response,
-                )
-                raise ValidationError(
-                    _(
-                        "ICICI returned an invalid response.\n\n%s"
-                    ) % response
-                )
-            clean_response = response[
-                json_start: json_end + 1
-            ]
+        except json.JSONDecodeError as exc:
 
-            try:
-                response_json = json.loads(clean_response)
+            _logger.exception(
+                "Unable to parse ICICI Create API response."
+            )
 
-            except json.JSONDecodeError:
+            raise ValidationError(
+                _("Unable to parse ICICI response.")
+            ) from exc
 
-                _logger.error(
-                    "Unable to parse ICICI response:\n%s",
-                    clean_response,
-                )
-
-                raise ValidationError(
-                    _(
-                        "Unable to parse ICICI response.\n\n%s"
-                    ) % clean_response
-                )
+        _logger.info(
+            "ICICI Create API Response:\n%s",
+            json.dumps(response_json, indent=4),
+        )
 
         response_status = (
             response_json.get("RESPONSE")
             or response_json.get("Response")
-        )
+            or ""
+        ).strip().upper()
 
-        if (response_status or "").upper() != "SUCCESS":
+        if response_status != "SUCCESS":
             raise ValidationError(
-                response_json.get("Message")
-                or response_json.get("MESSAGE")
-                or _("ICICI request failed.")
+                response_json.get("MESSAGE")
+                or response_json.get("Message")
+                or _("ICICI Create API failed.")
             )
 
         otp = (
@@ -524,31 +522,21 @@ class HrPayslip(models.Model):
             or response_json.get("otp")
             or response_json.get("AgOtp")
         )
-        if not otp:
-            raise ValidationError(
-                _("OTP was not received from ICICI.")
-            )
-
-        if otp:
-            self.write({
-                "icici_generated_otp": otp,
-                "icici_payment_status": "otp_pending",
-                "icici_reference": unique_id,
-            })
-        else:
-            _logger.warning(
-                "ICICI Create API returned SUCCESS but no OTP."
-            )
 
         self.write({
-            "icici_generated_otp": otp,
-            "icici_payment_status": "otp_pending",
             "icici_reference": unique_id,
+            "icici_payment_status": "otp_pending",
+            "icici_generated_otp": otp or False,
         })
 
-        _logger.info(
-            "ICICI OTP generated successfully %s",unique_id,
-        )
+        if otp:
+            _logger.info(
+                "OTP received from ICICI API."
+            )
+        else:
+            _logger.info(
+                "Create API succeeded. OTP will be received by the authorized user."
+            )
 
         return {
             "type": "ir.actions.act_window",
@@ -598,7 +586,7 @@ class HrPayslip(models.Model):
                     _("IFSC Code is missing for %s.")
                     % employee.name
                 )
-            amount = int(slip.net_wage or 0)
+            amount = round(slip.net_wage or 0, 2)
             if amount <= 0:
                 raise ValidationError(
                     _("Invalid salary amount for %s.")
@@ -664,7 +652,7 @@ class HrPayslip(models.Model):
                 _("No payslips selected.")
             )
 
-        if not self.icici_reference:
+        if not self[0].icici_reference:
             raise ValidationError(
                 _("ICICI Reference is missing.")
             )
@@ -809,9 +797,10 @@ class HrPayslip(models.Model):
         payload = {
             "AGGRID": "BULK0173",
             "CORPID": "601902129",
-            "USERID": "601902129.BALCHAND",
+            "USERID": "BALCHAND",
             "URN": "SR283346233",
             "FILESEQNUM": file_seq_num,
+            "UNIQUEID": self.icici_reference,
             "ISENCRYPTED": "N",
         }
 
@@ -842,8 +831,11 @@ class HrPayslip(models.Model):
                 _("Invalid response received from ICICI.")
             ) from exc
 
-        xml_data = response_json.get("XML", {})
-
+        xml_data = (
+            response_json.get("XML")
+            or response_json.get("xml")
+            or {}
+        )
         if xml_data.get("RESPONSE") != "SUCCESS":
             raise ValidationError(
                 xml_data.get("MESSAGE")
