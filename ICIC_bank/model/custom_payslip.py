@@ -70,10 +70,11 @@ class HrPayslip(models.Model):
     _private_key_cache = None
 
     def random_16(self):
-        """Generate a cryptographically secure 16-digit random number."""
+        """Generate a cryptographically secure 16-digit numeric string."""
         return "".join(
             choice(string.digits)
-            for _ in range(16))
+            for _ in range(16)
+        )
 
     def get_icici_public_key(self):
         """Load and cache the ICICI public key."""
@@ -83,7 +84,9 @@ class HrPayslip(models.Model):
         if cls._icici_public_key_cache:
             return cls._icici_public_key_cache
 
-        module_path = os.path.dirname(os.path.abspath(__file__))
+        module_path = os.path.abspath(
+            os.path.dirname(__file__)
+        )
         key_path = os.path.join(
             module_path,
             "..",
@@ -111,16 +114,21 @@ class HrPayslip(models.Model):
                 _("Unable to load ICICI public key.")
             ) from exc
 
+
     def get_private_key(self):
-        """Load and cache client private key."""
+        """Load and cache the client private key."""
 
         cls = type(self)
 
         if cls._private_key_cache:
             return cls._private_key_cache
 
+        module_path = os.path.abspath(
+            os.path.dirname(__file__)
+        )
+
         key_path = os.path.join(
-            os.path.dirname(__file__),
+            module_path,
             "..",
             "private_key.pem",
         )
@@ -149,95 +157,123 @@ class HrPayslip(models.Model):
     def encrypt_payload(self, payload):
         """Encrypt payload using ICICI Hybrid Encryption."""
 
-        rsa_key = self.get_icici_public_key()
+        self.ensure_one()
 
-        json_payload = json.dumps(
-            payload,
-            separators=(",", ":"),
-            ensure_ascii=False,
-            sort_keys=True,
-        )
+        try:
+            rsa_key = self.get_icici_public_key()
 
-        aes_key = self.random_16()
-        iv = self.random_16()
+            json_payload = json.dumps(
+                payload,
+                separators=(",", ":"),
+                ensure_ascii=False,
+                sort_keys=True,
+            )
 
-        cipher_rsa = PKCS1_v1_5.new(rsa_key)
+            aes_key = self.random_16()
+            iv = self.random_16()
 
-        encrypted_key = base64.b64encode(
-            cipher_rsa.encrypt(aes_key.encode("utf-8"))
-        ).decode("utf-8")
+            _logger.info("=" * 80)
+            _logger.info("ICICI Payload Encryption Started")
+            _logger.info("Random AES Key Generated")
+            _logger.info("Random IV Generated")
 
-        cipher_aes = AES.new(
-            aes_key.encode("utf-8"),
-            AES.MODE_CBC,
-            iv.encode("utf-8"),
-        )
+            encrypted_key = base64.b64encode(
+                PKCS1_v1_5.new(rsa_key).encrypt(
+                    aes_key.encode("utf-8")
+                )
+            ).decode("utf-8")
 
-        plaintext = iv + json_payload
+            plaintext = iv + json_payload
 
-        encrypted_data = base64.b64encode(
-            cipher_aes.encrypt(
+            cipher = AES.new(
+                aes_key.encode("utf-8"),
+                AES.MODE_CBC,
+                iv.encode("utf-8"),
+            )
+
+            cipher_text = cipher.encrypt(
                 pad(
                     plaintext.encode("utf-8"),
                     AES.block_size,
                 )
             )
-        ).decode("utf-8")
 
-        return {
-            "requestId": "",
-            "service": "CIB",
-            "encryptedKey": encrypted_key,
-            "oaepHashingAlgorithm": "NONE",
-            "iv": "",
-            "encryptedData": encrypted_data,
-            "clientInfo": "",
-            "optionalParam": "",
-        }
+            encrypted_data = base64.b64encode(
+                iv.encode("utf-8") + cipher_text
+            ).decode("utf-8")
+
+            _logger.info("ICICI Payload Encryption Completed")
+
+            return {
+                "requestId": "",
+                "service": "CIB",
+                "encryptedKey": encrypted_key,
+                "oaepHashingAlgorithm": "NONE",
+                "iv": "",
+                "encryptedData": encrypted_data,
+                "clientInfo": "",
+                "optionalParam": "",
+            }
+
+        except Exception as exc:
+            _logger.exception(
+                "ICICI payload encryption failed."
+            )
+            raise ValidationError(
+                _("Unable to encrypt ICICI request.")
+            ) from exc
 
     def decrypt_response(self, response_data):
         """Decrypt ICICI encrypted response."""
 
+        self.ensure_one()
+
         encrypted_key = response_data.get("encryptedKey")
         encrypted_data = response_data.get("encryptedData")
 
-        if not encrypted_key or not encrypted_data:
+        if not encrypted_key:
             raise ValidationError(
-                _("Incomplete encrypted response received from ICICI.")
+                _("ICICI encrypted key is missing.")
+            )
+
+        if not encrypted_data:
+            raise ValidationError(
+                _("ICICI encrypted data is missing.")
             )
 
         try:
             private_key = self.get_private_key()
 
-            cipher_rsa = PKCS1_v1_5.new(private_key)
-
-            aes_key = cipher_rsa.decrypt(
+            aes_key = PKCS1_v1_5.new(private_key).decrypt(
                 base64.b64decode(encrypted_key),
                 None,
             )
 
-            if not aes_key or len(aes_key) != 16:
+            if not aes_key:
                 raise ValidationError(
-                    _("Invalid AES key received from ICICI.")
+                    _("Unable to decrypt AES key.")
                 )
 
             encrypted_bytes = base64.b64decode(
-                encrypted_data,
-                validate=True,
+                encrypted_data
             )
 
-            iv = encrypted_bytes[:16]
+            if len(encrypted_bytes) <= 16:
+                raise ValidationError(
+                    _("Invalid encrypted response received from ICICI.")
+                )
 
+            iv = encrypted_bytes[:16]
             cipher_text = encrypted_bytes[16:]
 
-            cipher_aes = AES.new(
+            cipher = AES.new(
                 aes_key,
                 AES.MODE_CBC,
                 iv,
             )
 
             decrypted = unpad(
-                cipher_aes.decrypt(cipher_text),
+                cipher.decrypt(cipher_text),
                 AES.block_size,
             )
 
@@ -253,7 +289,19 @@ class HrPayslip(models.Model):
                 full_response,
             )
 
-            return full_response
+            if len(full_response) < 16:
+                raise ValidationError(
+                    _("Invalid decrypted response received from ICICI.")
+                )
+
+            final_response = full_response[16:]
+
+            _logger.info(
+                "FINAL RESPONSE = %s",
+                final_response,
+            )
+
+            return final_response
 
         except ValidationError:
             raise
@@ -273,6 +321,7 @@ class HrPayslip(models.Model):
              
     def call_icici_api(self, url, payload):
         """Call ICICI API using Hybrid Encryption."""
+
         self.ensure_one()
 
         headers = {
@@ -286,8 +335,7 @@ class HrPayslip(models.Model):
         _logger.info("=" * 80)
         _logger.info("ICICI API CALL STARTED")
         _logger.info("URL : %s", url)
-
-        response = None
+        _logger.info("REQUEST : %s", json.dumps(payload, indent=4))
 
         for attempt in range(1, 4):
 
@@ -301,7 +349,7 @@ class HrPayslip(models.Model):
                 )
 
                 _logger.info(
-                    "ICICI Response Status : %s",
+                    "HTTP STATUS : %s",
                     response.status_code,
                 )
 
@@ -324,14 +372,23 @@ class HrPayslip(models.Model):
                         _("ICICI API Error:\n%s") % error_message
                     )
 
-                response_json = response.json()
+                try:
+                    response_json = response.json()
+
+                except Exception as exc:
+                    _logger.exception(
+                        "Invalid JSON received from ICICI."
+                    )
+                    raise ValidationError(
+                        _("Invalid response received from ICICI.")
+                    ) from exc
 
                 decrypted_response = self.decrypt_response(
                     response_json
                 )
 
                 _logger.info(
-                    "RETURNING RESPONSE = %s",
+                    "ICICI RESPONSE : %s",
                     decrypted_response,
                 )
 
@@ -353,6 +410,7 @@ class HrPayslip(models.Model):
                     )
 
             except requests.exceptions.ConnectionError as exc:
+
                 raise ValidationError(
                     _("Unable to connect to ICICI server.")
                 ) from exc
@@ -363,7 +421,7 @@ class HrPayslip(models.Model):
             except Exception as exc:
 
                 _logger.exception(
-                    "Unexpected ICICI API Error"
+                    "Unexpected ICICI API error."
                 )
 
                 raise ValidationError(
@@ -372,11 +430,12 @@ class HrPayslip(models.Model):
 
         raise ValidationError(
             _("Unable to process ICICI request.")
-        )
-               
+        )  
+                  
     def action_release_salary(self):
-        """Generate ICICI reference and open OTP wizard."""
+        """Validate payslips, generate ICICI reference and open OTP wizard."""
 
+        self.ensure_one()
         for slip in self:
 
             if slip.icici_payment_status in (
@@ -385,33 +444,34 @@ class HrPayslip(models.Model):
                 "paid",
             ):
                 raise ValidationError(
-                    _(
-                        "Salary payment has already been initiated for %s."
-                    ) % slip.employee_id.name
+                    _("Salary payment has already been initiated for %s.")
+                    % slip.employee_id.name
                 )
 
             if slip.state != "validated":
                 raise ValidationError(
-                    _(
-                        "%s payslip must be validated before salary release."
-                    ) % slip.employee_id.name
+                    _("%s payslip must be validated before salary release.")
+                    % slip.employee_id.name
                 )
 
             employee = slip.employee_id
 
             bank_account = employee.bank_account_ids.filtered(
-                lambda account: account.acc_number and account.bank_id
+                lambda account:
+                    account.acc_number
+                    and account.bank_id
+                    and account.bank_id.bic
             )[:1]
 
             if not bank_account:
                 raise ValidationError(
-                    _("Bank account is missing for %s.")
+                    _("Please configure a valid bank account for %s.")
                     % employee.name
                 )
 
             if not bank_account.acc_number:
                 raise ValidationError(
-                    _("Bank account number is missing for %s.")
+                    _("Account Number is missing for %s.")
                     % employee.name
                 )
 
@@ -427,9 +487,7 @@ class HrPayslip(models.Model):
                     % employee.name
                 )
 
-            amount = round(slip.net_wage or 0, 2)
-
-            if amount <= 0:
+            if slip.net_wage <= 0:
                 raise ValidationError(
                     _("Invalid salary amount for %s.")
                     % employee.name
@@ -452,14 +510,11 @@ class HrPayslip(models.Model):
         }
 
         _logger.info("=" * 80)
-        _logger.info("ICICI Create API Request Started")
-        _logger.info(
-            "Payload:\n%s",
-            json.dumps(create_payload, indent=4),
-        )
+        _logger.info("ICICI CREATE API")
+        _logger.info(json.dumps(create_payload, indent=4))
         _logger.info("=" * 80)
 
-        result = self[0].call_icici_api(
+        result = self.call_icici_api(
             "https://apibankingone.icici.bank.in/api/Corporate/CIB/v1/Create",
             create_payload,
         )
@@ -482,35 +537,21 @@ class HrPayslip(models.Model):
                 % response
             )
 
-        clean_response = response[
-            json_start: json_end + 1
-        ]
-
-        try:
-            response_json = json.loads(clean_response)
-
-        except json.JSONDecodeError as exc:
-
-            _logger.exception(
-                "Unable to parse ICICI Create API response."
-            )
-
-            raise ValidationError(
-                _("Unable to parse ICICI response.")
-            ) from exc
+        response_json = json.loads(
+            response[json_start:json_end + 1]
+        )
 
         _logger.info(
-            "ICICI Create API Response:\n%s",
+            "CREATE RESPONSE:\n%s",
             json.dumps(response_json, indent=4),
         )
 
-        response_status = (
+        status = (
             response_json.get("RESPONSE")
-            or response_json.get("Response")
             or ""
-        ).strip().upper()
+        ).upper()
 
-        if response_status != "SUCCESS":
+        if status != "SUCCESS":
             raise ValidationError(
                 response_json.get("MESSAGE")
                 or response_json.get("Message")
@@ -531,11 +572,11 @@ class HrPayslip(models.Model):
 
         if otp:
             _logger.info(
-                "OTP received from ICICI API."
+                "OTP received from Create API."
             )
         else:
             _logger.info(
-                "Create API succeeded. OTP will be received by the authorized user."
+                "Production flow: OTP has been sent to the authorized ICICI user."
             )
 
         return {
@@ -552,11 +593,13 @@ class HrPayslip(models.Model):
     def generate_salary_file(self, payment_date):
         """Generate ICICI Salary File."""
 
+        self.ensure_one()
+
         debit_account = "693905601661"
         debit_branch = "6939"
 
         transaction_count = 0
-        total_amount = 0.00
+        total_amount = 0.0
         detail_lines = []
 
         for slip in self:
@@ -564,26 +607,42 @@ class HrPayslip(models.Model):
             employee = slip.employee_id
 
             bank_account = employee.bank_account_ids.filtered(
-                lambda b: b.acc_number and b.bank_id
+                lambda b:
+                    b.acc_number
+                    and b.bank_id
+                    and b.bank_id.bic
             )[:1]
 
             if not bank_account:
                 raise ValidationError(
-                    _("Bank account missing for %s.")
+                    _("Bank account is missing for %s.")
                     % employee.name
                 )
 
-            account_number = bank_account.acc_number.strip()
+            account_number = (
+                bank_account.acc_number or ""
+            ).strip()
 
-            ifsc = (bank_account.bank_id.bic or "").strip().upper()
-
-            if not ifsc:
+            if not account_number:
                 raise ValidationError(
-                    _("IFSC Code missing for %s.")
+                    _("Account Number is missing for %s.")
                     % employee.name
                 )
 
-            amount = round(float(slip.net_wage or 0.0), 2)
+            ifsc = (
+                bank_account.bank_id.bic or ""
+            ).strip().upper()
+
+            if len(ifsc) != 11:
+                raise ValidationError(
+                    _("Invalid IFSC Code for %s.")
+                    % employee.name
+                )
+
+            amount = round(
+                float(slip.net_wage or 0),
+                2,
+            )
 
             if amount <= 0:
                 raise ValidationError(
@@ -603,21 +662,16 @@ class HrPayslip(models.Model):
 
             branch_code = ifsc[-4:]
 
-            _logger.info(
-                "Employee=%s | IFSC=%s | TYPE=%s | NETWORK=%s | Branch=%s",
-                employee.name,
-                ifsc,
-                transaction_type,
-                network,
-                branch_code,
-            )
+            employee_name = " ".join(
+                employee.name.split()
+            )[:35]
 
             detail_lines.append(
                 "|".join([
                     transaction_type,
                     account_number,
                     branch_code,
-                    employee.name.strip()[:35],
+                    employee_name,
                     f"{amount:.2f}",
                     "INR",
                     "Salary",
@@ -640,7 +694,7 @@ class HrPayslip(models.Model):
             f"MDR|"
             f"{debit_account}|"
             f"{debit_branch}|"
-            f"Salary|"
+            f"SALARY|"
             f"{total_amount:.2f}|"
             f"INR|"
             f"Salary Batch|"
@@ -653,13 +707,15 @@ class HrPayslip(models.Model):
         )
 
         _logger.info("=" * 80)
-        _logger.info("FINAL SALARY FILE")
+        _logger.info("ICICI SALARY FILE GENERATED")
         _logger.info("\n%s", salary_file)
         _logger.info("=" * 80)
 
         return salary_file
 
     def action_reverse_payment(self, file_seq_num):
+        """Reverse salary payment."""
+
         self.ensure_one()
 
         if not file_seq_num:
@@ -672,10 +728,7 @@ class HrPayslip(models.Model):
                 _("ICICI Reference is missing.")
             )
 
-        if self.icici_payment_status not in (
-            "processing",
-            "failed",
-        ):
+        if self.icici_payment_status != "processing":
             raise ValidationError(
                 _("Only payments in Processing state can be reversed.")
             )
@@ -690,9 +743,12 @@ class HrPayslip(models.Model):
             "ISENCRYPTED": "N",
         }
 
+        _logger.info("=" * 80)
+        _logger.info("ICICI REVERSE PAYMENT")
         _logger.info(
-            "Submitting ICICI Reverse Payment."
+            json.dumps(payload, indent=4)
         )
+        _logger.info("=" * 80)
 
         result = self.call_icici_api(
             "https://apibankingone.icici.bank.in/api/v1/ReverseMis",
@@ -707,22 +763,53 @@ class HrPayslip(models.Model):
             )
 
         try:
-            response_json = json.loads(response)
+
+            response = response.strip()
+
+            json_start = response.find("{")
+            json_end = response.rfind("}")
+
+            if json_start == -1 or json_end == -1:
+                raise ValidationError(
+                    _("Invalid response received from ICICI.")
+                )
+
+            response_json = json.loads(
+                response[
+                    json_start:json_end + 1
+                ]
+            )
 
         except Exception as exc:
+
             _logger.exception(
-                "Unable to parse reverse response."
+                "Unable to parse ICICI reverse response."
             )
+
             raise ValidationError(
-                _("Invalid response received from ICICI.")
+                _("Unable to parse ICICI reverse response.")
             ) from exc
 
-        xml_data = (
-            response_json.get("XML")
-            or response_json.get("xml")
-            or {}
+        _logger.info(
+            "Reverse Response:\n%s",
+            json.dumps(
+                response_json,
+                indent=4,
+            ),
         )
-        if xml_data.get("RESPONSE") != "SUCCESS":
+
+        xml_data = response_json.get(
+            "XML",
+            {},
+        )
+
+        status = (
+            xml_data.get("RESPONSE")
+            or ""
+        ).upper()
+
+        if status != "SUCCESS":
+
             raise ValidationError(
                 xml_data.get("MESSAGE")
                 or _("Reverse payment failed.")
@@ -733,16 +820,173 @@ class HrPayslip(models.Model):
             "icici_response": response,
             "icici_generated_otp": False,
             "icici_file_seq_num": False,
+            "icici_utr": False,
         })
 
         _logger.info(
-            "Reverse payment completed successfully."
+            "ICICI payment reversed successfully."
         )
 
         return True
-    def action_open_reverse_wizard(self):
+    
+    def process_bulk_payment(self, otp, payment_date):
+        """Submit salary file to ICICI after OTP verification."""
+
         self.ensure_one()
 
+        payment_date = fields.Date.to_date(
+            payment_date
+        ).strftime("%m/%d/%Y")
+
+        if not otp:
+            raise ValidationError(
+                _("Please enter the OTP.")
+            )
+
+        for slip in self:
+
+            if slip.icici_payment_status != "otp_pending":
+                raise ValidationError(
+                    _("Salary payment is not awaiting OTP for %s.")
+                    % slip.employee_id.name
+                )
+
+            if not slip.icici_reference:
+                raise ValidationError(
+                    _("ICICI Reference is missing for %s.")
+                    % slip.employee_id.name
+                )
+
+        salary_file = self.generate_salary_file(
+            payment_date
+        )
+
+        encoded_file = base64.b64encode(
+            salary_file.encode("utf-8")
+        ).decode("utf-8")
+
+        payload = {
+            "FILE_DESCRIPTION": "Salary Payment",
+            "AGGR_ID": "BULK0173",
+            "URN": "SR283346233",
+            "AGGR_NAME": "BXITECH",
+            "USER_ID": "BALCHAND",
+            "CORP_ID": "601902129",
+            "UNIQUE_ID": self[0].icici_reference,
+            "AGOTP": otp.strip(),
+            "FILE_NAME": (
+                f"SALARY_"
+                f"{datetime.now().strftime('%Y%m%d%H%M%S')}.txt"
+            ),
+            "FILE_CONTENT": encoded_file,
+        }
+
+        _logger.info("=" * 80)
+        _logger.info("ICICI BULK PAYMENT PAYLOAD")
+        _logger.info(json.dumps(payload, indent=4))
+        _logger.info("=" * 80)
+
+        result = self.call_icici_api(
+            "https://apibankingone.icici.bank.in/api/v1/cibbulkpayment/bulkPayment",
+            payload,
+        )
+
+        response = result.get("response")
+
+        if not response:
+            raise ValidationError(
+                _("Empty response received from ICICI.")
+            )
+
+        response = response.strip()
+
+        json_start = response.find("{")
+        json_end = response.rfind("}")
+
+        if json_start == -1 or json_end == -1:
+            raise ValidationError(
+                _("Invalid response received from ICICI.\n\n%s")
+                % response
+            )
+
+        try:
+
+            response_json = json.loads(
+                response[
+                    json_start:json_end + 1
+                ]
+            )
+
+        except Exception as exc:
+
+            _logger.exception(
+                "Unable to parse Bulk Payment response."
+            )
+
+            raise ValidationError(
+                _("Unable to parse ICICI response.")
+            ) from exc
+
+        _logger.info(
+            "ICICI BULK PAYMENT RESPONSE\n%s",
+            json.dumps(
+                response_json,
+                indent=4,
+            ),
+        )
+
+        status = (
+            response_json.get("RESPONSE")
+            or response_json.get("Response")
+            or ""
+        ).upper()
+
+        if status != "SUCCESS":
+
+            raise ValidationError(
+                response_json.get("MESSAGE_DESC")
+                or response_json.get("MESSAGE")
+                or response_json.get("Message")
+                or _("ICICI Bulk Payment failed.")
+            )
+
+        file_sequence = (
+            response_json.get("FILE_SEQUENCE_NUM")
+            or response_json.get("FILESEQNUM")
+            or ""
+        )
+
+        utr = (
+            response_json.get("UTR")
+            or response_json.get("UTR_NUMBER")
+            or ""
+        )
+
+        self.write({
+            "icici_payment_status": "processing",
+            "icici_generated_otp": False,
+            "icici_file_seq_num": file_sequence,
+            "icici_utr": utr,
+            "icici_response": json.dumps(
+                response_json,
+                indent=4,
+            ),
+        })
+
+        _logger.info("=" * 80)
+        _logger.info("ICICI BULK PAYMENT SUBMITTED SUCCESSFULLY")
+        _logger.info("File Sequence : %s", file_sequence)
+        _logger.info("UTR : %s", utr)
+        _logger.info("=" * 80)
+
+        return True
+    
+    def action_open_reverse_wizard(self):
+        self.ensure_one()
+        if self.icici_payment_status != "processing":
+            raise ValidationError(
+                _("Only payments in Processing state can be reversed.")
+            )
         if not self.icici_file_seq_num:
             raise ValidationError(
                 _("File Sequence Number is not available.")
