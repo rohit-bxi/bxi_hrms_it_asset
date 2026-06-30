@@ -658,7 +658,7 @@ class HrPayslip(models.Model):
             )
 
         payment_date = Date.to_date(payment_date)
-        payment_date_str = payment_date.strftime("%d/%m/%Y")
+        payment_date_str = payment_date.strftime("%m/%d/%Y")
 
         _logger.info(
             "Payment Date : %s",
