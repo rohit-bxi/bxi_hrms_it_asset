@@ -240,6 +240,19 @@ class HrPayslip(models.Model):
                 cipher_aes.decrypt(cipher_text),
                 AES.block_size,
             )
+            _logger.info(
+                "FULL DECRYPTED RAW = %r",
+                decrypted,
+            )
+
+            _logger.info(
+                "FULL DECRYPTED STRING = %s",
+                decrypted.decode("utf-8", errors="replace"),
+            )
+            _logger.info(
+                "FINAL STRING : %s",
+                decrypted[16:].decode("utf-8", errors="replace"),
+            )
 
             return decrypted[16:].decode("utf-8")
 
@@ -564,11 +577,11 @@ class HrPayslip(models.Model):
             or response_json.get("Response")
         )
 
-        if response_status and response_status.upper() != "SUCCESS":
+        if (response_status or "").upper() != "SUCCESS":
             raise ValidationError(
-                response_json.get("MESSAGE")
-                or response_json.get("MESSAGE_DESC")
-                or _("ICICI Create request failed.")
+                response_json.get("Message")
+                or response_json.get("MESSAGE")
+                or _("ICICI request failed.")
             )
 
         otp = (
@@ -577,9 +590,15 @@ class HrPayslip(models.Model):
             or response_json.get("AgOtp")
         )
 
-        if not otp:
-            raise ValidationError(
-                _("OTP was not received from ICICI.")
+        if otp:
+            self.write({
+                "icici_generated_otp": otp,
+                "icici_payment_status": "otp_pending",
+                "icici_reference": unique_id,
+            })
+        else:
+            _logger.warning(
+                "ICICI Create API returned SUCCESS but no OTP."
             )
 
         self.write({
@@ -762,28 +781,32 @@ class HrPayslip(models.Model):
                 _("Empty response received from ICICI.")
             )
 
-        try:
-            response_json = json.loads(response)
-
-        except json.JSONDecodeError:
-            json_start = response.find("{")
-            json_end = response.rfind("}")
-            if json_start == -1 or json_end == -1:
-                _logger.error(
-                    "Invalid ICICI response: %s",
-                    response,
-                )
-                raise ValidationError(
-                    _("Invalid response received from ICICI.\n\n%s")
-                    % response
-                )
-            clean_response = response[
-                json_start: json_end + 1
-            ]
-
-            response_json = json.loads(
-                clean_response
+        response = response.strip()
+        json_start = response.find("{")
+        json_end = response.rfind("}")
+        if json_start == -1 or json_end == -1:
+            _logger.error(
+                "Invalid ICICI Response:\n%s",
+                response,
             )
+            raise ValidationError(
+                _("Invalid ICICI response.\n\n%s") % response
+            )
+        clean_response = response[
+            json_start: json_end + 1
+        ]
+
+        try:
+            response_json = json.loads(clean_response)
+
+        except json.JSONDecodeError as exc:
+            _logger.exception(
+                "Unable to parse ICICI response."
+            )
+            raise ValidationError(
+                _("Unable to parse ICICI response.\n\n%s")
+                % clean_response
+            ) from exc
 
         _logger.info(
             "ICICI Bulk Payment Response : %s",
