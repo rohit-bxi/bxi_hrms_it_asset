@@ -38,7 +38,7 @@ class ICICIOtpWizard(models.TransientModel):
                 _("No payslips selected.")
             )
 
-        if not self.otp:
+        if not self.otp or not self.otp.strip():
             raise ValidationError(
                 _("Please enter the OTP.")
             )
@@ -63,15 +63,10 @@ class ICICIOtpWizard(models.TransientModel):
                     % slip.employee_id.name
                 )
 
-            if not slip.icici_generated_otp:
+            if not slip.icici_reference:
                 raise ValidationError(
-                    _("OTP has not been generated for %s.")
+                    _("ICICI Reference is missing for %s.")
                     % slip.employee_id.name
-                )
-
-            if self.otp.strip() != slip.icici_generated_otp.strip():
-                raise ValidationError(
-                    _("Invalid OTP.")
                 )
 
         try:
@@ -92,10 +87,9 @@ class ICICIOtpWizard(models.TransientModel):
         except ValidationError:
             raise
 
-        except Exception as exc:
+        except Exception:
             _logger.exception(
-                "Unexpected ICICI bulk payment error: %s",
-                exc,
+                "Unexpected ICICI bulk payment error."
             )
 
             raise ValidationError(
@@ -157,10 +151,9 @@ class IciciReverseWizard(models.TransientModel):
         except ValidationError:
             raise
 
-        except Exception as exc:
+        except Exception:
             _logger.exception(
-                "Unexpected ICICI reverse payment error: %s",
-                exc,
+                "Unexpected ICICI reverse payment error."
             )
 
             raise ValidationError(
