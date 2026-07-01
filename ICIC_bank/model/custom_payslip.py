@@ -183,19 +183,21 @@ class HrPayslip(models.Model):
             ).decode("utf-8")
 
             cipher = AES.new(
-                aes_key.encode("utf-8"),
+                aes_key.encode(),
                 AES.MODE_CBC,
-                iv.encode("utf-8"),
+                iv.encode()
             )
-
-            plaintext = iv + json_payload
 
             cipher_text = cipher.encrypt(
                 pad(
-                    plaintext.encode("utf-8"),
-                    AES.block_size,
+                    json_payload.encode(),
+                    AES.block_size
                 )
             )
+
+            encrypted_data = base64.b64encode(
+                iv.encode() + cipher_text
+            ).decode()
 
             # ICICI Option-B
             encrypted_data = base64.b64encode(
@@ -349,7 +351,12 @@ class HrPayslip(models.Model):
         for attempt in range(1, 4):
 
             try:
-
+                _logger.info(
+                    json.dumps(
+                        encrypted_payload,
+                        indent=4
+                    )
+                )
                 response = requests.post(
                     url=url,
                     headers=headers,
