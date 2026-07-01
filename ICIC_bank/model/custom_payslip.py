@@ -299,16 +299,16 @@ class HrPayslip(models.Model):
 
             # ICICI specification:
             # Ignore first 16 bytes after decryption.
-            final_response = decrypted[16:].decode(
-                "utf-8"
-            )
-
+            full_response = decrypted.decode("utf-8")
             _logger.info(
-                "ICICI RESPONSE = %s",
-                final_response,
+                "FULL RESPONSE = %s",
+                full_response,
             )
 
-            return final_response
+            if full_response.startswith("{"):
+                return full_response
+
+            return full_response[16:]
 
         except ValidationError:
             raise
