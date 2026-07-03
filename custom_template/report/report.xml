@@ -62,7 +62,7 @@
 
                 <div style="
                     padding:20px;
-                    margin-bottom:90px;
+                    margin-bottom:140px;
                     box-sizing:border-box;
                 ">
                     <t t-out="0"/>
