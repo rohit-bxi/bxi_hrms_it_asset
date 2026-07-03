@@ -70,43 +70,23 @@
                 <!-- FOOTER -->
                 <div class="footer"
                     style="
-                        position: fixed;
-                        left: 0;
-                        right: 0;
-                        bottom: 0;
-                        background: #0b2a6f;
-                        color: white;
-                        height: 80px;
-                        padding: 10px;
-                        font-size: 11px;
-                        z-index: 9999;
-                    ">
-                     <div style="float:left; width:70%;">
-                            <div><strong><t t-esc="company.name"/></strong></div>
-                            <div><t t-esc="company.street"/></div>
-                            <div>
-                                <t t-esc="company.city"/>
-                                <t t-if="company.state_id">,
-                                    <t t-esc="company.state_id.name"/>
-                                </t>
-                            </div>
-                        </div>
+                        width:100%;
+                        background:#0b2a6f;
+                        color:#ffffff;
+                        font-size:9px;
+                        overflow:hidden;
+                        -webkit-print-color-adjust:exact;
+                        print-color-adjust:exact;
+                ">
 
-                        <div style="float:right; text-align:right;">
-                            <div>Email: <t t-esc="company.email"/></div>
-                            <div>CIN: <t t-esc="company.company_registry"/></div>
-                        </div>
-
-                    </div>
-
-                    <!-- <table style="
+                    <table style="
                         width:100%;
                         table-layout:fixed;
                         border-collapse:collapse;
                     ">
-                        <tr> -->
+                        <tr>
                             <!-- LEFT DETAILS -->
-                            <!-- <td style="
+                            <td style="
                                 width:55%;
                                 vertical-align:middle;
                                 padding:8px 15px;
@@ -140,10 +120,10 @@
                                 <br/>
 
                                 <t t-esc="company.country_id.name or ''"/>
-                            </td> -->
+                            </td>
 
                             <!-- RIGHT DETAILS -->
-                            <!-- <td style="
+                            <td style="
                                 width:25%;
                                 text-align:right;
                                 vertical-align:middle;
@@ -159,10 +139,10 @@
                                 <div>
                                     CIN: <t t-esc="company.company_registry or ''"/>
                                 </div>
-                            </td> -->
+                            </td>
 
                             <!-- LOGO -->
-                            <!-- <td style="
+                            <td style="
                                 width:20%;
                                 text-align:right;
                                 vertical-align:middle;
@@ -174,8 +154,8 @@
                                 </t>
                             </td>
                         </tr>
-                    </table> -->
-                <!-- </div> -->
+                    </table>
+                </div>
     </template>
 
 </odoo> 
