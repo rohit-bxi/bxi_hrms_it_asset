@@ -802,7 +802,7 @@ class HrPayslip(models.Model):
             f"{total_amount:.2f}|"
             f"INR|"
             f"Salary Batch|"
-            f"ICIC0000011|"
+            f"ICIC0006939|"
             f"WIB^"
         )
 
