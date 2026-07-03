@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-
     <template id="bxi_n01_layout">
 <style>
 .footer {
@@ -8,8 +7,9 @@
     left: 0;
     right: 0;
     bottom: 0;
-    height: 70px;
     width: 100%;
+    min-height: 70px;
+    display: block;
 }
 
 .page:last-child {
@@ -59,11 +59,12 @@
                 </div>
 
                 <!-- ================= BODY ================= -->
-                <div style="
-                    padding:20px;
-                    padding-bottom:90px;
-                    box-sizing:border-box;
-                ">
+                <div class="article"
+                    style="
+                        padding:20px;
+                        box-sizing:border-box;
+                        margin-bottom:110px;
+                    ">
                     <t t-out="0"/>
                 </div>
 
