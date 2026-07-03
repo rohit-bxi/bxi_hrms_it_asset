@@ -70,20 +70,26 @@
                 <!-- FOOTER -->
                 <div class="footer"
                     style="
-                        width:100%;
-                        background:#0b2a6f;
-                        color:#ffffff;
-                        font-size:9px;
-                        overflow:hidden;
-                        -webkit-print-color-adjust:exact;
-                        print-color-adjust:exact;
-                ">FOOTER LOADED
+                        position: fixed;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        height: 80px;
+                        background: red;
+                        color: white;
+                        font-size: 24px;
+                        text-align: center;
+                        line-height: 80px;
+                        z-index: 99999;
+                    ">
+                    FOOTER LOADED
+                </div>
 
-                    <table style="
+                    <!-- <table style="
                         width:100%;
                         table-layout:fixed;
                         border-collapse:collapse;
-                    ">
+                    "> -->
                         <tr>
                             <!-- LEFT DETAILS -->
                             <td style="
@@ -154,8 +160,7 @@
                                 </t>
                             </td>
                         </tr>
-                    </table>
-                </div>
+                    <!-- </table> -->
     </template>
 
 </odoo> 
