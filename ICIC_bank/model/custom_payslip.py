@@ -158,8 +158,6 @@ class HrPayslip(models.Model):
     def encrypt_payload(self, payload):
         """Encrypt payload using ICICI Hybrid Encryption."""
 
-        self.ensure_one()
-
         try:
             rsa_key = self.get_icici_public_key()
 
@@ -167,7 +165,6 @@ class HrPayslip(models.Model):
                 payload,
                 separators=(",", ":"),
                 ensure_ascii=False,
-                sort_keys=True,
             )
 
             aes_key = self.random_16()
@@ -195,11 +192,7 @@ class HrPayslip(models.Model):
                 )
             )
 
-            encrypted_data = base64.b64encode(
-                iv.encode() + cipher_text
-            ).decode()
-
-            # ICICI Option-B
+            # ICICI Option-B: IV prepended to ciphertext
             encrypted_data = base64.b64encode(
                 iv.encode("utf-8") + cipher_text
             ).decode("utf-8")
@@ -231,8 +224,6 @@ class HrPayslip(models.Model):
 
     def decrypt_response(self, response_data):
         """Decrypt ICICI encrypted response."""
-
-        self.ensure_one()
 
         encrypted_key = response_data.get("encryptedKey")
         encrypted_data = response_data.get("encryptedData")
@@ -331,8 +322,6 @@ class HrPayslip(models.Model):
              
     def call_icici_api(self, url, payload):
         """Call ICICI API using Hybrid Encryption."""
-
-        self.ensure_one()
 
         headers = {
             "accept": "*/*",
@@ -963,10 +952,6 @@ class HrPayslip(models.Model):
             raise ValidationError(
                 _("Please enter the OTP.")
             )
-
-        payment_date = fields.Date.to_date(
-            payment_date
-        ).strftime("%m/%d/%Y")
 
         for slip in self:
 
