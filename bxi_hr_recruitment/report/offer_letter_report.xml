@@ -1,6 +1,6 @@
 <odoo>
     <record id="paperformat_offer_letter_letter_a4" model="report.paperformat">
-            <field name="name">Employee Bonus Letter A4</field>
+            <field name="name">Employee Offer Letter A4</field>
             <field name="default" eval="False"/>
             <field name="format">A4</field>
             <field name="orientation">Portrait</field>

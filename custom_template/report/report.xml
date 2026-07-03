@@ -69,15 +69,15 @@
 
                 <!-- FOOTER -->
                 <div class="footer"
-                    style="
-                        width:100%;
-                        background:#0b2a6f;
-                        color:#ffffff;
-                        font-size:9px;
-                        overflow:hidden;
-                        -webkit-print-color-adjust:exact;
-                        print-color-adjust:exact;
-                ">
+                    style="position:fixed;
+                            bottom:0;
+                            left:0;
+                            right:0;
+                            background:red;
+                            color:white;
+                            font-size:20px;
+                            z-index:99999;">
+                    TEST FOOTER
 
                     <table style="
                         width:100%;

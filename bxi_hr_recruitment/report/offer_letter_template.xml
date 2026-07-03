@@ -45,9 +45,8 @@
         </t>
     </template>
     <template id="_report_offer_letter">
-            <t t-foreach="docs" t-as="o">
                 <!-- ===================== PAGE 1 ===================== -->
-                <div class="page" style="min-height:950px;padding:15px 20px; font-family:Arial, sans-serif; font-size:18px; line-height:1.8;">   
+                <div class="page" style="padding:40px; font-size:14px; font-family:Arial, sans-serif;">
                     <div class="offer-title"
                         style="text-align: center; font-weight: bold; font-size: 28px; color: #1e90ff;">
                         OFFER LETTER
@@ -2104,6 +2103,5 @@
                         </p>
                     </div>
                 </div>
-            </t>
     </template>
 </odoo>
