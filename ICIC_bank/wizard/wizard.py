@@ -31,6 +31,8 @@ class ICICIOtpWizard(models.TransientModel):
     )
 
     def action_confirm_otp(self):
+        """Submit Bulk Payment after OTP verification."""
+
         self.ensure_one()
 
         if not self.payslip_ids:
@@ -38,45 +40,55 @@ class ICICIOtpWizard(models.TransientModel):
                 _("No payslips selected.")
             )
 
-        if not self.otp or not self.otp.strip():
+        otp = (self.otp or "").strip()
+
+        if not otp:
             raise ValidationError(
                 _("Please enter the OTP.")
             )
 
+        if not self.payment_date:
+            raise ValidationError(
+                _("Please select the Payment Date.")
+            )
+
+        # ------------------------------------------------------
+        # Validate Payslips
+        # ------------------------------------------------------
+
         for slip in self.payslip_ids:
 
-            if slip.icici_payment_status == "paid":
+            if slip.icici_payment_status != "otp_pending":
                 raise ValidationError(
-                    _("Salary has already been released for %s.")
-                    % slip.employee_id.name
-                )
-
-            if slip.icici_payment_status == "processing":
-                raise ValidationError(
-                    _("Salary payment is already under processing for %s.")
-                    % slip.employee_id.name
-                )
-
-            if slip.icici_payment_status == "reversed":
-                raise ValidationError(
-                    _("Salary payment has already been reversed for %s.")
+                    _(
+                        "%s is not waiting for OTP confirmation."
+                    )
                     % slip.employee_id.name
                 )
 
             if not slip.icici_reference:
                 raise ValidationError(
-                    _("ICICI Reference is missing for %s.")
+                    _(
+                        "ICICI Reference is missing for %s."
+                    )
                     % slip.employee_id.name
                 )
 
+        _logger.info("=" * 80)
+        _logger.info("ICICI OTP VERIFIED")
+        _logger.info("Payment Date : %s", self.payment_date)
+        _logger.info("Payslips : %s", self.payslip_ids.ids)
+        _logger.info("=" * 80)
+
         try:
+
             self.payslip_ids.process_bulk_payment(
-                self.otp.strip(),
+                otp,
                 self.payment_date,
             )
 
             _logger.info(
-                "ICICI bulk payment submitted successfully."
+                "ICICI Bulk Payment submitted successfully."
             )
 
             return {
@@ -87,16 +99,17 @@ class ICICIOtpWizard(models.TransientModel):
         except ValidationError:
             raise
 
-        except Exception:
+        except Exception as exc:
+
             _logger.exception(
-                "Unexpected ICICI bulk payment error."
+                "Unexpected ICICI Bulk Payment Error."
             )
 
             raise ValidationError(
                 _(
-                    "An unexpected error occurred while processing the ICICI payment. Please contact your administrator."
+                    "An unexpected error occurred while processing the salary payment."
                 )
-            )
+            ) from exc
 
 
 class IciciReverseWizard(models.TransientModel):
@@ -117,6 +130,8 @@ class IciciReverseWizard(models.TransientModel):
     )
 
     def action_reverse(self):
+        """Reverse ICICI Salary Payment."""
+
         self.ensure_one()
 
         if not self.payslip_id:
@@ -131,16 +146,26 @@ class IciciReverseWizard(models.TransientModel):
 
         if self.payslip_id.icici_payment_status != "processing":
             raise ValidationError(
-                _("Only payments in Processing state can be reversed.")
+                _(
+                    "Only payments in Processing state can be reversed."
+                )
             )
 
+        _logger.info("=" * 80)
+        _logger.info(
+            "ICICI Reverse Started : %s",
+            self.payslip_id.number,
+        )
+        _logger.info("=" * 80)
+
         try:
+
             self.payslip_id.action_reverse_payment(
                 self.file_seq_num
             )
 
             _logger.info(
-                "ICICI reverse payment completed successfully."
+                "ICICI payment reversed successfully."
             )
 
             return {
@@ -151,13 +176,14 @@ class IciciReverseWizard(models.TransientModel):
         except ValidationError:
             raise
 
-        except Exception:
+        except Exception as exc:
+
             _logger.exception(
-                "Unexpected ICICI reverse payment error."
+                "Unexpected ICICI Reverse Payment Error."
             )
 
             raise ValidationError(
                 _(
-                    "An unexpected error occurred while reversing the payment. Please contact your administrator."
+                    "An unexpected error occurred while reversing the payment."
                 )
-            )
+            ) from exc
