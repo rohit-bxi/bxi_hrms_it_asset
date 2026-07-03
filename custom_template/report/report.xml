@@ -7,8 +7,9 @@
     left: 0;
     right: 0;
     bottom: 0;
-    height: 70px;
     width: 100%;
+    min-height: 70px;
+    z-index: 9999;
 }
 
 .page:last-child {
@@ -59,13 +60,13 @@
                     </table>
                 </div>
 
-                <div class="article" style="
+                <div style="
                     padding:20px;
-                    padding-bottom:90px;
+                    margin-bottom:90px;
                     box-sizing:border-box;
                 ">
-                <t t-out="0"/>
-            </div>
+                    <t t-out="0"/>
+                </div>
 
                 <!-- FOOTER -->
                 <div class="footer"
@@ -74,14 +75,12 @@
                         background:#0b2a6f;
                         color:#ffffff;
                         font-size:9px;
-                        overflow:hidden;
                         -webkit-print-color-adjust:exact;
                         print-color-adjust:exact;
                 ">
 
                     <table style="
                         width:100%;
-                        table-layout:fixed;
                         border-collapse:collapse;
                     ">
                         <tr>
