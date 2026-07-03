@@ -1,6 +1,6 @@
 <odoo>
     <record id="paperformat_offer_letter_letter_a4" model="report.paperformat">
-            <field name="name">Employee Offer Letter A4</field>
+            <field name="name">Employee Bonus Letter A4</field>
             <field name="default" eval="False"/>
             <field name="format">A4</field>
             <field name="orientation">Portrait</field>
@@ -17,6 +17,8 @@
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">bxi_hr_recruitment.report_offer_letter</field>
         <field name="report_file">bxi_hr_recruitment.report_offer_letter</field>
+        <field name="binding_model_id" ref="hr_recruitment.model_hr_applicant"/>
+        <field name="binding_type">report</field>
         <field name="print_report_name">'Offer Letter - %s' % (object.partner_name)</field>
         <field name="paperformat_id" ref="paperformat_offer_letter_letter_a4" />
     </record>
