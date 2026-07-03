@@ -59,8 +59,7 @@
                 </div>
 
                 <!-- ================= BODY ================= -->
-                <div class="article"
-                style="
+                <div style="
                     padding:20px;
                     padding-bottom:90px;
                     box-sizing:border-box;
