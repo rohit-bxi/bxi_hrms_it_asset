@@ -4,7 +4,7 @@
     <template id="report_offer_letter">
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="o">
-                <t t-set="company" t-value="o.template_company_id" />
+                <t t-set="company" t-value="(o.template_company_id or res_company).sudo()"/>
                 <t t-if="o.template_company_id and o.template_company_id.id == 1">
                     <t t-call="custom_template.bxi_custom_layout">
                         <t t-call="bxi_hr_recruitment._report_offer_letter" />
