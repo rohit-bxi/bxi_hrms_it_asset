@@ -61,7 +61,7 @@
 
                 <div style="
                     padding:20px;
-                    padding-bottom:150px;
+                    padding-bottom:90px;
                     box-sizing:border-box;
                 ">
                 <t t-out="0"/>
@@ -70,26 +70,18 @@
                 <!-- FOOTER -->
                 <div class="footer"
                     style="
-                        position: fixed;
-                        left: 0;
-                        right: 0;
-                        bottom: 0;
-                        height: 80px;
-                        background: red;
-                        color: white;
-                        font-size: 24px;
-                        text-align: center;
-                        line-height: 80px;
-                        z-index: 99999;
-                    ">
-                    FOOTER LOADED
-                </div>
-
-                    <!-- <table style="
                         width:100%;
-                        table-layout:fixed;
+                        background:#0b2a6f;
+                        color:#ffffff;
+                        font-size:9px;
+                        -webkit-print-color-adjust:exact;
+                        print-color-adjust:exact;
+                ">
+
+                    <table style="
+                        width:100%;
                         border-collapse:collapse;
-                    "> -->
+                    ">
                         <tr>
                             <!-- LEFT DETAILS -->
                             <td style="
@@ -160,7 +152,8 @@
                                 </t>
                             </td>
                         </tr>
-                    <!-- </table> -->
+                    </table>
+                </div>
     </template>
 
 </odoo> 
