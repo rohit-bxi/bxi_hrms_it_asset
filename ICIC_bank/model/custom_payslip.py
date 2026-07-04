@@ -747,11 +747,11 @@ class HrPayslip(models.Model):
             if ifsc.startswith("ICIC"):
                 transaction_type = "MCW"
                 network = "WIB"
+                branch_code = ifsc[-4:]
             else:
                 transaction_type = "MCO"
                 network = "NFT"
-
-            branch_code = ifsc[-4:]
+                branch_code = "0011"
 
             employee_name = " ".join(
                 employee.name.split()
