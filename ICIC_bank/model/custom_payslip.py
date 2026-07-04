@@ -1062,16 +1062,29 @@ class HrPayslip(models.Model):
         response_status = (
             response_json.get("RESPONSE")
             or response_json.get("Response")
+            or response_json.get("response")
+            or response_json.get("status")
+            or response_json.get("Status")
             or ""
         ).strip().upper()
 
-        if response_status != "SUCCESS":
+        message = (
+            response_json.get("MESSAGE_DESC")
+            or response_json.get("MESSAGE")
+            or response_json.get("Message")
+            or response_json.get("message")
+            or ""
+        )
 
+        is_success = (
+            response_status == "SUCCESS"
+            or "SUCCESSFULLY" in message.upper()
+            or "SUCCESS" in message.upper()
+        )
+
+        if not is_success:
             raise ValidationError(
-                response_json.get("MESSAGE_DESC")
-                or response_json.get("MESSAGE")
-                or response_json.get("Message")
-                or _("ICICI Bulk Payment failed.")
+                message or _("ICICI Bulk Payment failed.")
             )
 
         file_sequence = (
@@ -1079,6 +1092,12 @@ class HrPayslip(models.Model):
             or response_json.get("FILESEQNUM")
             or ""
         )
+
+        if not file_sequence and message:
+            import re
+            match = re.search(r"File Sequence\s*(?:No|Number)?\s*:\s*\[?(\d+)\]?", message, re.IGNORECASE)
+            if match:
+                file_sequence = match.group(1)
 
         utr = (
             response_json.get("UTR")
