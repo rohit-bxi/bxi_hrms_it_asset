@@ -47,7 +47,7 @@
     <template id="_report_offer_letter">
             <t t-foreach="docs" t-as="o">
                 <!-- ===================== PAGE 1 ===================== -->
-                <div class="page" style="min-height:950px;padding:15px 20px; font-family:Arial, sans-serif; font-size:18px; line-height:1.8;">   
+                <div class="page" style="padding:15px 20px; font-family:Arial, sans-serif; font-size:18px; line-height:1.8;">   
                     <div class="offer-title"
                         style="text-align: center; font-weight: bold; font-size: 28px; color: #1e90ff;">
                         OFFER LETTER
@@ -134,7 +134,7 @@
 
                 <!-- ===================== PAGE 2 ===================== -->
                 <div class="page"
-                    style="page-break-before:always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
+                    style="page-break-after: always;always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
                     <!-- Paragraph 5 -->
                     <p> You would be required to furnish digital copies of the documents and other
                         listed information in Annexure IV, before your joining date. Please note
@@ -201,7 +201,7 @@
                 </div>
                 <!-- ===================== PAGE 3 ===================== -->
                 <div class="page"
-                    style="page-break-before:always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
+                    style="page-break-after: always;always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
                     <h3 style="text-align:center; font-size:22px; margin-bottom:20px;">
                         ANNEXURE I
 </h3>
@@ -397,7 +397,7 @@
                 </div>
                 <!-- ===================== PAGE 4 ===================== -->
                 <div class="page"
-                    style="page-break-before:always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
+                    style="page-break-after: always;always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
                     <h3 style="text-align:center;">ANNEXURE II</h3>
 
                     <p style="font-weight:bold; text-decoration: underline;">
@@ -448,7 +448,7 @@
                 </div>
                 <!-- ===================== PAGE 5 ===================== -->
                 <div class="page"
-                    style="page-break-before:always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
+                    style="page-break-after: always;always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
                     <p>
                         The components forming part of Flexible compensation plan are listed below:
                     </p>
@@ -487,7 +487,7 @@
                 </div>
                 <!-- ===================== PAGE 6 ===================== -->
                 <div class="page"
-                    style="page-break-before:always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
+                    style="page-break-after: always;always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
                     <p> f. <strong>Car Lease Rental Reimbursement:</strong> We have an attractive
                         Car Lease Scheme, according to which you can avail the following facilities: </p>
 
@@ -527,7 +527,7 @@
 
                 <!-- ===================== PAGE 7 ===================== -->
                 <div class="page"
-                    style="page-break-before:always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
+                    style="page-break-after: always;always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
                     <p> a. <strong>Performance Bonus (PB):</strong> Performance Bonus (PB) is
                         payable in accordance with the Company Bonus Policy (sales / delivery /
                         functional support) as applicable at that time. The quantum of pay-out will
@@ -574,7 +574,7 @@
 
                 <!-- ===================== PAGE 8 ===================== -->
                 <div class="page"
-                    style="page-break-before:always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
+                    style="page-break-after: always;always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
                     <p> b. <strong>Coverage under ESI:</strong> The employee will be covered under
                         Employee State Insurance Scheme in accordance with the applicable norms and
                         amendments made from time to time or any further amendment which may come
@@ -631,7 +631,7 @@
 
                 <!-- ===================== PAGE 9 ===================== -->
                 <div class="page"
-                    style="page-break-before:always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
+                    style="page-break-after: always;always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
                     <p> 5. <strong>Term Life Insurance (including EDLI):</strong> You will be
                         covered under Term Life Insurance which provides a safety net to the family
                         in case of death of the employee due to any reason. The applicable amount is
@@ -691,7 +691,7 @@
                 </div>
                 <!-- ===================== PAGE 10 ===================== -->
                 <div class="page"
-                    style="page-break-before:always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
+                    style="page-break-after: always;always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
                     <p>
                         The fitness testing (and accompanying results) will not lead to any
                         subjective,
@@ -744,7 +744,7 @@
                 </div>
                 <!-- ===================== PAGE 11 ===================== -->
                 <div class="page"
-                    style="page-break-before:always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
+                    style="page-break-after: always;always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
                     <p>
                         You may also be required to sign other Agreements with the Company, as the
                         Company may
@@ -807,7 +807,7 @@
                 </div>
                 <!-- ===================== PAGE 12 ===================== -->
                 <div class="page"
-                    style="page-break-before:always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
+                    style="page-break-after: always;always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
                     <h5>BACKGROUND VERIFICATION</h5>
 
                     <p>
@@ -883,7 +883,7 @@
                 </div>
                 <!-- ===================== PAGE 13 ===================== -->
                 <div class="page"
-                    style="page-break-before:always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
+                    style="page-break-after: always;always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
                     <h5>14. CORRECTNESS OF DETAILS FURNISHED</h5>
 
                     <p>
@@ -947,7 +947,7 @@
                 </div>
                 <!-- ===================== PAGE 14 ===================== -->
                 <div class="page"
-                    style="page-break-before:always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
+                    style="page-break-after: always;always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
                     <!-- POINT 16 CONTENT -->
                     <p>
                         <strong>16. Other Rules and Regulations of the Company:</strong> Your
@@ -1058,7 +1058,7 @@
                 </div>
                 <!-- ===================== PAGE 15 ===================== -->
                 <div class="page"
-                    style="page-break-before:always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
+                    style="page-break-after: always;always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
                     <!-- ADDITIONAL DOCUMENTS -->
                     <p style="font-weight:bold; margin-top:10px;">
                         Additional Documents (To be submitted on request - Only if required)
@@ -1108,7 +1108,7 @@
                 </div>
                 <!-- ===================== PAGE 16 ===================== -->
                 <div class="page"
-                    style="page-break-before:always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
+                    style="page-break-after: always;always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
                     <!-- TOP NOTE -->
                     <p>
                         Additional document can be requested to clear background verification
@@ -1228,7 +1228,7 @@
                 </div>
                 <!-- ===================== PAGE 17 ===================== -->
                 <div class="page"
-                    style="page-break-before:always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
+                    style="page-break-after: always;always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
                     <!-- CONTINUED BULLETS -->
                     <ul style="margin-left:20px;">
                         <li style="margin-bottom:6px;">
@@ -1323,7 +1323,7 @@
                 </div>
                 <!-- ===================== PAGE 18 ===================== -->
                 <div class="page"
-                    style="page-break-before:always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
+                    style="page-break-after: always;always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
                     <!-- RELOCATION EXPENSE -->
                     <p>
                         <strong>Relocation Expenses:</strong> You will be reimbursed relocation
@@ -1406,7 +1406,7 @@
                 </div>
                 <!-- ===================== PAGE 19 ===================== -->
                 <div class="page"
-                    style="page-break-before:always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
+                    style="page-break-after: always;always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
                     <!-- CONTINUATION: CONFIDENTIAL INFORMATION -->
                     <p>
                         Subsidiaries or affiliates (collectively "Company Parties"), to which I have
@@ -1499,7 +1499,7 @@
                 </div>
                 <!-- ===================== PAGE 20 ===================== -->
                 <div class="page"
-                    style="page-break-before:always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
+                    style="page-break-after: always;always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
                     <!-- CONTINUATION: THIRD PARTY INFO -->
                     <p>
                         Hold all such confidential or proprietary information in the strictest
@@ -1585,7 +1585,7 @@
                 </div>
                 <!-- ===================== PAGE 21 ===================== -->
                 <div class="page"
-                    style="page-break-before:always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
+                    style="page-break-after: always;always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
                     <!-- CONTINUATION: ASSIGNMENT -->
                     <p>
                         Reduced to practice during the period of my employment with the Company
@@ -1668,7 +1668,7 @@
                 </div>
                 <!-- ===================== PAGE 22 ===================== -->
                 <div class="page"
-                    style="page-break-before:always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
+                    style="page-break-after: always;always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
                     <!-- CONTINUATION: PATENT CLAUSE -->
                     <p>
                         Incapacity or for any other reason to fail to secure my signature to apply
@@ -1760,7 +1760,7 @@
                 </div>
                 <!-- ===================== PAGE 23 ===================== -->
                 <div class="page"
-                    style="page-break-before:always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
+                    style="page-break-after: always;always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
                     <!-- CONTINUATION: RETURNING DOCUMENTS -->
                     <p>
                         Pursuant to my employment with the Company or otherwise belonging to the
@@ -1837,7 +1837,7 @@
                 </div>
                 <!-- ===================== PAGE 24 ===================== -->
                 <div class="page"
-                    style="page-break-before:always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
+                    style="page-break-after: always;always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
                     <!-- SIMILAR SERVICES DEFINITION -->
                     <ul style="margin-left:20px;">
                         <li style="margin-bottom:6px;">
@@ -1916,7 +1916,7 @@
                 </div>
                 <!-- ===================== PAGE 25 ===================== -->
                 <div class="page"
-                    style="page-break-before:always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
+                    style="page-break-after: always;always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">
                     <!-- CONTINUATION: PROTECTION OF SYSTEMS -->
                     <p>
                         Customer's work and computer environment and, as such, I undertake not to
@@ -1998,7 +1998,7 @@
                 </div>
                 <!-- ===================== PAGE 26 ===================== -->
                 <div class="page"
-                    style="page-break-before:always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">                    <!--
+                    style="page-break-after: always;always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.8;">                    <!--
                     10 CONTINUED -->
                     <p>
                         I represent that my performance of all the terms of my employment agreement
@@ -2068,7 +2068,7 @@
                 </div>
                 <!-- ===================== PAGE 27 ===================== -->
                 <div class="page"
-                    style="page-break-before:always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.2;">
+                    style="page-break-after: always;always;padding:15px 20px;font-family:Arial, sans-serif;font-size:18px;line-height:1.2;">
                     <!-- BORDER CONTAINER -->
                     <div
                         style="border: 2px solid #000000;padding: 25px;margin: 40px 20px;min-height: 100px;">
