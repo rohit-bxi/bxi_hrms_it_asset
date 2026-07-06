@@ -57,10 +57,16 @@ class ApplicantCreation(http.Controller):
             if not email:
                 return self._response("error", "Email is required")
 
-            existing_applicant = request.env['hr.applicant'].sudo().search([
-                ('email_from', '=ilike', email.strip()),
-                ('job_id', '=', job_id)
-            ], limit=1)
+            if not partner_name:
+                return self._response("error", "Applicant name is required")
+
+            domain = [('email_from', '=ilike', email.strip())]
+            if job_id:
+                domain.append(('job_id', '=', int(job_id)))
+
+            existing_applicant = request.env['hr.applicant'].sudo().search(
+                domain, limit=1
+            )
 
             if existing_applicant:
                 return self._response(
@@ -68,25 +74,23 @@ class ApplicantCreation(http.Controller):
                     "An applicant with this email address already exists."
                 )
 
-            if not partner_name:
-                return self._response("error", "Applicant name is required")
-
-            job = request.env['hr.job'].sudo().browse(job_id)
-
-            if not job.exists():
-                return self._response("error", "Invalid Job ID")
-
             applicant_vals = {
                 'partner_name': partner_name,
                 'email_from': email,
                 'partner_phone': phone,
-                'job_id': job_id,
-                'cover_letter': cover_letter
+                'cover_letter': cover_letter,
             }
 
-            # -----------------------------
-            #  ADD RESUME (IMPORTANT BLOCK)
-            # -----------------------------
+            # Set Job only if provided
+            if job_id:
+                job = request.env['hr.job'].sudo().browse(int(job_id))
+
+                if not job.exists():
+                    return self._response("error", "Invalid Job ID")
+
+                applicant_vals['job_id'] = job.id
+
+            # Resume
             if resume_file:
                 applicant_vals.update({
                     'resume_file': resume_file,
