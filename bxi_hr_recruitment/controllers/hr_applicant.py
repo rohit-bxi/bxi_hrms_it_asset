@@ -51,6 +51,9 @@ class ApplicantCreation(http.Controller):
             phone = kwargs.get('partner_phone')
             job_id = kwargs.get('job_id')
             cover_letter=kwargs.get('cover_letter')
+            linkedin_profile = kwargs.get('linkedin_profile')
+            job_approach = kwargs.get('job_approach')
+            country = kwargs.get('country')
 
             resume_file = kwargs.get('resume_file')
 
@@ -84,13 +87,19 @@ class ApplicantCreation(http.Controller):
             # Set Job only if provided
             if job_id:
                 job = request.env['hr.job'].sudo().browse(int(job_id))
-
                 if not job.exists():
                     return self._response("error", "Invalid Job ID")
-
                 applicant_vals['job_id'] = job.id
 
-            # Resume
+            if linkedin_profile:
+                applicant_vals['linkedin_profile'] = linkedin_profile.strip()
+
+            if job_approach:
+                applicant_vals['job_approach'] = job_approach.strip()
+
+            if country:
+                applicant_vals['country'] = country.strip()
+
             if resume_file:
                 applicant_vals.update({
                     'resume_file': resume_file,
