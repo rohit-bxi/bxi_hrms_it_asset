@@ -154,7 +154,7 @@ class IciciReverseWizard(models.TransientModel):
         _logger.info("=" * 80)
         _logger.info(
             "ICICI Reverse Started : %s",
-            self.payslip_id.number,
+            self.payslip_id,
         )
         _logger.info("=" * 80)
 
