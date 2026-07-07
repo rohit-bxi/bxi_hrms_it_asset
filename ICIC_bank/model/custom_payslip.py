@@ -840,7 +840,7 @@ class HrPayslip(models.Model):
         payload = {
             "AGGRID": "BULK0173",
             "CORPID": "601902129",
-            "USERID": "BALCHAND",
+            "USERID": "601902129.BALCHAND",
             "URN": "SR283346233",
             "FILESEQNUM": file_seq_num,
             "UNIQUEID": self.icici_reference,
