@@ -158,8 +158,6 @@ class HrPayslip(models.Model):
     def encrypt_payload(self, payload):
         """Encrypt payload using ICICI Hybrid Encryption."""
 
-        self.ensure_one()
-
         try:
             rsa_key = self.get_icici_public_key()
 
@@ -167,7 +165,6 @@ class HrPayslip(models.Model):
                 payload,
                 separators=(",", ":"),
                 ensure_ascii=False,
-                sort_keys=True,
             )
 
             aes_key = self.random_16()
@@ -195,11 +192,7 @@ class HrPayslip(models.Model):
                 )
             )
 
-            encrypted_data = base64.b64encode(
-                iv.encode() + cipher_text
-            ).decode()
-
-            # ICICI Option-B
+            # ICICI Option-B: IV prepended to ciphertext
             encrypted_data = base64.b64encode(
                 iv.encode("utf-8") + cipher_text
             ).decode("utf-8")
@@ -231,8 +224,6 @@ class HrPayslip(models.Model):
 
     def decrypt_response(self, response_data):
         """Decrypt ICICI encrypted response."""
-
-        self.ensure_one()
 
         encrypted_key = response_data.get("encryptedKey")
         encrypted_data = response_data.get("encryptedData")
@@ -331,8 +322,6 @@ class HrPayslip(models.Model):
              
     def call_icici_api(self, url, payload):
         """Call ICICI API using Hybrid Encryption."""
-
-        self.ensure_one()
 
         headers = {
             "accept": "*/*",
@@ -758,11 +747,11 @@ class HrPayslip(models.Model):
             if ifsc.startswith("ICIC"):
                 transaction_type = "MCW"
                 network = "WIB"
+                branch_code = ifsc[-4:]
             else:
                 transaction_type = "MCO"
                 network = "NFT"
-
-            branch_code = ifsc[-4:]
+                branch_code = "0011"
 
             employee_name = " ".join(
                 employee.name.split()
@@ -813,7 +802,7 @@ class HrPayslip(models.Model):
             f"{total_amount:.2f}|"
             f"INR|"
             f"Salary Batch|"
-            f"ICIC0000011|"
+            f"ICIC0006939|"
             f"WIB^"
         )
 
@@ -964,10 +953,6 @@ class HrPayslip(models.Model):
                 _("Please enter the OTP.")
             )
 
-        payment_date = fields.Date.to_date(
-            payment_date
-        ).strftime("%m/%d/%Y")
-
         for slip in self:
 
             if slip.icici_payment_status != "otp_pending":
@@ -1077,16 +1062,29 @@ class HrPayslip(models.Model):
         response_status = (
             response_json.get("RESPONSE")
             or response_json.get("Response")
+            or response_json.get("response")
+            or response_json.get("status")
+            or response_json.get("Status")
             or ""
         ).strip().upper()
 
-        if response_status != "SUCCESS":
+        message = (
+            response_json.get("MESSAGE_DESC")
+            or response_json.get("MESSAGE")
+            or response_json.get("Message")
+            or response_json.get("message")
+            or ""
+        )
 
+        is_success = (
+            response_status == "SUCCESS"
+            or "SUCCESSFULLY" in message.upper()
+            or "SUCCESS" in message.upper()
+        )
+
+        if not is_success:
             raise ValidationError(
-                response_json.get("MESSAGE_DESC")
-                or response_json.get("MESSAGE")
-                or response_json.get("Message")
-                or _("ICICI Bulk Payment failed.")
+                message or _("ICICI Bulk Payment failed.")
             )
 
         file_sequence = (
@@ -1094,6 +1092,12 @@ class HrPayslip(models.Model):
             or response_json.get("FILESEQNUM")
             or ""
         )
+
+        if not file_sequence and message:
+            import re
+            match = re.search(r"File Sequence\s*(?:No|Number)?\s*:\s*\[?(\d+)\]?", message, re.IGNORECASE)
+            if match:
+                file_sequence = match.group(1)
 
         utr = (
             response_json.get("UTR")
