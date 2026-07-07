@@ -19,6 +19,10 @@
             <xpath expr="//field[@name='user_id']" position="replace">
                 <field name='hr_user_id'/>
             </xpath>
+             <xpath expr="//field[@name='categ_ids']" position="after">
+                <field name='job_approach'/>
+                <field name="country"/>
+            </xpath>
             <xpath expr="//field[@name='email_from']" position="after">
                  <field name="cover_letter"/>
                 <field name="resume_file" filename="resume_filename"/>

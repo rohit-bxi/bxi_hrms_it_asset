@@ -53,6 +53,8 @@ class HrHire(models.Model):
         related='company_id',
         readonly=True,
     )
+    job_approach = fields.Char("Job Approach", placeholder="If Job is not created)")
+    country = fields.Char("Country")
     sign_request_id = fields.Many2one('sign.request', string="Sign Request")
 
     reporting_manager_id = fields.Many2one('hr.employee', string="Reporting Manager")
@@ -352,7 +354,11 @@ class HrHire(models.Model):
 
         if not self.email_from:
             raise UserError(_("Applicant email is missing."))
-
+        
+        if not self.job_id:
+            raise UserError(
+                _("Please select a Job Position before sending the application form.")
+            )
         base_url = "https://careers.bxiventures.com/application-form/"
 
         # Generate secure token (optional for your side)
