@@ -675,7 +675,7 @@ class HrPayslip(models.Model):
         ).strftime("%m/%d/%Y")
 
         debit_account = "693905601661"
-        debit_branch = "6939"
+        debit_branch = "0011"
 
         transaction_count = 0
         total_amount = 0.00
@@ -802,7 +802,7 @@ class HrPayslip(models.Model):
             f"{total_amount:.2f}|"
             f"INR|"
             f"Salary Batch|"
-            f"ICIC0006939|"
+            f"ICIC0000011|"
             f"WIB^"
         )
 
