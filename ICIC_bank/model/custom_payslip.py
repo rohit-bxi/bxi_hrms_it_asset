@@ -675,7 +675,7 @@ class HrPayslip(models.Model):
         ).strftime("%m/%d/%Y")
 
         debit_account = "693905601661"
-        debit_branch = "6939"
+        debit_branch = "0011"
 
         transaction_count = 0
         total_amount = 0.00
@@ -724,12 +724,6 @@ class HrPayslip(models.Model):
                     % employee.name
                 )
 
-            if not ifsc[:4].isalpha():
-                raise ValidationError(
-                    _("Invalid IFSC Code for %s.")
-                    % employee.name
-                )
-
             amount = round(
                 float(slip.net_wage or 0.0),
                 2,
@@ -747,36 +741,38 @@ class HrPayslip(models.Model):
             if ifsc.startswith("ICIC"):
                 transaction_type = "MCW"
                 network = "WIB"
-                branch_code = ifsc[-4:]
+                branch_code = "0011"
+                beneficiary_ifsc = "ICIC0000011"
             else:
                 transaction_type = "MCO"
                 network = "NFT"
                 branch_code = "0011"
+                beneficiary_ifsc = ifsc
 
             employee_name = " ".join(
                 employee.name.split()
             )[:35]
 
-            detail_line = "|".join([
-                transaction_type,
-                account_number,
-                branch_code,
-                employee_name,
-                f"{amount:.2f}",
-                "INR",
-                "Salary",
-                network,
-                ifsc,
-            ]) + "^"
-
-            detail_lines.append(detail_line)
+            detail_lines.append(
+                "|".join([
+                    transaction_type,
+                    account_number,
+                    branch_code,
+                    employee_name,
+                    f"{amount:.2f}",
+                    "INR",
+                    "Salary",
+                    network,
+                    beneficiary_ifsc,
+                ]) + "^"
+            )
 
             _logger.info(
                 "Employee : %s | Type : %s | Amount : %.2f | IFSC : %s",
                 employee.name,
                 transaction_type,
                 amount,
-                ifsc,
+                beneficiary_ifsc,
             )
 
         if transaction_count == 0:
@@ -802,7 +798,7 @@ class HrPayslip(models.Model):
             f"{total_amount:.2f}|"
             f"INR|"
             f"Salary Batch|"
-            f"ICIC0006939|"
+            f"ICIC0000011|"
             f"WIB^"
         )
 
