@@ -108,12 +108,17 @@ class ProjectContract(models.Model):
     )
 
 
-    contract_amount = fields.Float("Contract Amount", tracking=True)
+    contract_amount = fields.Monetary("Contract Amount", currency_field='currency_id', tracking=True)
     industry_id = fields.Many2one('res.partner.industry', string="Industry", tracking=True)
 
     milestone_no = fields.Integer("No. Of Milestones", tracking=True)
 
-    currency_id = fields.Many2one('res.currency', default=lambda self: self.env.company.currency_id)
+    currency_id = fields.Many2one(
+        'res.currency',
+        string='Currency',
+        default=lambda self: self.env.company.currency_id,
+        required=True
+    )
 
     contract_type = fields.Selection([
         ('fixed', 'Fixed Price (Lump Sum)'),
@@ -169,7 +174,8 @@ class ProjectContract(models.Model):
         string="Quarter Breakdown"
     )
 
-    total_quarter_amount = fields.Float(
+    total_quarter_amount = fields.Monetary(
+        currency_field='currency_id',
         compute="_compute_total",
         store=True
     )
@@ -358,8 +364,15 @@ class ContractQuarterLine(models.Model):
 
     contract_id = fields.Many2one('project.contract.management', ondelete='cascade')
     invoice_date = fields.Date("Invoice Date", required=True)
-    amount = fields.Float("Invoice Value", required=True)
+    currency_id = fields.Many2one(
+        'res.currency',
+        related='contract_id.currency_id',
+        store=True,
+        readonly=True
+    )
+    amount = fields.Monetary("Invoice Value", currency_field='currency_id', required=True)
     billed = fields.Boolean("Billed")
+
 
 
 class AccountMove(models.Model):
