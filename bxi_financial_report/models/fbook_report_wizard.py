@@ -231,8 +231,10 @@ class FbookReportWizard(models.TransientModel):
 
 
 
-            # 5. Expenses (Captured from Expense Module - hr.expense)
+            # 5. Expenses (Combination of hr.expense + vendor bills + payroll salary)
             expenses_val = 0.0
+
+            # A. Expenses
             if 'hr.expense' in self.env:
                 expenses = self.env['hr.expense'].search([
                     ('company_id', 'in', company_ids),
@@ -243,7 +245,9 @@ class FbookReportWizard(models.TransientModel):
                     expenses_val += exp.currency_id._convert(
                         exp.total_amount_currency, target_currency, get_rate_company(exp), exp.date or fields.Date.today()
                     )
-            else:
+
+            # B. Vendor Bills
+            if 'account.move' in self.env:
                 bills = self.env['account.move'].search([
                     ('company_id', 'in', company_ids),
                     ('move_type', '=', 'in_invoice'),
@@ -255,7 +259,7 @@ class FbookReportWizard(models.TransientModel):
                         bill.amount_total, target_currency, get_rate_company(bill), bill.invoice_date or fields.Date.today()
                     )
 
-            # Add Payroll / Payslips
+            # C. Payroll / Payslips (Salary)
             if 'hr.payslip' in self.env:
                 payslips = self.env['hr.payslip'].search([
                     ('company_id', 'in', company_ids),
@@ -274,6 +278,7 @@ class FbookReportWizard(models.TransientModel):
                     expenses_val += slip.company_id.currency_id._convert(
                         net_amt, target_currency, get_rate_company(slip), slip.date_to or fields.Date.today()
                     )
+
 
 
 
@@ -391,42 +396,25 @@ class FbookReportWizard(models.TransientModel):
                 y1_billed = 0.0
                 y2_billed = 0.0
 
-                # Search invoices linked to this contract
+                # Billed Y1 & Y2: all customer invoices except cancel
                 invoices = self.env['account.move'].search([
                     ('company_id', 'in', company_ids),
                     ('move_type', '=', 'out_invoice'),
-                    ('state', '=', 'posted')
+                    ('state', '!=', 'cancel'),
+                    ('partner_id', 'in', contract.client_ids.ids)
                 ])
 
                 for inv in invoices:
-                    is_linked = False
-                    if inv.contract_id and inv.contract_id.id == contract.id:
-                        is_linked = True
-                    elif inv.id in contract.invoice_ids.ids:
-                        is_linked = True
-                    else:
-                        sale_orders = inv.line_ids.sale_line_ids.order_id
-                        if sale_orders:
-                            linked_contracts = self.env['project.contract.management'].search([
-                                ('sale_order_ids', 'in', sale_orders.ids),
-                                '|', ('company_id', 'in', company_ids), ('company_id', '=', False)
-                            ])
-                            if contract.id in linked_contracts.ids:
-                                is_linked = True
+                    inv_date = inv.invoice_date
+                    if inv_date:
+                        inv_val = inv.currency_id._convert(
+                            inv.amount_total, target_currency, get_rate_company(inv), inv_date
+                        )
 
-
-
-                    if is_linked:
-                        inv_date = inv.invoice_date
-                        if inv_date:
-                            inv_val = inv.currency_id._convert(
-                                inv.amount_total, target_currency, get_rate_company(inv), inv_date
-                            )
-
-                            if y1_start_date <= inv_date <= y1_end_date:
-                                y1_billed += inv_val
-                            elif y2_start_date <= inv_date <= y2_end_date:
-                                y2_billed += inv_val
+                        if y1_start_date <= inv_date <= y1_end_date:
+                            y1_billed += inv_val
+                        elif y2_start_date <= inv_date <= y2_end_date:
+                            y2_billed += inv_val
 
                 # Convert contract amount to target currency
                 val_converted = contract.currency_id._convert(
