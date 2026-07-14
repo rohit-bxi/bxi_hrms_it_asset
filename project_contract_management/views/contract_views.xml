@@ -180,7 +180,7 @@
 
                     <group>
                         <group string="Basic Classification">
-                            <field name="lead_id" required="1"/>
+                            <field name="lead_id"/>
                             <field name="industry_id" required="1"/>
                             <field name="client_ids" widget="many2many_tags" required="1"/>
                             <field name="project_ids" widget="many2many_tags"/>
