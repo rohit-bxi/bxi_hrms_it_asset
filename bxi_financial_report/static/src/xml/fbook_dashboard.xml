@@ -237,21 +237,6 @@
 
                     <!-- DSO -->
                      <tr class="metric-row">
-                         <td class="row-label">DSO (Days)</td>
-                         <!-- Y1 -->
-                         <td><t t-esc="state.report_data.data.y1.q1.dso_days"/></td>
-                         <td><t t-esc="state.report_data.data.y1.q2.dso_days"/></td>
-                         <td><t t-esc="state.report_data.data.y1.q3.dso_days"/></td>
-                         <td><t t-esc="state.report_data.data.y1.q4.dso_days"/></td>
-                         <td class="total-cell"><t t-esc="state.report_data.data.y1.total.dso_days"/></td>
-                         <!-- Y2 -->
-                         <td><t t-esc="state.report_data.data.y2.q1.dso_days"/></td>
-                         <td><t t-esc="state.report_data.data.y2.q2.dso_days"/></td>
-                         <td><t t-esc="state.report_data.data.y2.q3.dso_days"/></td>
-                         <td><t t-esc="state.report_data.data.y2.q4.dso_days"/></td>
-                         <td class="total-cell"><t t-esc="state.report_data.data.y2.total.dso_days"/></td>
-                     </tr>
-                     <tr class="metric-row">
                          <td class="row-label">DSO (Amount)</td>
                          <!-- Y1 -->
                          <td><t t-esc="state.report_data.data.y1.q1.dso_amount"/></td>
@@ -265,6 +250,21 @@
                          <td><t t-esc="state.report_data.data.y2.q3.dso_amount"/></td>
                          <td><t t-esc="state.report_data.data.y2.q4.dso_amount"/></td>
                          <td class="total-cell"><t t-esc="state.report_data.data.y2.total.dso_amount"/></td>
+                     </tr>
+                     <tr class="metric-row">
+                         <td class="row-label">DSO (Days)</td>
+                         <!-- Y1 -->
+                         <td><t t-esc="state.report_data.data.y1.q1.dso_days"/></td>
+                         <td><t t-esc="state.report_data.data.y1.q2.dso_days"/></td>
+                         <td><t t-esc="state.report_data.data.y1.q3.dso_days"/></td>
+                         <td><t t-esc="state.report_data.data.y1.q4.dso_days"/></td>
+                         <td class="total-cell"><t t-esc="state.report_data.data.y1.total.dso_days"/></td>
+                         <!-- Y2 -->
+                         <td><t t-esc="state.report_data.data.y2.q1.dso_days"/></td>
+                         <td><t t-esc="state.report_data.data.y2.q2.dso_days"/></td>
+                         <td><t t-esc="state.report_data.data.y2.q3.dso_days"/></td>
+                         <td><t t-esc="state.report_data.data.y2.q4.dso_days"/></td>
+                         <td class="total-cell"><t t-esc="state.report_data.data.y2.total.dso_days"/></td>
                      </tr>
 
                     <!-- Spacer -->

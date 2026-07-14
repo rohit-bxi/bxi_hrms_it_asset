@@ -236,7 +236,6 @@ class FbookReportWizard(models.TransientModel):
             if 'hr.expense' in self.env:
                 expenses = self.env['hr.expense'].search([
                     ('company_id', 'in', company_ids),
-                    ('state', 'in', ('approved', 'posted', 'in_payment', 'paid')),
                     ('date', '>=', qdef['start']),
                     ('date', '<=', qdef['end'])
                 ])
@@ -244,20 +243,38 @@ class FbookReportWizard(models.TransientModel):
                     expenses_val += exp.currency_id._convert(
                         exp.total_amount_currency, target_currency, get_rate_company(exp), exp.date or fields.Date.today()
                     )
-
             else:
                 bills = self.env['account.move'].search([
                     ('company_id', 'in', company_ids),
                     ('move_type', '=', 'in_invoice'),
-                    ('state', '=', 'posted'),
                     ('invoice_date', '>=', qdef['start']),
                     ('invoice_date', '<=', qdef['end'])
-
                 ])
                 for bill in bills:
                     expenses_val += bill.currency_id._convert(
                         bill.amount_total, target_currency, get_rate_company(bill), bill.invoice_date or fields.Date.today()
                     )
+
+            # Add Payroll / Payslips
+            if 'hr.payslip' in self.env:
+                payslips = self.env['hr.payslip'].search([
+                    ('company_id', 'in', company_ids),
+                    ('date_to', '>=', qdef['start']),
+                    ('date_to', '<=', qdef['end'])
+                ])
+                for slip in payslips:
+                    net_amt = 0.0
+                    if hasattr(slip, 'get_salary_line_total'):
+                        net_amt = slip.get_salary_line_total('NET')
+                    else:
+                        line = slip.line_ids.filtered(lambda l: l.code == 'NET')
+                        if line:
+                            net_amt = line[0].total
+                    
+                    expenses_val += slip.company_id.currency_id._convert(
+                        net_amt, target_currency, get_rate_company(slip), slip.date_to or fields.Date.today()
+                    )
+
 
 
 
@@ -438,7 +455,7 @@ class FbookReportWizard(models.TransientModel):
 
         return {
             'company_name': company.name,
-            'currency_symbol': target_currency.symbol or target_currency.name,
+            'currency_symbol': f"{target_currency.symbol} {target_currency.name}" if target_currency.symbol else target_currency.name,
             'year1_label': f'FY{y1_start - 2000 + 1} - {y1_start} -{y1_start + 1}',
             'year2_label': f'FY{y2_start - 2000 + 1} - {y2_start} -{y2_start + 1}',
             'y1_date_range_label': f'1st Apr-{y1_start-2000} to 31st Mar-{y1_start-2000+1}',
