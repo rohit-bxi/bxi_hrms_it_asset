@@ -144,30 +144,30 @@ class FbookReportWizard(models.TransientModel):
             year_key = qdef['year']
             q_key = qdef['q']
 
-            # 1. Bookings (Based on contract quarter breakdown if present, fallback to start date)
+            # 1. Bookings (Based on contract quarter breakdown if present, fallback to start date) - COMMENTED OUT FOR NOW
             booking_val = 0.0
-            if 'project.contract.management' in self.env:
-                contracts = self.env['project.contract.management'].search([
-                    ('company_id', 'in', company_ids)
-                ])
-                q_start_dt = fields.Date.from_string(qdef['start'])
-                q_end_dt = fields.Date.from_string(qdef['end'])
-                for contract in contracts:
-
-                    if contract.contract_quarter_ids:
-                        q_lines = contract.contract_quarter_ids.filtered(
-                            lambda l: l.invoice_date and q_start_dt <= l.invoice_date <= q_end_dt
-                        )
-                        for line in q_lines:
-                            booking_val += contract.currency_id._convert(
-                                line.amount, target_currency, get_rate_company(contract), fields.Date.today()
-                            )
-
-                    else:
-                        if contract.contract_start_date and q_start_dt <= contract.contract_start_date <= q_end_dt:
-                            booking_val += contract.currency_id._convert(
-                                contract.contract_amount, target_currency, get_rate_company(contract), fields.Date.today()
-                            )
+            # if 'project.contract.management' in self.env:
+            #     contracts = self.env['project.contract.management'].search([
+            #         ('company_id', 'in', company_ids)
+            #     ])
+            #     q_start_dt = fields.Date.from_string(qdef['start'])
+            #     q_end_dt = fields.Date.from_string(qdef['end'])
+            #     for contract in contracts:
+            #
+            #         if contract.contract_quarter_ids:
+            #             q_lines = contract.contract_quarter_ids.filtered(
+            #                 lambda l: l.invoice_date and q_start_dt <= l.invoice_date <= q_end_dt
+            #             )
+            #             for line in q_lines:
+            #                 booking_val += contract.currency_id._convert(
+            #                     line.amount, target_currency, get_rate_company(contract), fields.Date.today()
+            #                 )
+            #
+            #         else:
+            #             if contract.contract_start_date and q_start_dt <= contract.contract_start_date <= q_end_dt:
+            #                 booking_val += contract.currency_id._convert(
+            #                     contract.contract_amount, target_currency, get_rate_company(contract), fields.Date.today()
+            #                 )
 
 
 
@@ -224,22 +224,24 @@ class FbookReportWizard(models.TransientModel):
 
 
 
-            # 4. DSO — ALL outstanding receivables for selected companies
-            open_invoices = self.env['account.move'].search([
-                ('company_id', 'in', company_ids),
-                ('move_type', '=', 'out_invoice'),
-                ('state', '=', 'posted'),
-                ('invoice_date', '<=', qdef['end']),
-                ('payment_state', 'not in', ('paid', 'reversed'))
-            ])
-            receivables_val = sum(
-                inv.currency_id._convert(
-                    inv.amount_residual, target_currency,
-                    get_rate_company(inv), inv.invoice_date or fields.Date.today()
-                )
-                for inv in open_invoices
-            )
-            dso_val = (receivables_val / billed_val * 90) if billed_val > 0 else 0.0
+            # 4. DSO — ALL outstanding receivables for selected companies - COMMENTED OUT FOR NOW
+            dso_val = 0.0
+            # open_invoices = self.env['account.move'].search([
+            #     ('company_id', 'in', company_ids),
+            #     ('move_type', '=', 'out_invoice'),
+            #     ('state', '=', 'posted'),
+            #     ('invoice_date', '<=', qdef['end']),
+            #     ('payment_state', 'not in', ('paid', 'reversed'))
+            # ])
+            # receivables_val = sum(
+            #     inv.currency_id._convert(
+            #         inv.amount_residual, target_currency,
+            #         get_rate_company(inv), inv.invoice_date or fields.Date.today()
+            #     )
+            #     for inv in open_invoices
+            # )
+            # dso_val = (receivables_val / billed_val * 90) if billed_val > 0 else 0.0
+
 
 
 
@@ -345,38 +347,38 @@ class FbookReportWizard(models.TransientModel):
                 y2_start_date = date(y2_start, 4, 1)
                 y2_end_date = date(y2_start + 1, 3, 31)
 
-                # Booking Y1 & Y2 based on breakdown lines if present, fallback to start date
+                # Booking Y1 & Y2 based on breakdown lines if present, fallback to start date - COMMENTED OUT FOR NOW
                 y1_booking = 0.0
                 y2_booking = 0.0
-                if contract.contract_quarter_ids:
-                    # Year 1 Lines
-                    y1_lines = contract.contract_quarter_ids.filtered(
-                        lambda l: l.invoice_date and y1_start_date <= l.invoice_date <= y1_end_date
-                    )
-                    for line in y1_lines:
-                        y1_booking += contract.currency_id._convert(
-                            line.amount, target_currency, get_rate_company(contract), fields.Date.today()
-                        )
-
-                    # Year 2 Lines
-                    y2_lines = contract.contract_quarter_ids.filtered(
-                        lambda l: l.invoice_date and y2_start_date <= l.invoice_date <= y2_end_date
-                    )
-                    for line in y2_lines:
-                        y2_booking += contract.currency_id._convert(
-                            line.amount, target_currency, get_rate_company(contract), fields.Date.today()
-                        )
-
-                else:
-                    if contract.contract_start_date:
-                        if y1_start_date <= contract.contract_start_date <= y1_end_date:
-                            y1_booking = contract.currency_id._convert(
-                                contract.contract_amount, target_currency, get_rate_company(contract), fields.Date.today()
-                            )
-                        elif y2_start_date <= contract.contract_start_date <= y2_end_date:
-                            y2_booking = contract.currency_id._convert(
-                                contract.contract_amount, target_currency, get_rate_company(contract), fields.Date.today()
-                            )
+                # if contract.contract_quarter_ids:
+                #     # Year 1 Lines
+                #     y1_lines = contract.contract_quarter_ids.filtered(
+                #         lambda l: l.invoice_date and y1_start_date <= l.invoice_date <= y1_end_date
+                #     )
+                #     for line in y1_lines:
+                #         y1_booking += contract.currency_id._convert(
+                #             line.amount, target_currency, get_rate_company(contract), fields.Date.today()
+                #         )
+                #
+                #     # Year 2 Lines
+                #     y2_lines = contract.contract_quarter_ids.filtered(
+                #         lambda l: l.invoice_date and y2_start_date <= l.invoice_date <= y2_end_date
+                #     )
+                #     for line in y2_lines:
+                #         y2_booking += contract.currency_id._convert(
+                #             line.amount, target_currency, get_rate_company(contract), fields.Date.today()
+                #         )
+                #
+                # else:
+                #     if contract.contract_start_date:
+                #         if y1_start_date <= contract.contract_start_date <= y1_end_date:
+                #             y1_booking = contract.currency_id._convert(
+                #                 contract.contract_amount, target_currency, get_rate_company(contract), fields.Date.today()
+                #             )
+                #         elif y2_start_date <= contract.contract_start_date <= y2_end_date:
+                #             y2_booking = contract.currency_id._convert(
+                #                 contract.contract_amount, target_currency, get_rate_company(contract), fields.Date.today()
+                #             )
 
 
 
