@@ -1,4 +1,4 @@
-from odoo import fields, models
+from odoo import fields, models, api, _
 
 
 class PresalesPOC(models.Model):
@@ -12,5 +12,12 @@ class PresalesPOC(models.Model):
     )
 
     employee_id = fields.Many2one('hr.employee',
-        string="Email",
+        string="Employee",
     )
+
+
+    @api.onchange('employee_id')
+    def _onchange_employee_id(self):
+        if self.employee_id:
+            self.name = self.employee_id.name
+
