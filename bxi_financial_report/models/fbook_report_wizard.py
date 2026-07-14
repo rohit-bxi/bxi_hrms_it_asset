@@ -224,24 +224,9 @@ class FbookReportWizard(models.TransientModel):
 
 
 
-            # 4. DSO — ALL outstanding receivables for selected companies - COMMENTED OUT FOR NOW
-            dso_val = 0.0
-            # open_invoices = self.env['account.move'].search([
-            #     ('company_id', 'in', company_ids),
-            #     ('move_type', '=', 'out_invoice'),
-            #     ('state', '=', 'posted'),
-            #     ('invoice_date', '<=', qdef['end']),
-            #     ('payment_state', 'not in', ('paid', 'reversed'))
-            # ])
-            # receivables_val = sum(
-            #     inv.currency_id._convert(
-            #         inv.amount_residual, target_currency,
-            #         get_rate_company(inv), inv.invoice_date or fields.Date.today()
-            #     )
-            #     for inv in open_invoices
-            # )
-            # dso_val = (receivables_val / billed_val * 90) if billed_val > 0 else 0.0
-
+            # 4. DSO — Split into DSO (Days) and DSO (Amount)
+            dso_days_val = 0.0
+            dso_amount_val = billed_val - actual_val
 
 
 
@@ -286,7 +271,8 @@ class FbookReportWizard(models.TransientModel):
                 'booking': target_currency.round(booking_val),
                 'billed': target_currency.round(billed_val),
                 'actual': target_currency.round(actual_val),
-                'dso': round(dso_val, 2),
+                'dso_days': round(dso_days_val, 2),
+                'dso_amount': target_currency.round(dso_amount_val),
                 'expenses': target_currency.round(expenses_val),
                 'profit': target_currency.round(profit_val),
                 'margin': round(margin_val, 2)
@@ -297,7 +283,8 @@ class FbookReportWizard(models.TransientModel):
             sum_booking = sum(data[y][q]['booking'] for q in ['q1', 'q2', 'q3', 'q4'])
             sum_billed = sum(data[y][q]['billed'] for q in ['q1', 'q2', 'q3', 'q4'])
             sum_actual = sum(data[y][q]['actual'] for q in ['q1', 'q2', 'q3', 'q4'])
-            avg_dso = sum(data[y][q]['dso'] for q in ['q1', 'q2', 'q3', 'q4']) / 4.0
+            avg_dso_days = sum(data[y][q]['dso_days'] for q in ['q1', 'q2', 'q3', 'q4']) / 4.0
+            sum_dso_amount = sum(data[y][q]['dso_amount'] for q in ['q1', 'q2', 'q3', 'q4'])
             sum_expenses = sum(data[y][q]['expenses'] for q in ['q1', 'q2', 'q3', 'q4'])
             total_profit = sum_billed - sum_expenses
             total_margin = (total_profit / sum_billed * 100) if sum_billed > 0 else 0.0
@@ -306,7 +293,8 @@ class FbookReportWizard(models.TransientModel):
                 'booking': target_currency.round(sum_booking),
                 'billed': target_currency.round(sum_billed),
                 'actual': target_currency.round(sum_actual),
-                'dso': round(avg_dso, 2),
+                'dso_days': round(avg_dso_days, 2),
+                'dso_amount': target_currency.round(sum_dso_amount),
                 'expenses': target_currency.round(sum_expenses),
                 'profit': target_currency.round(total_profit),
                 'margin': round(total_margin, 2)
