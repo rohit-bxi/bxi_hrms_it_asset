@@ -311,6 +311,11 @@
             </table>
 
             <!-- SECOND TABLE: CONTRACT DETAILED REPORT -->
+            <div class="alert alert-warning" style="margin-top: 25px; margin-bottom: 25px; padding: 12px 16px; border-left: 4px solid #f59e0b; background-color: #fef3c7; color: #78350f; border-radius: 4px; font-weight: 500; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                <i class="fa fa-exclamation-triangle"></i>
+                <span>Note: Currently Booking and DSO are not working, please ignore them.</span>
+            </div>
+
             <div class="fbook-title" style="margin-top: 40px; margin-bottom: 16px;">Contract Detailed Report</div>
             <table class="fbook-table">
                 <thead>
