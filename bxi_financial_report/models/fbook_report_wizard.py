@@ -197,7 +197,7 @@ class FbookReportWizard(models.TransientModel):
 
 
 
-            # 2. Billed — sum of posted invoices linked to contracts, by invoice_date
+            # 2. Billed — ALL posted customer invoices for selected companies in the quarter
             billed_val = 0.0
             actual_val = 0.0
             invoices = self.env['account.move'].search([
@@ -208,21 +208,23 @@ class FbookReportWizard(models.TransientModel):
                 ('invoice_date', '<=', qdef['end'])
             ])
             for inv in invoices:
-                if is_linked_to_contract(inv):
-                    inv_amount = inv.currency_id._convert(
-                        inv.amount_total, target_currency,
-                        get_rate_company(inv), inv.invoice_date or fields.Date.today()
-                    )
-                    # Billed = all posted invoices
-                    billed_val += inv_amount
-                    # Actual = only invoices that are fully paid
-                    if inv.payment_state == 'paid':
-                        actual_val += inv_amount
+                inv_amount = inv.currency_id._convert(
+                    inv.amount_total, target_currency,
+                    get_rate_company(inv), inv.invoice_date or fields.Date.today()
+                )
+                # Billed = ALL posted invoices raised in the quarter
+                billed_val += inv_amount
+                # Actual = invoices that are fully paid (payment_state = paid)
+                if inv.payment_state == 'paid':
+
+                    actual_val += inv_amount
 
 
 
 
-            # 4. DSO (Days Sales Outstanding based on contract invoices)
+
+
+            # 4. DSO — ALL outstanding receivables for selected companies
             open_invoices = self.env['account.move'].search([
                 ('company_id', 'in', company_ids),
                 ('move_type', '=', 'out_invoice'),
@@ -230,14 +232,16 @@ class FbookReportWizard(models.TransientModel):
                 ('invoice_date', '<=', qdef['end']),
                 ('payment_state', 'not in', ('paid', 'reversed'))
             ])
-            receivables_val = 0.0
-            for inv in open_invoices:
-                if is_linked_to_contract(inv):
-                    receivables_val += inv.currency_id._convert(
-                        inv.amount_residual, target_currency, get_rate_company(inv), inv.invoice_date or fields.Date.today()
-                    )
-
+            receivables_val = sum(
+                inv.currency_id._convert(
+                    inv.amount_residual, target_currency,
+                    get_rate_company(inv), inv.invoice_date or fields.Date.today()
+                )
+                for inv in open_invoices
+            )
             dso_val = (receivables_val / billed_val * 90) if billed_val > 0 else 0.0
+
+
 
 
             # 5. Expenses (Captured from Expense Module - hr.expense)
