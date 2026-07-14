@@ -197,13 +197,13 @@ class FbookReportWizard(models.TransientModel):
 
 
 
-            # 2. Billed — ALL posted customer invoices for selected companies in the quarter
+            # 2. Billed — ALL customer invoices (except cancel/rejected) for selected companies in the quarter
             billed_val = 0.0
             actual_val = 0.0
             invoices = self.env['account.move'].search([
                 ('company_id', 'in', company_ids),
                 ('move_type', '=', 'out_invoice'),
-                ('state', '=', 'posted'),
+                ('state', 'not in', ('cancel', 'rejected')),
                 ('invoice_date', '>=', qdef['start']),
                 ('invoice_date', '<=', qdef['end'])
             ])
@@ -250,12 +250,13 @@ class FbookReportWizard(models.TransientModel):
             if 'account.move' in self.env:
                 bills = self.env['account.move'].search([
                     ('company_id', 'in', company_ids),
-                    ('move_type', '=', 'in_invoice'),
+                    ('move_type', 'in', ('in_invoice', 'in_receipt', 'in_refund')),
                     ('invoice_date', '>=', qdef['start']),
                     ('invoice_date', '<=', qdef['end'])
                 ])
                 for bill in bills:
-                    expenses_val += bill.currency_id._convert(
+                    sign = -1.0 if bill.move_type == 'in_refund' else 1.0
+                    expenses_val += sign * bill.currency_id._convert(
                         bill.amount_total, target_currency, get_rate_company(bill), bill.invoice_date or fields.Date.today()
                     )
 
@@ -357,50 +358,19 @@ class FbookReportWizard(models.TransientModel):
                 y2_start_date = date(y2_start, 4, 1)
                 y2_end_date = date(y2_start + 1, 3, 31)
 
-                # Booking Y1 & Y2 based on breakdown lines if present, fallback to start date - COMMENTED OUT FOR NOW
+                # Booking Y1 & Y2 are 0
                 y1_booking = 0.0
                 y2_booking = 0.0
-                # if contract.contract_quarter_ids:
-                #     # Year 1 Lines
-                #     y1_lines = contract.contract_quarter_ids.filtered(
-                #         lambda l: l.invoice_date and y1_start_date <= l.invoice_date <= y1_end_date
-                #     )
-                #     for line in y1_lines:
-                #         y1_booking += contract.currency_id._convert(
-                #             line.amount, target_currency, get_rate_company(contract), fields.Date.today()
-                #         )
-                #
-                #     # Year 2 Lines
-                #     y2_lines = contract.contract_quarter_ids.filtered(
-                #         lambda l: l.invoice_date and y2_start_date <= l.invoice_date <= y2_end_date
-                #     )
-                #     for line in y2_lines:
-                #         y2_booking += contract.currency_id._convert(
-                #             line.amount, target_currency, get_rate_company(contract), fields.Date.today()
-                #         )
-                #
-                # else:
-                #     if contract.contract_start_date:
-                #         if y1_start_date <= contract.contract_start_date <= y1_end_date:
-                #             y1_booking = contract.currency_id._convert(
-                #                 contract.contract_amount, target_currency, get_rate_company(contract), fields.Date.today()
-                #             )
-                #         elif y2_start_date <= contract.contract_start_date <= y2_end_date:
-                #             y2_booking = contract.currency_id._convert(
-                #                 contract.contract_amount, target_currency, get_rate_company(contract), fields.Date.today()
-                #             )
-
-
 
                 # Billed Y1 & Y2
                 y1_billed = 0.0
                 y2_billed = 0.0
 
-                # Billed Y1 & Y2: all customer invoices except cancel
+                # Billed Y1 & Y2: all customer invoices except cancel/rejected
                 invoices = self.env['account.move'].search([
                     ('company_id', 'in', company_ids),
                     ('move_type', '=', 'out_invoice'),
-                    ('state', '!=', 'cancel'),
+                    ('state', 'not in', ('cancel', 'rejected')),
                     ('partner_id', 'in', contract.client_ids.ids)
                 ])
 
