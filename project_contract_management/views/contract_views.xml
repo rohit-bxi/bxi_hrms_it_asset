@@ -20,8 +20,9 @@
                 <field name="contract_start_date"/>
                 <field name="contract_end_date" optional="hide"/>
                 <field name="company_id" groups="base.group_multi_company" optional="show"/>
-                <field name="contract_amount" sum="Total Contract Amount" widget="monetary" options="{'currency_field': 'currency_id'}"/>
-                <field name="currency_id" optional="hide"/>
+                <field name="contract_amount" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                <field name="currency_id" column_invisible="True"/>
+
                 <field name="stage_id" widget="badge"/>
             </list>
 

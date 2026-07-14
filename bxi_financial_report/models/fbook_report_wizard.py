@@ -67,8 +67,14 @@ class FbookReportWizard(models.TransientModel):
             company_ids = [company_ids]
 
         companies = self.env['res.company'].browse(company_ids)
+        # Primary company used as fallback for currency rate lookups
         company = companies[0] if companies else self.env.company
         target_currency = self.env['res.currency'].browse(currency_id)
+
+        def get_rate_company(record):
+            """Return the record's own company for exchange rate lookup, or fallback."""
+            rec_company = getattr(record, 'company_id', False)
+            return rec_company if rec_company else company
 
 
         y2_start = int(start_financial_year)
@@ -154,13 +160,15 @@ class FbookReportWizard(models.TransientModel):
                         )
                         for line in q_lines:
                             booking_val += contract.currency_id._convert(
-                                line.amount, target_currency, company, fields.Date.today()
+                                line.amount, target_currency, get_rate_company(contract), fields.Date.today()
                             )
+
                     else:
                         if contract.contract_start_date and q_start_dt <= contract.contract_start_date <= q_end_dt:
                             booking_val += contract.currency_id._convert(
-                                contract.contract_amount, target_currency, company, fields.Date.today()
+                                contract.contract_amount, target_currency, get_rate_company(contract), fields.Date.today()
                             )
+
 
 
 
@@ -189,8 +197,9 @@ class FbookReportWizard(models.TransientModel):
 
 
 
-            # 2. Billed (Posted Customer Invoices linked to contracts)
+            # 2. Billed — sum of posted invoices linked to contracts, by invoice_date
             billed_val = 0.0
+            actual_val = 0.0
             invoices = self.env['account.move'].search([
                 ('company_id', 'in', company_ids),
                 ('move_type', '=', 'out_invoice'),
@@ -200,30 +209,18 @@ class FbookReportWizard(models.TransientModel):
             ])
             for inv in invoices:
                 if is_linked_to_contract(inv):
-                    billed_val += inv.currency_id._convert(
-                        inv.amount_total, target_currency, company, inv.invoice_date or fields.Date.today()
+                    inv_amount = inv.currency_id._convert(
+                        inv.amount_total, target_currency,
+                        get_rate_company(inv), inv.invoice_date or fields.Date.today()
                     )
+                    # Billed = all posted invoices
+                    billed_val += inv_amount
+                    # Actual = only invoices that are fully paid
+                    if inv.payment_state == 'paid':
+                        actual_val += inv_amount
 
-            # 3. Actual (Posted Collections/Payments linked to contract invoices)
-            actual_val = 0.0
-            payments = self.env['account.payment'].search([
-                ('company_id', 'in', company_ids),
-                ('payment_type', '=', 'inbound'),
-                ('state', 'in', ('posted', 'paid')),
-                ('date', '>=', qdef['start']),
-                ('date', '<=', qdef['end'])
-            ])
 
-            for pm in payments:
-                linked_pm = False
-                for inv in pm.reconciled_invoice_ids:
-                    if is_linked_to_contract(inv):
-                        linked_pm = True
-                        break
-                if linked_pm:
-                    actual_val += pm.currency_id._convert(
-                        pm.amount, target_currency, company, pm.date or fields.Date.today()
-                    )
+
 
             # 4. DSO (Days Sales Outstanding based on contract invoices)
             open_invoices = self.env['account.move'].search([
@@ -237,8 +234,9 @@ class FbookReportWizard(models.TransientModel):
             for inv in open_invoices:
                 if is_linked_to_contract(inv):
                     receivables_val += inv.currency_id._convert(
-                        inv.amount_residual, target_currency, company, inv.invoice_date or fields.Date.today()
+                        inv.amount_residual, target_currency, get_rate_company(inv), inv.invoice_date or fields.Date.today()
                     )
+
             dso_val = (receivables_val / billed_val * 90) if billed_val > 0 else 0.0
 
 
@@ -253,8 +251,9 @@ class FbookReportWizard(models.TransientModel):
                 ])
                 for exp in expenses:
                     expenses_val += exp.currency_id._convert(
-                        exp.total_amount_currency, target_currency, company, exp.date or fields.Date.today()
+                        exp.total_amount_currency, target_currency, get_rate_company(exp), exp.date or fields.Date.today()
                     )
+
             else:
                 bills = self.env['account.move'].search([
                     ('company_id', 'in', company_ids),
@@ -266,8 +265,9 @@ class FbookReportWizard(models.TransientModel):
                 ])
                 for bill in bills:
                     expenses_val += bill.currency_id._convert(
-                        bill.amount_total, target_currency, company, bill.invoice_date or fields.Date.today()
+                        bill.amount_total, target_currency, get_rate_company(bill), bill.invoice_date or fields.Date.today()
                     )
+
 
 
             # 6. Profit
@@ -351,26 +351,29 @@ class FbookReportWizard(models.TransientModel):
                     )
                     for line in y1_lines:
                         y1_booking += contract.currency_id._convert(
-                            line.amount, target_currency, company, fields.Date.today()
+                            line.amount, target_currency, get_rate_company(contract), fields.Date.today()
                         )
+
                     # Year 2 Lines
                     y2_lines = contract.contract_quarter_ids.filtered(
                         lambda l: l.invoice_date and y2_start_date <= l.invoice_date <= y2_end_date
                     )
                     for line in y2_lines:
                         y2_booking += contract.currency_id._convert(
-                            line.amount, target_currency, company, fields.Date.today()
+                            line.amount, target_currency, get_rate_company(contract), fields.Date.today()
                         )
+
                 else:
                     if contract.contract_start_date:
                         if y1_start_date <= contract.contract_start_date <= y1_end_date:
                             y1_booking = contract.currency_id._convert(
-                                contract.contract_amount, target_currency, company, fields.Date.today()
+                                contract.contract_amount, target_currency, get_rate_company(contract), fields.Date.today()
                             )
                         elif y2_start_date <= contract.contract_start_date <= y2_end_date:
                             y2_booking = contract.currency_id._convert(
-                                contract.contract_amount, target_currency, company, fields.Date.today()
+                                contract.contract_amount, target_currency, get_rate_company(contract), fields.Date.today()
                             )
+
 
 
                 # Billed Y1 & Y2
@@ -406,8 +409,9 @@ class FbookReportWizard(models.TransientModel):
                         inv_date = inv.invoice_date
                         if inv_date:
                             inv_val = inv.currency_id._convert(
-                                inv.amount_total, target_currency, company, inv_date
+                                inv.amount_total, target_currency, get_rate_company(inv), inv_date
                             )
+
                             if y1_start_date <= inv_date <= y1_end_date:
                                 y1_billed += inv_val
                             elif y2_start_date <= inv_date <= y2_end_date:
@@ -415,8 +419,9 @@ class FbookReportWizard(models.TransientModel):
 
                 # Convert contract amount to target currency
                 val_converted = contract.currency_id._convert(
-                    contract.contract_amount, target_currency, company, fields.Date.today()
+                    contract.contract_amount, target_currency, get_rate_company(contract), fields.Date.today()
                 )
+
 
                 contracts_data.append({
                     'industry': contract.industry_id.name or '',
