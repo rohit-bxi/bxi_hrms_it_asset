@@ -140,6 +140,7 @@ class FbookReportWizard(models.TransientModel):
             'y2': {'q1': {}, 'q2': {}, 'q3': {}, 'q4': {}, 'total': {}}
         }
 
+        running_dso_amount = 0.0
         for qdef in quarters_def:
             year_key = qdef['year']
             q_key = qdef['q']
@@ -226,7 +227,8 @@ class FbookReportWizard(models.TransientModel):
 
             # 4. DSO — Split into DSO (Days) and DSO (Amount)
             dso_days_val = 0.0
-            dso_amount_val = billed_val - actual_val
+            running_dso_amount += billed_val - actual_val
+            dso_amount_val = running_dso_amount
 
 
 
@@ -308,7 +310,7 @@ class FbookReportWizard(models.TransientModel):
             sum_billed = sum(data[y][q]['billed'] for q in ['q1', 'q2', 'q3', 'q4'])
             sum_actual = sum(data[y][q]['actual'] for q in ['q1', 'q2', 'q3', 'q4'])
             avg_dso_days = sum(data[y][q]['dso_days'] for q in ['q1', 'q2', 'q3', 'q4']) / 4.0
-            sum_dso_amount = sum(data[y][q]['dso_amount'] for q in ['q1', 'q2', 'q3', 'q4'])
+            sum_dso_amount = data[y]['q4']['dso_amount']
             sum_expenses = sum(data[y][q]['expenses'] for q in ['q1', 'q2', 'q3', 'q4'])
             total_profit = sum_billed - sum_expenses
             total_margin = (total_profit / sum_billed * 100) if sum_billed > 0 else 0.0
@@ -448,36 +450,23 @@ class FbookReportWizard(models.TransientModel):
         total_y2_booking = sum(c['y2_booking'] for c in contracts_data)
         total_y2_billed = sum(c['y2_billed'] for c in contracts_data)
 
-        # Calculate Detailed Expense Data consolidated by Partner / Employee
+        # Calculate Detailed Expense Data consolidated by Category
         expenses_data = []
-        salary_data = []
         from datetime import date as _date
 
-        exp_revenue = {}  # key: (type, name) → dict
-        sal_revenue = {}  # key: month_sort → dict
+        categories_dict = {}
 
-        def _add_expense_entry(key, label, category, y_key, val_booked, val_billed):
-            if key not in exp_revenue:
-                exp_revenue[key] = {
-                    'name': label,
-                    'category': category,
+        def _add_expense_val(cat_label, y_key, val_booked, val_billed):
+            if cat_label not in categories_dict:
+                categories_dict[cat_label] = {
+                    'category': cat_label,
                     'y1_booked': 0.0,
                     'y1_billed': 0.0,
                     'y2_booked': 0.0,
                     'y2_billed': 0.0,
                 }
-            exp_revenue[key][f'{y_key}_booked'] += val_booked
-            exp_revenue[key][f'{y_key}_billed'] += val_billed
-
-        def _add_salary_entry(month_sort, month_year, y_key, net_val):
-            if month_sort not in sal_revenue:
-                sal_revenue[month_sort] = {
-                    'name': month_year,
-                    'category': 'Salary',
-                    'y1_booked': 0.0,
-                    'y2_booked': 0.0,
-                }
-            sal_revenue[month_sort][f'{y_key}_booked'] += net_val
+            categories_dict[cat_label][f'{y_key}_booked'] += val_booked
+            categories_dict[cat_label][f'{y_key}_billed'] += val_billed
 
         y1_start_date = _date(y1_start, 4, 1)
         y1_end_date = _date(y1_start + 1, 3, 31)
@@ -491,7 +480,7 @@ class FbookReportWizard(models.TransientModel):
                 return 'y2'
             return None
 
-        # A. hr.expense — consolidated into a single row
+        # A. hr.expense -> consolidated under "Employee(rimbusement)"
         if 'hr.expense' in self.env:
             exps = self.env['hr.expense'].sudo().search([
                 ('company_id', 'in', company_ids),
@@ -502,16 +491,21 @@ class FbookReportWizard(models.TransientModel):
                 y_key = _get_y_key(exp.date)
                 if not y_key:
                     continue
-                key = ('employee', 'employee_expenses')
-                label = 'Employee Expenses'
                 conv = exp.currency_id._convert(
                     exp.total_amount_currency, target_currency,
                     get_rate_company(exp), exp.date or fields.Date.today()
                 )
-                is_paid = getattr(exp, 'state', '') in ('paid', 'posted', 'in_payment', 'approved')
-                _add_expense_entry(key, label, 'Employee Expense', y_key, conv, conv if is_paid else 0.0)
+                is_paid = getattr(exp, 'state', '') in ('paid', 'posted', 'in_payment', 'done')
+                _add_expense_val('Employee(rimbusement)', y_key, conv, conv if is_paid else 0.0)
 
-        # B. Vendor Bills — grouped by partner
+        # B. Vendor Bills -> consolidated by vendor_category
+        category_labels = {
+            'technology': 'Technology',
+            'miscellaneous': 'Miscellaneous',
+            'employee': 'Employee',
+            'travel': 'Travel',
+            'administration': 'Administration',
+        }
         if 'account.move' in self.env:
             bills = self.env['account.move'].sudo().search([
                 ('company_id', 'in', company_ids),
@@ -525,17 +519,20 @@ class FbookReportWizard(models.TransientModel):
                 if not y_key:
                     continue
                 partner = bill.partner_id
-                label = partner.name if partner else 'Unknown Vendor'
-                key = ('vendor', label.strip().lower())
+                vendor_cat = partner.vendor_category if partner else 'miscellaneous'
+                if not vendor_cat:
+                    vendor_cat = 'miscellaneous'
+                cat_label = category_labels.get(vendor_cat, 'Miscellaneous')
+
                 sign = -1.0 if bill.move_type == 'in_refund' else 1.0
                 conv = sign * bill.currency_id._convert(
                     bill.amount_total, target_currency,
                     get_rate_company(bill), bill.invoice_date or fields.Date.today()
                 )
                 is_paid = bill.payment_state in ('paid', 'in_payment', 'partial') if hasattr(bill, 'payment_state') else False
-                _add_expense_entry(key, label, 'Vendor Bill', y_key, conv, conv if is_paid else 0.0)
+                _add_expense_val(cat_label, y_key, conv, conv if is_paid else 0.0)
 
-        # C. Payroll / Payslips — grouped by month (separate Salary Expenses section)
+        # C. Payroll / Payslips -> consolidated under "Employee(salary)"
         if 'hr.payslip' in self.env:
             payslips = self.env['hr.payslip'].sudo().search([
                 ('company_id', 'in', company_ids),
@@ -546,13 +543,6 @@ class FbookReportWizard(models.TransientModel):
                 y_key = _get_y_key(slip.date_to)
                 if not y_key:
                     continue
-                slip_date = slip.date_to
-                if slip_date:
-                    month_year = slip_date.strftime('%B %Y')          # e.g. "April 2025"
-                    month_sort = slip_date.strftime('%Y-%m')           # for grouping key
-                else:
-                    month_year = 'Unknown Month'
-                    month_sort = 'unknown'
                 net_amt = 0.0
                 if hasattr(slip, 'get_salary_line_total'):
                     net_amt = slip.get_salary_line_total('NET')
@@ -561,14 +551,15 @@ class FbookReportWizard(models.TransientModel):
                     if line:
                         net_amt = line[0].total
                 conv = slip.company_id.currency_id._convert(
-                    net_amt, target_currency, get_rate_company(slip), slip_date or fields.Date.today()
+                    net_amt, target_currency, get_rate_company(slip), slip.date_to or fields.Date.today()
                 )
-                _add_salary_entry(month_sort, month_year, y_key, conv)
+                # Salary Plan and Actual values are the same
+                _add_expense_val('Employee(salary)', y_key, conv, conv)
 
-        # Populate expenses data (Employee Expenses + Vendor Bills)
-        for key, r in exp_revenue.items():
+        # Populate expenses_data
+        for cat_label in sorted(categories_dict.keys()):
+            r = categories_dict[cat_label]
             expenses_data.append({
-                'name': r['name'],
                 'category': r['category'],
                 'y1_booked': target_currency.round(r['y1_booked']),
                 'y1_billed': target_currency.round(r['y1_billed']),
@@ -576,23 +567,14 @@ class FbookReportWizard(models.TransientModel):
                 'y2_billed': target_currency.round(r['y2_billed']),
             })
 
-        # Populate salary data
-        for month_sort in sorted(sal_revenue.keys()):
-            r = sal_revenue[month_sort]
-            salary_data.append({
-                'name': r['name'],
-                'category': r['category'],
-                'y1_booked': target_currency.round(r['y1_booked']),
-                'y2_booked': target_currency.round(r['y2_booked']),
-            })
-
+        salary_data = []
         total_exp_y1_booked = target_currency.round(sum(e['y1_booked'] for e in expenses_data))
         total_exp_y1_billed = target_currency.round(sum(e['y1_billed'] for e in expenses_data))
         total_exp_y2_booked = target_currency.round(sum(e['y2_booked'] for e in expenses_data))
         total_exp_y2_billed = target_currency.round(sum(e['y2_billed'] for e in expenses_data))
 
-        total_sal_y1_booked = target_currency.round(sum(s['y1_booked'] for s in salary_data))
-        total_sal_y2_booked = target_currency.round(sum(s['y2_booked'] for s in salary_data))
+        total_sal_y1_booked = 0.0
+        total_sal_y2_booked = 0.0
 
         return {
             'company_name': company.name,
