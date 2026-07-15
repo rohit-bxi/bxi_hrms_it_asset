@@ -814,8 +814,8 @@ class HrPayslip(models.Model):
 
         return salary_file
     
-    def action_reverse_payment(self, file_seq_num):
-        """Reverse an ICICI salary payment."""
+    def action_check_transaction_status(self, file_seq_num):
+        """Fetch transaction status from ICICI Reverse MIS API."""
 
         self.ensure_one()
 
@@ -829,9 +829,13 @@ class HrPayslip(models.Model):
                 _("ICICI Reference is missing.")
             )
 
-        if self.icici_payment_status != "processing":
+        if self.icici_payment_status not in (
+            "processing",
+            "paid",
+            "failed",
+        ):
             raise ValidationError(
-                _("Only payments in Processing state can be reversed.")
+                _("Transaction status can only be checked after salary processing has started.")
             )
 
         payload = {
@@ -845,10 +849,8 @@ class HrPayslip(models.Model):
         }
 
         _logger.info("=" * 80)
-        _logger.info("ICICI REVERSE PAYMENT REQUEST")
-        _logger.info(
-            json.dumps(payload, indent=4)
-        )
+        _logger.info("ICICI REVERSE MIS REQUEST")
+        _logger.info(json.dumps(payload, indent=4))
         _logger.info("=" * 80)
 
         result = self.call_icici_api(
@@ -884,54 +886,134 @@ class HrPayslip(models.Model):
         except Exception as exc:
 
             _logger.exception(
-                "Unable to parse ICICI Reverse API response."
+                "Unable to parse Reverse MIS response."
             )
 
             raise ValidationError(
-                _("Unable to parse ICICI Reverse API response.")
+                _("Unable to parse ICICI response.")
             ) from exc
 
-        _logger.info("=" * 80)
-        _logger.info("ICICI REVERSE RESPONSE")
-        _logger.info(
-            json.dumps(response_json, indent=4)
-        )
-        _logger.info("=" * 80)
-
-        # Some ICICI APIs return XML object,
-        # some return direct JSON.
-        response_data = (
-            response_json.get("XML")
-            or response_json
-        )
-
-        response_status = (
-            response_data.get("RESPONSE")
-            or response_data.get("Response")
-            or ""
-        ).strip().upper()
-
-        if response_status != "SUCCESS":
-            raise ValidationError(
-                response_data.get("MESSAGE")
-                or response_data.get("Message")
-                or _("Reverse payment failed.")
-            )
-
         self.write({
-            "icici_payment_status": "reversed",
             "icici_response": json.dumps(
                 response_json,
                 indent=4,
-            ),
-            "icici_generated_otp": False,
-            "icici_file_seq_num": False,
-            "icici_utr": False,
+            )
         })
 
+        _logger.info("=" * 80)
+        _logger.info("ICICI REVERSE MIS RESPONSE")
         _logger.info(
-            "ICICI payment reversed successfully."
+            json.dumps(
+                response_json,
+                indent=4,
+            )
         )
+        _logger.info("=" * 80)
+
+        response_status = (
+            response_json.get("RESPONSE")
+            or ""
+        ).upper()
+
+        if response_status != "SUCCESS":
+            raise ValidationError(
+                _("ICICI returned an unsuccessful response.")
+            )
+
+        file_status = (
+            response_json.get("FILE_STATUS")
+            or ""
+        ).upper()
+
+        records = (
+            response_json.get(
+                "FILEUPLOAD_BINARY_OUTPUT",
+                {},
+            ).get("Records")
+        )
+
+        payment_status = "processing"
+        utr = False
+
+        if file_status == "PPD":
+            payment_status = "paid"
+
+        elif file_status == "FAL":
+            payment_status = "failed"
+
+        elif file_status in (
+            "ENT",
+            "ATH",
+            "PFI",
+            "CRP",
+            "MIR",
+        ):
+            payment_status = "processing"
+
+        elif file_status in (
+            "REC",
+            "REJ",
+        ):
+            payment_status = "failed"
+
+        if (
+            records
+            and isinstance(records, dict)
+            and records.get("Record")
+        ):
+
+            record_lines = records.get("Record")
+
+            if isinstance(record_lines, str):
+                record_lines = [record_lines]
+
+            for line in record_lines[1:]:
+
+                columns = line.split("|")
+
+                if len(columns) < 12:
+                    continue
+
+                host_reference = columns[7]
+                response_code = columns[8]
+                response_message = columns[9]
+                remarks = columns[10]
+                transaction_status = columns[11]
+
+                _logger.info(
+                    "Transaction Status : %s",
+                    transaction_status,
+                )
+
+                _logger.info(
+                    "Host Response : %s - %s",
+                    response_code,
+                    response_message,
+                )
+
+                if transaction_status == "SUC":
+
+                    payment_status = "paid"
+                    utr = host_reference
+
+                elif transaction_status == "FAL":
+
+                    payment_status = "failed"
+
+                elif transaction_status == "SUS":
+
+                    payment_status = "processing"
+
+        self.write({
+            "icici_payment_status": payment_status,
+            "icici_utr": utr,
+        })
+
+        _logger.info("=" * 80)
+        _logger.info("FILE STATUS : %s", file_status)
+        _logger.info("ODOO STATUS : %s", payment_status)
+        _logger.info("UTR : %s", utr)
+        _logger.info("=" * 80)
 
         return True
     
@@ -1130,15 +1212,19 @@ class HrPayslip(models.Model):
         return True
 
 
-    def action_open_reverse_wizard(self):
-        """Open ICICI Reverse Payment Wizard."""
+    def action_open_transaction_status_wizard(self):
+        """Open ICICI Transaction Status Wizard."""
 
         self.ensure_one()
 
-        if self.icici_payment_status != "processing":
+        if self.icici_payment_status not in (
+            "processing",
+            "paid",
+            "failed",
+        ):
             raise ValidationError(
                 _(
-                    "Only payments in Processing state can be reversed."
+                    "Transaction status can only be checked after salary processing has started."
                 )
             )
 
@@ -1149,8 +1235,8 @@ class HrPayslip(models.Model):
 
         return {
             "type": "ir.actions.act_window",
-            "name": _("Reverse Payment"),
-            "res_model": "icici.reverse.wizard",
+            "name": _("Transaction Status"),
+            "res_model": "icici.transaction.status.wizard",
             "view_mode": "form",
             "target": "new",
             "context": {

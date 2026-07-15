@@ -51,10 +51,10 @@
                     class="btn-primary"
                     invisible="state != 'validated' or icici_payment_status in ('processing','paid','reversed')"/>
                 <button
-                    name="action_open_reverse_wizard"
-                    string="Reverse Payment"
+                    name="action_open_transaction_status_wizard"
+                    string="Check Payment Status"
                     type="object"
-                    class="btn-danger"
+                    class="btn-primary"
                     invisible="icici_payment_status != 'processing'"/>
             </xpath>
 
