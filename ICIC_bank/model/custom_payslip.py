@@ -910,51 +910,60 @@ class HrPayslip(models.Model):
         )
         _logger.info("=" * 80)
 
+        xml_data = response_json.get("XML")
+        if not xml_data:
+            raise ValidationError(
+                _("XML data not found in ICICI response.")
+            )
+        if isinstance(xml_data, str):
+            try:
+                xml_data = json.loads(xml_data)
+            except Exception:
+                raise ValidationError(
+                    _("Invalid XML section received from ICICI.")
+                )
+
         response_status = (
-            response_json.get("RESPONSE")
+            xml_data.get("RESPONSE")
             or ""
         ).upper()
 
         if response_status != "SUCCESS":
             raise ValidationError(
-                _("ICICI returned an unsuccessful response.")
+                xml_data.get("MESSAGE")
+                or _("ICICI returned an unsuccessful response.")
             )
 
         file_status = (
-            response_json.get("FILE_STATUS")
+            xml_data.get("FILE_STATUS")
             or ""
         ).upper()
 
         records = (
-            response_json.get(
+            xml_data.get(
                 "FILEUPLOAD_BINARY_OUTPUT",
-                {},
-            ).get("Records")
+                {}
+            ).get(
+                "Records",
+                {}
+            )
         )
-
         payment_status = "processing"
         utr = False
 
-        if file_status == "PPD":
-            payment_status = "paid"
-
-        elif file_status == "FAL":
-            payment_status = "failed"
-
-        elif file_status in (
-            "ENT",
-            "ATH",
-            "PFI",
-            "CRP",
-            "MIR",
-        ):
+        # File has been processed successfully.
+        # Actual payment status is determined from transaction records.
+        if file_status == "STS":
             payment_status = "processing"
 
-        elif file_status in (
-            "REC",
-            "REJ",
-        ):
+        elif file_status in ("PPD",):
+            payment_status = "paid"
+
+        elif file_status in ("FAL", "REC", "REJ"):
             payment_status = "failed"
+
+        else:
+            payment_status = "processing"
 
         if (
             records
@@ -991,17 +1000,15 @@ class HrPayslip(models.Model):
                     response_message,
                 )
 
+                transaction_status = transaction_status.upper()
                 if transaction_status == "SUC":
-
                     payment_status = "paid"
                     utr = host_reference
 
-                elif transaction_status == "FAL":
-
+                elif transaction_status in ("FAL", "FAIL"):
                     payment_status = "failed"
 
-                elif transaction_status == "SUS":
-
+                else:
                     payment_status = "processing"
 
         self.write({
