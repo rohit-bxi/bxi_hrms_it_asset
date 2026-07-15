@@ -178,7 +178,7 @@ class FbookReportWizard(models.TransientModel):
                     if not inv.contract_id.company_id or inv.contract_id.company_id.id in company_ids:
                         return True
                 # Check via Many2many invoice_ids on contract model
-                linked_m2m = self.env['project.contract.management'].search([
+                linked_m2m = self.env['project.contract.management'].sudo().search([
                     ('invoice_ids', 'in', [inv.id]),
                     '|', ('company_id', 'in', company_ids), ('company_id', '=', False)
                 ])
@@ -187,7 +187,7 @@ class FbookReportWizard(models.TransientModel):
                 # Check via Sales Orders
                 sale_orders = inv.line_ids.sale_line_ids.order_id
                 if sale_orders:
-                    linked_contracts = self.env['project.contract.management'].search([
+                    linked_contracts = self.env['project.contract.management'].sudo().search([
                         ('sale_order_ids', 'in', sale_orders.ids),
                         '|', ('company_id', 'in', company_ids), ('company_id', '=', False)
                     ])
@@ -200,7 +200,7 @@ class FbookReportWizard(models.TransientModel):
             # 2. Billed — ALL customer invoices (except cancel/rejected) for selected companies in the quarter
             billed_val = 0.0
             actual_val = 0.0
-            invoices = self.env['account.move'].search([
+            invoices = self.env['account.move'].sudo().search([
                 ('company_id', 'in', company_ids),
                 ('move_type', '=', 'out_invoice'),
                 ('state', 'not in', ('cancel', 'rejected')),
@@ -236,7 +236,7 @@ class FbookReportWizard(models.TransientModel):
 
             # A. Expenses
             if 'hr.expense' in self.env:
-                expenses = self.env['hr.expense'].search([
+                expenses = self.env['hr.expense'].sudo().search([
                     ('company_id', 'in', company_ids),
                     ('date', '>=', qdef['start']),
                     ('date', '<=', qdef['end'])
@@ -248,7 +248,7 @@ class FbookReportWizard(models.TransientModel):
 
             # B. Vendor Bills
             if 'account.move' in self.env:
-                bills = self.env['account.move'].search([
+                bills = self.env['account.move'].sudo().search([
                     ('company_id', 'in', company_ids),
                     ('move_type', 'in', ('in_invoice', 'in_receipt', 'in_refund')),
                     ('invoice_date', '>=', qdef['start']),
@@ -262,7 +262,7 @@ class FbookReportWizard(models.TransientModel):
 
             # C. Payroll / Payslips (Salary)
             if 'hr.payslip' in self.env:
-                payslips = self.env['hr.payslip'].search([
+                payslips = self.env['hr.payslip'].sudo().search([
                     ('company_id', 'in', company_ids),
                     ('date_to', '>=', qdef['start']),
                     ('date_to', '<=', qdef['end'])
@@ -323,93 +323,190 @@ class FbookReportWizard(models.TransientModel):
                 'margin': round(total_margin, 2)
             }
 
-        # Calculate Detailed Contracts Data
+        # Calculate Detailed Revenue Data consolidated by Customer
         contracts_data = []
-        from datetime import date
+        from datetime import date as _date_rev
         total_contract_value = 0.0
         total_y1_booking = 0.0
         total_y1_billed = 0.0
         total_y2_booking = 0.0
         total_y2_billed = 0.0
 
-        if 'project.contract.management' in self.env:
-            all_contracts = self.env['project.contract.management'].search([
-                ('company_id', 'in', company_ids)
+        revenue_data = {}
+        if 'account.move' in self.env:
+            rv_y1_start = _date_rev(y1_start, 4, 1)
+            rv_y1_end = _date_rev(y1_start + 1, 3, 31)
+            rv_y2_start = _date_rev(y2_start, 4, 1)
+            rv_y2_end = _date_rev(y2_start + 1, 3, 31)
+
+            invoices = self.env['account.move'].sudo().search([
+                ('company_id', 'in', company_ids),
+                ('move_type', '=', 'out_invoice'),
+                ('state', 'not in', ('cancel', 'rejected')),
+                ('invoice_date', '>=', rv_y1_start),
+                ('invoice_date', '<=', rv_y2_end),
             ])
-            for contract in all_contracts:
 
-
-                # Period
-                start_str = contract.contract_start_date.strftime('%d-%b-%y') if contract.contract_start_date else ''
-                end_str = contract.contract_end_date.strftime('%d-%b-%y') if contract.contract_end_date else ''
-                period = f"{start_str} to {end_str}" if (start_str or end_str) else ''
-
-                # Engagement
-                engagement = ''
-                if contract.contract_type:
-                    engagement_dict = dict(self.env['project.contract.management']._fields['contract_type'].selection or [])
-                    engagement = engagement_dict.get(contract.contract_type, '')
-
-                # Year 1 Dates
-                y1_start_date = date(y1_start, 4, 1)
-                y1_end_date = date(y1_start + 1, 3, 31)
-
-                # Year 2 Dates
-                y2_start_date = date(y2_start, 4, 1)
-                y2_end_date = date(y2_start + 1, 3, 31)
-
-                # Booking Y1 & Y2 are 0
-                y1_booking = 0.0
-                y2_booking = 0.0
-
-                # Billed Y1 & Y2
-                y1_billed = 0.0
-                y2_billed = 0.0
-
-                # Billed Y1 & Y2: all customer invoices except cancel/rejected
-                invoices = self.env['account.move'].search([
-                    ('company_id', 'in', company_ids),
-                    ('move_type', '=', 'out_invoice'),
-                    ('state', 'not in', ('cancel', 'rejected')),
-                    ('partner_id', 'in', contract.client_ids.ids)
-                ])
-
-                for inv in invoices:
-                    inv_date = inv.invoice_date
-                    if inv_date:
-                        inv_val = inv.currency_id._convert(
-                            inv.amount_total, target_currency, get_rate_company(inv), inv_date
-                        )
-
-                        if y1_start_date <= inv_date <= y1_end_date:
-                            y1_billed += inv_val
-                        elif y2_start_date <= inv_date <= y2_end_date:
-                            y2_billed += inv_val
-
-                # Convert contract amount to target currency
-                val_converted = contract.currency_id._convert(
-                    contract.contract_amount, target_currency, get_rate_company(contract), fields.Date.today()
+            for inv in invoices:
+                partner = inv.partner_id
+                if not partner:
+                    continue
+                partner_id = partner.id
+                if partner_id not in revenue_data:
+                    revenue_data[partner_id] = {
+                        'customer': partner.name or '',
+                        'industry': partner.industry_id.name if hasattr(partner, 'industry_id') and partner.industry_id else '',
+                        'y1_booking': 0.0,
+                        'y1_billed': 0.0,
+                        'y2_booking': 0.0,
+                        'y2_billed': 0.0,
+                    }
+                inv_date = inv.invoice_date
+                inv_val = inv.currency_id._convert(
+                    inv.amount_total, target_currency, get_rate_company(inv), inv_date or fields.Date.today()
                 )
+                if inv_date and rv_y1_start <= inv_date <= rv_y1_end:
+                    revenue_data[partner_id]['y1_billed'] += inv_val
+                elif inv_date and rv_y2_start <= inv_date <= rv_y2_end:
+                    revenue_data[partner_id]['y2_billed'] += inv_val
 
+        for partner_id, r in revenue_data.items():
+            contracts_data.append({
+                'customer': r['customer'],
+                'industry': r['industry'],
+                'y1_booking': target_currency.round(r['y1_booking']),
+                'y1_billed': target_currency.round(r['y1_billed']),
+                'y2_booking': target_currency.round(r['y2_booking']),
+                'y2_billed': target_currency.round(r['y2_billed']),
+            })
 
-                contracts_data.append({
-                    'industry': contract.industry_id.name or '',
-                    'customers': ', '.join(contract.client_ids.mapped('name')) or '',
-                    'business': contract.name,
-                    'period': period,
-                    'engagement': engagement,
-                    'contract_value': target_currency.round(val_converted),
-                    'y1_booking': target_currency.round(y1_booking),
-                    'y1_billed': target_currency.round(y1_billed),
-                    'y2_booking': target_currency.round(y2_booking),
-                    'y2_billed': target_currency.round(y2_billed)
-                })
-
-        total_contract_value = sum(c['contract_value'] for c in contracts_data)
         total_y1_booking = sum(c['y1_booking'] for c in contracts_data)
         total_y1_billed = sum(c['y1_billed'] for c in contracts_data)
         total_y2_booking = sum(c['y2_booking'] for c in contracts_data)
         total_y2_billed = sum(c['y2_billed'] for c in contracts_data)
+
+        # Calculate Detailed Expense Data consolidated by Partner / Employee
+        expenses_data = []
+        from datetime import date as _date
+
+        exp_revenue = {}  # key: (type, name) → dict
+
+        def _add_expense_entry(key, label, category, y_key, val_booked, val_billed):
+            if key not in exp_revenue:
+                exp_revenue[key] = {
+                    'name': label,
+                    'category': category,
+                    'y1_booked': 0.0,
+                    'y1_billed': 0.0,
+                    'y2_booked': 0.0,
+                    'y2_billed': 0.0,
+                }
+            exp_revenue[key][f'{y_key}_booked'] += val_booked
+            exp_revenue[key][f'{y_key}_billed'] += val_billed
+
+        y1_start_date = _date(y1_start, 4, 1)
+        y1_end_date = _date(y1_start + 1, 3, 31)
+        y2_start_date = _date(y2_start, 4, 1)
+        y2_end_date = _date(y2_start + 1, 3, 31)
+
+        def _get_y_key(rec_date):
+            if rec_date and y1_start_date <= rec_date <= y1_end_date:
+                return 'y1'
+            elif rec_date and y2_start_date <= rec_date <= y2_end_date:
+                return 'y2'
+            return None
+
+        # A. hr.expense — grouped by employee
+        if 'hr.expense' in self.env:
+            exps = self.env['hr.expense'].sudo().search([
+                ('company_id', 'in', company_ids),
+                ('date', '>=', y1_start_date),
+                ('date', '<=', y2_end_date),
+            ])
+            for exp in exps:
+                y_key = _get_y_key(exp.date)
+                if not y_key:
+                    continue
+                emp = exp.employee_id
+                label = emp.name if emp else 'Unknown Employee'
+                key = ('employee', label.strip().lower())
+                conv = exp.currency_id._convert(
+                    exp.total_amount_currency, target_currency,
+                    get_rate_company(exp), exp.date or fields.Date.today()
+                )
+                is_paid = getattr(exp, 'state', '') in ('paid', 'posted', 'in_payment', 'approved')
+                _add_expense_entry(key, label, 'Employee Expense', y_key, conv, conv if is_paid else 0.0)
+
+        # B. Vendor Bills — grouped by partner
+        if 'account.move' in self.env:
+            bills = self.env['account.move'].sudo().search([
+                ('company_id', 'in', company_ids),
+                ('move_type', 'in', ('in_invoice', 'in_receipt', 'in_refund')),
+                ('invoice_date', '>=', y1_start_date),
+                ('invoice_date', '<=', y2_end_date),
+            ])
+            for bill in bills:
+                y_key = _get_y_key(bill.invoice_date)
+                if not y_key:
+                    continue
+                partner = bill.partner_id
+                label = partner.name if partner else 'Unknown Vendor'
+                key = ('vendor', label.strip().lower())
+                sign = -1.0 if bill.move_type == 'in_refund' else 1.0
+                conv = sign * bill.currency_id._convert(
+                    bill.amount_total, target_currency,
+                    get_rate_company(bill), bill.invoice_date or fields.Date.today()
+                )
+                is_paid = bill.payment_state in ('paid', 'in_payment', 'partial') if hasattr(bill, 'payment_state') else False
+                _add_expense_entry(key, label, 'Vendor Bill', y_key, conv, conv if is_paid else 0.0)
+
+        # C. Payroll / Payslips — grouped by month (e.g. "April 2025")
+        if 'hr.payslip' in self.env:
+            payslips = self.env['hr.payslip'].sudo().search([
+                ('company_id', 'in', company_ids),
+                ('date_to', '>=', y1_start_date),
+                ('date_to', '<=', y2_end_date),
+            ])
+            for slip in payslips:
+                y_key = _get_y_key(slip.date_to)
+                if not y_key:
+                    continue
+                slip_date = slip.date_to
+                if slip_date:
+                    month_year = slip_date.strftime('%B %Y')          # e.g. "April 2025"
+                    month_sort = slip_date.strftime('%Y-%m')           # for grouping key
+                else:
+                    month_year = 'Unknown Month'
+                    month_sort = 'unknown'
+                key = ('payslip', month_sort)
+                label = month_year
+                net_amt = 0.0
+                if hasattr(slip, 'get_salary_line_total'):
+                    net_amt = slip.get_salary_line_total('NET')
+                else:
+                    line = slip.line_ids.filtered(lambda l: l.code == 'NET')
+                    if line:
+                        net_amt = line[0].total
+                conv = slip.company_id.currency_id._convert(
+                    net_amt, target_currency, get_rate_company(slip), slip_date or fields.Date.today()
+                )
+                is_paid = getattr(slip, 'state', '') in ('done', 'paid')
+                _add_expense_entry(key, label, 'Salary', y_key, conv, conv if is_paid else 0.0)
+
+        for key, r in exp_revenue.items():
+            expenses_data.append({
+                'name': r['name'],
+                'category': r['category'],
+                'y1_booked': target_currency.round(r['y1_booked']),
+                'y1_billed': target_currency.round(r['y1_billed']),
+                'y2_booked': target_currency.round(r['y2_booked']),
+                'y2_billed': target_currency.round(r['y2_billed']),
+            })
+
+        total_exp_y1_booked = target_currency.round(sum(e['y1_booked'] for e in expenses_data))
+        total_exp_y1_billed = target_currency.round(sum(e['y1_billed'] for e in expenses_data))
+        total_exp_y2_booked = target_currency.round(sum(e['y2_booked'] for e in expenses_data))
+        total_exp_y2_billed = target_currency.round(sum(e['y2_billed'] for e in expenses_data))
 
         return {
             'company_name': company.name,
@@ -427,5 +524,10 @@ class FbookReportWizard(models.TransientModel):
             'total_y1_billed': target_currency.round(total_y1_billed),
             'total_y2_booking': target_currency.round(total_y2_booking),
             'total_y2_billed': target_currency.round(total_y2_billed),
+            'expenses_data': expenses_data,
+            'total_exp_y1_booked': total_exp_y1_booked,
+            'total_exp_y1_billed': total_exp_y1_billed,
+            'total_exp_y2_booked': total_exp_y2_booked,
+            'total_exp_y2_billed': total_exp_y2_billed,
         }
 
