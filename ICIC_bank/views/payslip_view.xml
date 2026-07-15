@@ -19,7 +19,7 @@
                     decoration-success="icici_payment_status == 'paid'"
                     decoration-warning="icici_payment_status == 'processing'"
                     decoration-danger="icici_payment_status == 'failed'"
-                    decoration-info="icici_payment_status == 'reversed'"
+                    decoration-info="icici_payment_status == 'Fetching'"
                 />
                 <field name="icici_reference" optional="hide"/>
                 <field name="icici_file_seq_num"/>
