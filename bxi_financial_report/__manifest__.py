@@ -12,6 +12,7 @@
     'depends': ['base', 'account', 'sale', 'project_contract_management'],
     'data': [
         'security/ir.model.access.csv',
+        'views/res_partner_views.xml',
         'views/fbook_report_wizard_views.xml',
         'views/fbook_report_views.xml',
     ],
