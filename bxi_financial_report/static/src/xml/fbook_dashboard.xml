@@ -188,83 +188,83 @@
                     <tr class="metric-row">
                         <td class="row-label">Booking</td>
                         <!-- Y1 -->
-                        <td><t t-esc="state.report_data.data.y1.q1.booking"/></td>
-                        <td><t t-esc="state.report_data.data.y1.q2.booking"/></td>
-                        <td><t t-esc="state.report_data.data.y1.q3.booking"/></td>
-                        <td><t t-esc="state.report_data.data.y1.q4.booking"/></td>
-                        <td class="total-cell"><t t-esc="state.report_data.data.y1.total.booking"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y1.q1.booking)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y1.q2.booking)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y1.q3.booking)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y1.q4.booking)"/></td>
+                        <td class="total-cell"><t t-out="formatAmt(state.report_data.data.y1.total.booking)"/></td>
                         <!-- Y2 -->
-                        <td><t t-esc="state.report_data.data.y2.q1.booking"/></td>
-                        <td><t t-esc="state.report_data.data.y2.q2.booking"/></td>
-                        <td><t t-esc="state.report_data.data.y2.q3.booking"/></td>
-                        <td><t t-esc="state.report_data.data.y2.q4.booking"/></td>
-                        <td class="total-cell"><t t-esc="state.report_data.data.y2.total.booking"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y2.q1.booking)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y2.q2.booking)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y2.q3.booking)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y2.q4.booking)"/></td>
+                        <td class="total-cell"><t t-out="formatAmt(state.report_data.data.y2.total.booking)"/></td>
                     </tr>
 
                     <!-- Billed -->
                     <tr class="metric-row">
                         <td class="row-label">Billed</td>
                         <!-- Y1 -->
-                        <td><t t-esc="state.report_data.data.y1.q1.billed"/></td>
-                        <td><t t-esc="state.report_data.data.y1.q2.billed"/></td>
-                        <td><t t-esc="state.report_data.data.y1.q3.billed"/></td>
-                        <td><t t-esc="state.report_data.data.y1.q4.billed"/></td>
-                        <td class="total-cell"><t t-esc="state.report_data.data.y1.total.billed"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y1.q1.billed)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y1.q2.billed)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y1.q3.billed)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y1.q4.billed)"/></td>
+                        <td class="total-cell"><t t-out="formatAmt(state.report_data.data.y1.total.billed)"/></td>
                         <!-- Y2 -->
-                        <td><t t-esc="state.report_data.data.y2.q1.billed"/></td>
-                        <td><t t-esc="state.report_data.data.y2.q2.billed"/></td>
-                        <td><t t-esc="state.report_data.data.y2.q3.billed"/></td>
-                        <td><t t-esc="state.report_data.data.y2.q4.billed"/></td>
-                        <td class="total-cell"><t t-esc="state.report_data.data.y2.total.billed"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y2.q1.billed)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y2.q2.billed)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y2.q3.billed)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y2.q4.billed)"/></td>
+                        <td class="total-cell"><t t-out="formatAmt(state.report_data.data.y2.total.billed)"/></td>
                     </tr>
 
                     <!-- Actual -->
                     <tr class="metric-row">
                         <td class="row-label">Actual</td>
                         <!-- Y1 -->
-                        <td><t t-esc="state.report_data.data.y1.q1.actual"/></td>
-                        <td><t t-esc="state.report_data.data.y1.q2.actual"/></td>
-                        <td><t t-esc="state.report_data.data.y1.q3.actual"/></td>
-                        <td><t t-esc="state.report_data.data.y1.q4.actual"/></td>
-                        <td class="total-cell"><t t-esc="state.report_data.data.y1.total.actual"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y1.q1.actual)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y1.q2.actual)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y1.q3.actual)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y1.q4.actual)"/></td>
+                        <td class="total-cell"><t t-out="formatAmt(state.report_data.data.y1.total.actual)"/></td>
                         <!-- Y2 -->
-                        <td><t t-esc="state.report_data.data.y2.q1.actual"/></td>
-                        <td><t t-esc="state.report_data.data.y2.q2.actual"/></td>
-                        <td><t t-esc="state.report_data.data.y2.q3.actual"/></td>
-                        <td><t t-esc="state.report_data.data.y2.q4.actual"/></td>
-                        <td class="total-cell"><t t-esc="state.report_data.data.y2.total.actual"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y2.q1.actual)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y2.q2.actual)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y2.q3.actual)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y2.q4.actual)"/></td>
+                        <td class="total-cell"><t t-out="formatAmt(state.report_data.data.y2.total.actual)"/></td>
                     </tr>
 
                     <!-- DSO -->
                      <tr class="metric-row">
                          <td class="row-label">DSO (Amount)</td>
                          <!-- Y1 -->
-                         <td><t t-esc="state.report_data.data.y1.q1.dso_amount"/></td>
-                         <td><t t-esc="state.report_data.data.y1.q2.dso_amount"/></td>
-                         <td><t t-esc="state.report_data.data.y1.q3.dso_amount"/></td>
-                         <td><t t-esc="state.report_data.data.y1.q4.dso_amount"/></td>
-                         <td class="total-cell"><t t-esc="state.report_data.data.y1.total.dso_amount"/></td>
+                         <td><t t-out="formatAmt(state.report_data.data.y1.q1.dso_amount)"/></td>
+                         <td><t t-out="formatAmt(state.report_data.data.y1.q2.dso_amount)"/></td>
+                         <td><t t-out="formatAmt(state.report_data.data.y1.q3.dso_amount)"/></td>
+                         <td><t t-out="formatAmt(state.report_data.data.y1.q4.dso_amount)"/></td>
+                         <td class="total-cell"><t t-out="formatAmt(state.report_data.data.y1.total.dso_amount)"/></td>
                          <!-- Y2 -->
-                         <td><t t-esc="state.report_data.data.y2.q1.dso_amount"/></td>
-                         <td><t t-esc="state.report_data.data.y2.q2.dso_amount"/></td>
-                         <td><t t-esc="state.report_data.data.y2.q3.dso_amount"/></td>
-                         <td><t t-esc="state.report_data.data.y2.q4.dso_amount"/></td>
-                         <td class="total-cell"><t t-esc="state.report_data.data.y2.total.dso_amount"/></td>
+                         <td><t t-out="formatAmt(state.report_data.data.y2.q1.dso_amount)"/></td>
+                         <td><t t-out="formatAmt(state.report_data.data.y2.q2.dso_amount)"/></td>
+                         <td><t t-out="formatAmt(state.report_data.data.y2.q3.dso_amount)"/></td>
+                         <td><t t-out="formatAmt(state.report_data.data.y2.q4.dso_amount)"/></td>
+                         <td class="total-cell"><t t-out="formatAmt(state.report_data.data.y2.total.dso_amount)"/></td>
                      </tr>
                      <tr class="metric-row">
                          <td class="row-label">DSO (Days)</td>
                          <!-- Y1 -->
-                         <td><t t-esc="state.report_data.data.y1.q1.dso_days"/></td>
-                         <td><t t-esc="state.report_data.data.y1.q2.dso_days"/></td>
-                         <td><t t-esc="state.report_data.data.y1.q3.dso_days"/></td>
-                         <td><t t-esc="state.report_data.data.y1.q4.dso_days"/></td>
-                         <td class="total-cell"><t t-esc="state.report_data.data.y1.total.dso_days"/></td>
+                         <td><t t-out="formatAmt(state.report_data.data.y1.q1.dso_days)"/></td>
+                         <td><t t-out="formatAmt(state.report_data.data.y1.q2.dso_days)"/></td>
+                         <td><t t-out="formatAmt(state.report_data.data.y1.q3.dso_days)"/></td>
+                         <td><t t-out="formatAmt(state.report_data.data.y1.q4.dso_days)"/></td>
+                         <td class="total-cell"><t t-out="formatAmt(state.report_data.data.y1.total.dso_days)"/></td>
                          <!-- Y2 -->
-                         <td><t t-esc="state.report_data.data.y2.q1.dso_days"/></td>
-                         <td><t t-esc="state.report_data.data.y2.q2.dso_days"/></td>
-                         <td><t t-esc="state.report_data.data.y2.q3.dso_days"/></td>
-                         <td><t t-esc="state.report_data.data.y2.q4.dso_days"/></td>
-                         <td class="total-cell"><t t-esc="state.report_data.data.y2.total.dso_days"/></td>
+                         <td><t t-out="formatAmt(state.report_data.data.y2.q1.dso_days)"/></td>
+                         <td><t t-out="formatAmt(state.report_data.data.y2.q2.dso_days)"/></td>
+                         <td><t t-out="formatAmt(state.report_data.data.y2.q3.dso_days)"/></td>
+                         <td><t t-out="formatAmt(state.report_data.data.y2.q4.dso_days)"/></td>
+                         <td class="total-cell"><t t-out="formatAmt(state.report_data.data.y2.total.dso_days)"/></td>
                      </tr>
 
                     <!-- Spacer -->
@@ -276,51 +276,51 @@
                     <tr class="metric-row">
                         <td class="row-label">Expenses</td>
                         <!-- Y1 -->
-                        <td><t t-esc="state.report_data.data.y1.q1.expenses"/></td>
-                        <td><t t-esc="state.report_data.data.y1.q2.expenses"/></td>
-                        <td><t t-esc="state.report_data.data.y1.q3.expenses"/></td>
-                        <td><t t-esc="state.report_data.data.y1.q4.expenses"/></td>
-                        <td class="total-cell"><t t-esc="state.report_data.data.y1.total.expenses"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y1.q1.expenses)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y1.q2.expenses)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y1.q3.expenses)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y1.q4.expenses)"/></td>
+                        <td class="total-cell"><t t-out="formatAmt(state.report_data.data.y1.total.expenses)"/></td>
                         <!-- Y2 -->
-                        <td><t t-esc="state.report_data.data.y2.q1.expenses"/></td>
-                        <td><t t-esc="state.report_data.data.y2.q2.expenses"/></td>
-                        <td><t t-esc="state.report_data.data.y2.q3.expenses"/></td>
-                        <td><t t-esc="state.report_data.data.y2.q4.expenses"/></td>
-                        <td class="total-cell"><t t-esc="state.report_data.data.y2.total.expenses"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y2.q1.expenses)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y2.q2.expenses)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y2.q3.expenses)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y2.q4.expenses)"/></td>
+                        <td class="total-cell"><t t-out="formatAmt(state.report_data.data.y2.total.expenses)"/></td>
                     </tr>
 
                     <!-- Profit -->
                     <tr class="metric-row">
                         <td class="row-label">Profit</td>
                         <!-- Y1 -->
-                        <td><t t-esc="state.report_data.data.y1.q1.profit"/></td>
-                        <td><t t-esc="state.report_data.data.y1.q2.profit"/></td>
-                        <td><t t-esc="state.report_data.data.y1.q3.profit"/></td>
-                        <td><t t-esc="state.report_data.data.y1.q4.profit"/></td>
-                        <td class="total-cell"><t t-esc="state.report_data.data.y1.total.profit"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y1.q1.profit)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y1.q2.profit)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y1.q3.profit)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y1.q4.profit)"/></td>
+                        <td class="total-cell"><t t-out="formatAmt(state.report_data.data.y1.total.profit)"/></td>
                         <!-- Y2 -->
-                        <td><t t-esc="state.report_data.data.y2.q1.profit"/></td>
-                        <td><t t-esc="state.report_data.data.y2.q2.profit"/></td>
-                        <td><t t-esc="state.report_data.data.y2.q3.profit"/></td>
-                        <td><t t-esc="state.report_data.data.y2.q4.profit"/></td>
-                        <td class="total-cell"><t t-esc="state.report_data.data.y2.total.profit"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y2.q1.profit)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y2.q2.profit)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y2.q3.profit)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.data.y2.q4.profit)"/></td>
+                        <td class="total-cell"><t t-out="formatAmt(state.report_data.data.y2.total.profit)"/></td>
                     </tr>
 
                     <!-- Margin% -->
                     <tr class="metric-row">
                         <td class="row-label">Margin %</td>
                         <!-- Y1 -->
-                        <td><t t-esc="state.report_data.data.y1.q1.margin"/>%</td>
-                        <td><t t-esc="state.report_data.data.y1.q2.margin"/>%</td>
-                        <td><t t-esc="state.report_data.data.y1.q3.margin"/>%</td>
-                        <td><t t-esc="state.report_data.data.y1.q4.margin"/>%</td>
-                        <td class="total-cell"><t t-esc="state.report_data.data.y1.total.margin"/>%</td>
+                        <td><t t-out="formatPct(state.report_data.data.y1.q1.margin)"/></td>
+                        <td><t t-out="formatPct(state.report_data.data.y1.q2.margin)"/></td>
+                        <td><t t-out="formatPct(state.report_data.data.y1.q3.margin)"/></td>
+                        <td><t t-out="formatPct(state.report_data.data.y1.q4.margin)"/></td>
+                        <td class="total-cell"><t t-out="formatPct(state.report_data.data.y1.total.margin)"/></td>
                         <!-- Y2 -->
-                        <td><t t-esc="state.report_data.data.y2.q1.margin"/>%</td>
-                        <td><t t-esc="state.report_data.data.y2.q2.margin"/>%</td>
-                        <td><t t-esc="state.report_data.data.y2.q3.margin"/>%</td>
-                        <td><t t-esc="state.report_data.data.y2.q4.margin"/>%</td>
-                        <td class="total-cell"><t t-esc="state.report_data.data.y2.total.margin"/>%</td>
+                        <td><t t-out="formatPct(state.report_data.data.y2.q1.margin)"/></td>
+                        <td><t t-out="formatPct(state.report_data.data.y2.q2.margin)"/></td>
+                        <td><t t-out="formatPct(state.report_data.data.y2.q3.margin)"/></td>
+                        <td><t t-out="formatPct(state.report_data.data.y2.q4.margin)"/></td>
+                        <td class="total-cell"><t t-out="formatPct(state.report_data.data.y2.total.margin)"/></td>
                     </tr>
                 </tbody>
             </table>
@@ -361,19 +361,19 @@
                         <tr class="metric-row">
                             <td style="text-align: left;"><t t-esc="c.customer"/></td>
                             <td style="text-align: left;"><t t-esc="c.industry"/></td>
-                            <td><t t-esc="c.y1_booking"/></td>
-                            <td><t t-esc="c.y1_billed"/></td>
-                            <td><t t-esc="c.y2_booking"/></td>
-                            <td><t t-esc="c.y2_billed"/></td>
+                            <td><t t-out="formatAmt(c.y1_booking)"/></td>
+                            <td><t t-out="formatAmt(c.y1_billed)"/></td>
+                            <td><t t-out="formatAmt(c.y2_booking)"/></td>
+                            <td><t t-out="formatAmt(c.y2_billed)"/></td>
                         </tr>
                     </t>
                     <!-- Totals row -->
                     <tr style="font-weight: bold; background: #e2e8f0; color: #0f172a;">
                         <td colspan="2" style="text-align: left;">Total</td>
-                        <td><t t-esc="state.report_data.total_y1_booking"/></td>
-                        <td><t t-esc="state.report_data.total_y1_billed"/></td>
-                        <td><t t-esc="state.report_data.total_y2_booking"/></td>
-                        <td><t t-esc="state.report_data.total_y2_billed"/></td>
+                        <td><t t-out="formatAmt(state.report_data.total_y1_booking)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.total_y1_billed)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.total_y2_booking)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.total_y2_billed)"/></td>
                     </tr>
                 </tbody>
             </table>
@@ -414,19 +414,19 @@
                         <tr class="metric-row">
                             <td style="text-align: left;"><t t-esc="e.name"/></td>
                             <td style="text-align: left;"><t t-esc="e.category"/></td>
-                            <td><t t-esc="e.y1_booked"/></td>
-                            <td><t t-esc="e.y1_billed"/></td>
-                            <td><t t-esc="e.y2_booked"/></td>
-                            <td><t t-esc="e.y2_billed"/></td>
+                            <td><t t-out="formatAmt(e.y1_booked)"/></td>
+                            <td><t t-out="formatAmt(e.y1_billed)"/></td>
+                            <td><t t-out="formatAmt(e.y2_booked)"/></td>
+                            <td><t t-out="formatAmt(e.y2_billed)"/></td>
                         </tr>
                     </t>
                     <!-- Totals row -->
                     <tr style="font-weight: bold; background: #e2e8f0; color: #0f172a;">
                         <td colspan="2" style="text-align: left;">Total</td>
-                        <td><t t-esc="state.report_data.total_exp_y1_booked"/></td>
-                        <td><t t-esc="state.report_data.total_exp_y1_billed"/></td>
-                        <td><t t-esc="state.report_data.total_exp_y2_booked"/></td>
-                        <td><t t-esc="state.report_data.total_exp_y2_billed"/></td>
+                        <td><t t-out="formatAmt(state.report_data.total_exp_y1_booked)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.total_exp_y1_billed)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.total_exp_y2_booked)"/></td>
+                        <td><t t-out="formatAmt(state.report_data.total_exp_y2_billed)"/></td>
                     </tr>
                 </tbody>
             </table>
