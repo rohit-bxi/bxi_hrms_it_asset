@@ -90,9 +90,9 @@
               parent="account.menu_finance_reports"
               sequence="100"/>
 
-    <!-- Grandchild menu 'Fbook Report' under 'BXI Reports' -->
+    <!-- Grandchild menu 'Financial Book' under 'BXI Reports' -->
     <menuitem id="menu_fbook_report"
-              name="Fbook Report"
+              name="Financial Book"
               parent="menu_bxi_reports"
               action="action_fbook_report_wizard"
               sequence="10"/>
