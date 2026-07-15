@@ -112,9 +112,9 @@ class ICICIOtpWizard(models.TransientModel):
             ) from exc
 
 
-class IciciReverseWizard(models.TransientModel):
-    _name = "icici.reverse.wizard"
-    _description = "ICICI Reverse Payment Wizard"
+class IciciTransactionStatusWizard(models.TransientModel):
+    _name = "icici.transaction.status.wizard"
+    _description = "ICICI Transaction Status Wizard"
 
     payslip_id = fields.Many2one(
         "hr.payslip",
