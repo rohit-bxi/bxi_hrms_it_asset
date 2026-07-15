@@ -87,6 +87,30 @@ class FbookDashboard extends Component {
         URL.revokeObjectURL(url);
     }
 
+    /**
+     * Format a numeric amount with locale thousand separators and 2 decimal places.
+     * e.g. 296237.83 → "2,96,237.83"  (uses en-IN locale for Indian comma style)
+     * Non-numeric / falsy values render as "0.00".
+     */
+    formatAmt(val) {
+        const num = parseFloat(val);
+        if (isNaN(num)) return "0.00";
+        return num.toLocaleString('en-IN', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        });
+    }
+
+    /**
+     * Format a percentage value with 2 decimal places.
+     * e.g. 45.678 → "45.68 %"
+     */
+    formatPct(val) {
+        const num = parseFloat(val);
+        if (isNaN(num)) return "0.00 %";
+        return num.toFixed(2) + " %";
+    }
+
 }
 
 
