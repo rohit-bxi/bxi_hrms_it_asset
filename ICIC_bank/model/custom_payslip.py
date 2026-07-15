@@ -779,9 +779,10 @@ class HrPayslip(models.Model):
             raise ValidationError(
                 _("No valid payslips found.")
             )
+        total_records = transaction_count + 1
 
         header = (
-            f"FHR|{transaction_count}|"
+            f"FHR|{total_records}|"
             f"{payment_date}|"
             f"SALARY|"
             f"{total_amount:.2f}|"
