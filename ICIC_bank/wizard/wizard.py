@@ -129,8 +129,8 @@ class IciciReverseWizard(models.TransientModel):
         readonly=True,
     )
 
-    def action_reverse(self):
-        """Reverse ICICI Salary Payment."""
+    def action_check_status(self):
+        """Fetch ICICI Transaction Status."""
 
         self.ensure_one()
 
@@ -144,17 +144,28 @@ class IciciReverseWizard(models.TransientModel):
                 _("File Sequence Number is required.")
             )
 
-        if self.payslip_id.icici_payment_status != "processing":
+        if self.payslip_id.icici_payment_status not in (
+            "processing",
+            "paid",
+            "failed",
+        ):
             raise ValidationError(
                 _(
-                    "Only payments in Processing state can be reversed."
+                    "Transaction status can only be checked after salary processing has started."
                 )
             )
 
         _logger.info("=" * 80)
         _logger.info(
-            "ICICI Reverse Started : %s",
-            self.payslip_id,
+            "ICICI TRANSACTION STATUS CHECK STARTED"
+        )
+        _logger.info(
+            "Payslip : %s",
+            self.payslip_id.display_name,
+        )
+        _logger.info(
+            "File Sequence Number : %s",
+            self.file_seq_num,
         )
         _logger.info("=" * 80)
 
@@ -165,7 +176,7 @@ class IciciReverseWizard(models.TransientModel):
             )
 
             _logger.info(
-                "ICICI payment reversed successfully."
+                "ICICI Transaction Status fetched successfully."
             )
 
             return {
@@ -179,11 +190,11 @@ class IciciReverseWizard(models.TransientModel):
         except Exception as exc:
 
             _logger.exception(
-                "Unexpected ICICI Reverse Payment Error."
+                "Unexpected ICICI Transaction Status Error."
             )
 
             raise ValidationError(
                 _(
-                    "An unexpected error occurred while reversing the payment."
+                    "An unexpected error occurred while fetching the transaction status."
                 )
             ) from exc
