@@ -171,7 +171,7 @@ class IciciTransactionStatusWizard(models.TransientModel):
 
         try:
 
-            self.payslip_id.action_reverse_payment(
+            self.payslip_id.action_check_transaction_status(
                 self.file_seq_num
             )
 
