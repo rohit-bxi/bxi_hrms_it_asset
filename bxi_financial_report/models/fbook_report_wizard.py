@@ -150,7 +150,7 @@ class FbookReportWizard(models.TransientModel):
             booking_val = 0.0
             if 'project.contract.management' in self.env:
                 contracts = self.env['project.contract.management'].sudo().search([
-                    '|', ('company_id', 'in', company_ids), ('company_id', '=', False)
+                    ('company_id', 'in', company_ids)
                 ])
                 q_start_dt = fields.Date.from_string(qdef['start'])
                 q_end_dt = fields.Date.from_string(qdef['end'])
@@ -167,12 +167,12 @@ class FbookReportWizard(models.TransientModel):
             # Helper function to check if an invoice is linked to a contract
             def is_linked_to_contract(inv):
                 if inv.contract_id:
-                    if not inv.contract_id.company_id or inv.contract_id.company_id.id in company_ids:
+                    if inv.contract_id.company_id and inv.contract_id.company_id.id in company_ids:
                         return True
                 # Check via Many2many invoice_ids on contract model
                 linked_m2m = self.env['project.contract.management'].sudo().search([
                     ('invoice_ids', 'in', [inv.id]),
-                    '|', ('company_id', 'in', company_ids), ('company_id', '=', False)
+                    ('company_id', 'in', company_ids)
                 ])
                 if linked_m2m:
                     return True
@@ -181,7 +181,7 @@ class FbookReportWizard(models.TransientModel):
                 if sale_orders:
                     linked_contracts = self.env['project.contract.management'].sudo().search([
                         ('sale_order_ids', 'in', sale_orders.ids),
-                        '|', ('company_id', 'in', company_ids), ('company_id', '=', False)
+                        ('company_id', 'in', company_ids)
                     ])
                     if linked_contracts:
                         return True
@@ -386,7 +386,7 @@ class FbookReportWizard(models.TransientModel):
                         if sale_orders:
                             linked_contracts = self.env['project.contract.management'].sudo().search([
                                 ('sale_order_ids', 'in', sale_orders.ids),
-                                '|', ('company_id', 'in', company_ids), ('company_id', '=', False)
+                                ('company_id', 'in', company_ids)
                             ])
                             if contract.id in linked_contracts.ids:
                                 is_linked = True
@@ -578,11 +578,10 @@ class FbookReportWizard(models.TransientModel):
 
                 # Ongoing financial year:
                 # Exclude the current ongoing month from the average calculation
-                past_salaries = [(d, val) for d, val in salaries if d and d.strftime('%Y-%m') != current_ym]
-                past_months = {d.strftime('%Y-%m') for d, val in past_salaries if d}
-                total_past_sal = sum(val for d, val in past_salaries)
-                num_past_months = len(past_months)
-                plan_val = (total_past_sal / num_past_months * 12) if num_past_months > 0 else 0.0
+                past_salaries = [val for d, val in salaries if d and d.strftime('%Y-%m') < current_ym]
+                total_past_sal = sum(past_salaries)
+                elapsed_months = (today.year - start_date.year) * 12 + (today.month - start_date.month)
+                plan_val = (total_past_sal / elapsed_months * 12) if elapsed_months > 0 else actual_val
                 return plan_val, actual_val
 
             y1_plan, y1_actual = _calc_year_salary(y1_salaries, y1_start_date, y1_end_date)
