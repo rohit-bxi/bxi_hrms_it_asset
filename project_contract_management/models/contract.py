@@ -168,81 +168,10 @@ class ProjectContract(models.Model):
         string="Attachments"
     )
 
-    contract_quarter_ids = fields.One2many(
-        'contract.quarter.line',
-        'contract_id',
-        string="Quarter Breakdown"
-    )
-
-    total_quarter_amount = fields.Monetary(
-        currency_field='currency_id',
-        compute="_compute_total",
-        store=True
-    )
-
-    exceed_warning = fields.Boolean(
-        compute="_compute_total",
-        store=True
-    )
-
-    progress_percent = fields.Float(
-        string="Progress %",
-        compute="_compute_progress",
-        store=True
-    )
-
     probability = fields.Float(
         related="stage_id.probability",
         store=True
     )
-    progress_color = fields.Char(
-        compute="_compute_progress_color"
-    )
-
-    def _compute_progress_color(self):
-        for rec in self:
-            if rec.progress_percent > 100:
-                rec.progress_color = 'bg-danger'
-            elif rec.progress_percent > 70:
-                rec.progress_color = 'bg-warning'
-            else:
-                rec.progress_color = 'bg-success'
-
-    def action_auto_split_remaining(self):
-        for rec in self:
-            if not rec.contract_quarter_ids:
-                return
-
-            total = sum(rec.contract_quarter_ids.mapped('amount'))
-            remaining = rec.contract_amount - total
-
-            if remaining <= 0:
-                return
-
-            count = len(rec.contract_quarter_ids)
-            per_line = remaining / count
-
-            for line in rec.contract_quarter_ids:
-                line.amount += per_line
-
-    @api.depends('contract_quarter_ids.amount', 'contract_quarter_ids.billed', 'contract_amount')
-    def _compute_progress(self):
-        for rec in self:
-            billed_amount = sum(
-                line.amount for line in rec.contract_quarter_ids if line.billed
-            )
-
-            if rec.contract_amount:
-                rec.progress_percent = (billed_amount / rec.contract_amount) * 100
-            else:
-                rec.progress_percent = 0
-
-    @api.depends('contract_quarter_ids.amount', 'contract_amount')
-    def _compute_total(self):
-        for rec in self:
-            total = sum(rec.contract_quarter_ids.mapped('amount'))
-            rec.total_quarter_amount = total
-            rec.exceed_warning = total > rec.contract_amount
 
 
     def _read_group_stage_ids(self, stages, domain, order=None):
@@ -305,74 +234,34 @@ class ProjectContract(models.Model):
                 rec.contract_tenure = 0
 
     # =========================
-    # GENERATE DYNAMIC BREAKDOWN BASED ON BILLING CYCLE
+    # CREATE PROJECT ACTION
     # =========================
-    def action_generate_monthly_breakdown(self):
-        for rec in self:
-            rec.contract_quarter_ids.unlink()
-
-            if not rec.contract_start_date or not rec.contract_end_date:
-                continue
-
-            cycle = rec.billing_cycle or 'monthly'
-            dates = []
-
-            from dateutil.rrule import rrule, MONTHLY, YEARLY
-            start = rec.contract_start_date
-            end = rec.contract_end_date
-
-            if cycle == 'monthly':
-                dates = [d.date() for d in rrule(MONTHLY, dtstart=start, until=end)]
-            elif cycle == 'quarterly':
-                dates = [d.date() for d in rrule(MONTHLY, interval=3, dtstart=start, until=end)]
-            elif cycle == 'yearly':
-                dates = [d.date() for d in rrule(YEARLY, dtstart=start, until=end)]
-            elif cycle == 'bi_weekly':
-                from dateutil.rrule import WEEKLY
-                dates = [d.date() for d in rrule(WEEKLY, interval=2, dtstart=start, until=end)]
-            elif cycle == 'one_time':
-                dates = [start]
-            elif cycle == 'milestone':
-                count = rec.milestone_no or 1
-                if count <= 1:
-                    dates = [start]
-                else:
-                    days_diff = (end - start).days
-                    step = days_diff / (count - 1)
-                    from datetime import timedelta
-                    dates = [start + timedelta(days=int(i * step)) for i in range(count)]
+    def action_create_project(self):
+        self.ensure_one()
+        return {
+            'name': 'Create Project',
+            'type': 'ir.actions.act_window',
+            'res_model': 'project.project',
+            'view_mode': 'form',
+            'target': 'current',
+            'context': {
+                'default_name': self.name,
+                'default_partner_id': self.client_ids[0].id if self.client_ids else False,
+                'default_contract_ids': [(4, self.id)],
+            }
+        }
 
 
-            if not dates:
-                dates = [start]
+class ProjectProject(models.Model):
+    _inherit = 'project.project'
 
-            count = len(dates)
-            amount_per_line = rec.contract_amount / count if count > 0 else 0.0
-
-            for d in dates:
-                self.env['contract.quarter.line'].create({
-                    'contract_id': rec.id,
-                    'invoice_date': d,
-                    'amount': amount_per_line,
-                })
-
-
-
-class ContractQuarterLine(models.Model):
-    _name = 'contract.quarter.line'
-    _description = 'Contract Quarter Line'
-
-    contract_id = fields.Many2one('project.contract.management', ondelete='cascade')
-    invoice_date = fields.Date("Invoice Date", required=True)
-    currency_id = fields.Many2one(
-        'res.currency',
-        related='contract_id.currency_id',
-        store=True,
-        readonly=True
+    contract_ids = fields.Many2many(
+        'project.contract.management',
+        'contract_project_rel',
+        'project_id',
+        'contract_id',
+        string="Contracts"
     )
-    amount = fields.Monetary("Invoice Value", currency_field='currency_id', required=True)
-    billed = fields.Boolean("Billed")
-
 
 
 class AccountMove(models.Model):
