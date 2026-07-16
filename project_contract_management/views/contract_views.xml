@@ -46,8 +46,6 @@
                 <field name="currency_id"/>
                 <field name="contract_start_date"/>
                 <field name="contract_end_date"/>
-                <field name="progress_percent"/>
-                <field name="progress_color"/>
                 <field name="probability"/>
 
                 <templates>
@@ -96,22 +94,7 @@
                                     <field name="contract_end_date"/>
                                 </div>
 
-                                <!-- PROGRESS -->
-                                <div>
 
-                                    <div class="d-flex justify-content-between small mb-1">
-                                        <span>Progress</span>
-                                        <span><field name="progress_percent"/>%</span>
-                                    </div>
-
-                                    <div class="progress contract_progress">
-                                        <div t-att-class="'progress-bar ' + record.progress_color.raw_value"
-                                             role="progressbar"
-                                             t-att-style="'width: %s%%' % record.progress_percent.raw_value">
-                                        </div>
-                                    </div>
-
-                                </div>
 
                             </div>
 
@@ -133,11 +116,11 @@
                 <header>
                     <field name="stage_id" widget="statusbar" options="{'clickable': True}"/>
 
-                    <button name="action_generate_monthly_breakdown"
+                    <button name="action_create_project"
                             type="object"
-                            string="Generate Breakdown"
+                            string="Create Project"
                             class="btn-primary"
-                            icon="fa-calculator"/>
+                            icon="fa-plus"/>
 
                 </header>
 
@@ -235,39 +218,6 @@
                         </page>
 
 
-                        <page string="Contract Amount Breakdown">
-
-                            <div class="alert alert-info" role="alert">
-                                Click the "Generate Breakdown" button to auto-create invoice breakdown.
-                            </div>
-
-
-                            <div class="mb-2">
-                                <button name="action_auto_split_remaining"
-                                        type="object"
-                                        string="Auto Balance"
-                                        class="btn btn-secondary"
-                                        icon="fa-balance-scale"/>
-                            </div>
-
-                            <field name="contract_quarter_ids">
-                                <list editable="bottom">
-                                    <field name="invoice_date"/>
-                                    <field name="amount"/>
-                                    <field name="billed"/>
-                                </list>
-                            </field>
-
-
-                            <group>
-                                <field name="total_quarter_amount" readonly="1"/>
-
-                                <div class="text-danger" invisible="not exceed_warning">
-                                    ⚠ Total exceeds Contract Amount!
-                                </div>
-                            </group>
-
-                        </page>
 
                     </notebook>
 

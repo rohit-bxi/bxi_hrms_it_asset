@@ -141,34 +141,25 @@ class FbookReportWizard(models.TransientModel):
         }
 
         running_dso_amount = 0.0
+        running_dso_days = 0.0
         for qdef in quarters_def:
             year_key = qdef['year']
             q_key = qdef['q']
 
-            # 1. Bookings (Based on contract quarter breakdown if present, fallback to start date) - COMMENTED OUT FOR NOW
+            # 1. Bookings (Based on contract quarter breakdown if present, fallback to start date)
             booking_val = 0.0
-            # if 'project.contract.management' in self.env:
-            #     contracts = self.env['project.contract.management'].search([
-            #         ('company_id', 'in', company_ids)
-            #     ])
-            #     q_start_dt = fields.Date.from_string(qdef['start'])
-            #     q_end_dt = fields.Date.from_string(qdef['end'])
-            #     for contract in contracts:
-            #
-            #         if contract.contract_quarter_ids:
-            #             q_lines = contract.contract_quarter_ids.filtered(
-            #                 lambda l: l.invoice_date and q_start_dt <= l.invoice_date <= q_end_dt
-            #             )
-            #             for line in q_lines:
-            #                 booking_val += contract.currency_id._convert(
-            #                     line.amount, target_currency, get_rate_company(contract), fields.Date.today()
-            #                 )
-            #
-            #         else:
-            #             if contract.contract_start_date and q_start_dt <= contract.contract_start_date <= q_end_dt:
-            #                 booking_val += contract.currency_id._convert(
-            #                     contract.contract_amount, target_currency, get_rate_company(contract), fields.Date.today()
-            #                 )
+            if 'project.contract.management' in self.env:
+                contracts = self.env['project.contract.management'].sudo().search([
+                    '|', ('company_id', 'in', company_ids), ('company_id', '=', False)
+                ])
+                q_start_dt = fields.Date.from_string(qdef['start'])
+                q_end_dt = fields.Date.from_string(qdef['end'])
+                for contract in contracts:
+
+                    if contract.contract_start_date and q_start_dt <= contract.contract_start_date <= q_end_dt:
+                        booking_val += contract.currency_id._convert(
+                            contract.contract_amount, target_currency, get_rate_company(contract), fields.Date.today()
+                        )
 
 
 
@@ -226,9 +217,13 @@ class FbookReportWizard(models.TransientModel):
 
 
             # 4. DSO — Split into DSO (Days) and DSO (Amount)
-            dso_days_val = 0.0
             running_dso_amount += billed_val - actual_val
             dso_amount_val = running_dso_amount
+
+            running_dso_days += ((billed_val - actual_val) / billed_val * 90) if billed_val > 0 else 0.0
+            if running_dso_days < 0.0:
+                running_dso_days = 0.0
+            dso_days_val = running_dso_days
 
 
 
@@ -297,7 +292,7 @@ class FbookReportWizard(models.TransientModel):
                 'booking': target_currency.round(booking_val),
                 'billed': target_currency.round(billed_val),
                 'actual': target_currency.round(actual_val),
-                'dso_days': round(dso_days_val, 2),
+                'dso_days': int(round(dso_days_val)),
                 'dso_amount': target_currency.round(dso_amount_val),
                 'expenses': target_currency.round(expenses_val),
                 'profit': target_currency.round(profit_val),
@@ -309,7 +304,7 @@ class FbookReportWizard(models.TransientModel):
             sum_booking = sum(data[y][q]['booking'] for q in ['q1', 'q2', 'q3', 'q4'])
             sum_billed = sum(data[y][q]['billed'] for q in ['q1', 'q2', 'q3', 'q4'])
             sum_actual = sum(data[y][q]['actual'] for q in ['q1', 'q2', 'q3', 'q4'])
-            avg_dso_days = sum(data[y][q]['dso_days'] for q in ['q1', 'q2', 'q3', 'q4']) / 4.0
+            avg_dso_days = data[y]['q4']['dso_days']
             sum_dso_amount = data[y]['q4']['dso_amount']
             sum_expenses = sum(data[y][q]['expenses'] for q in ['q1', 'q2', 'q3', 'q4'])
             total_profit = sum_billed - sum_expenses
@@ -319,7 +314,7 @@ class FbookReportWizard(models.TransientModel):
                 'booking': target_currency.round(sum_booking),
                 'billed': target_currency.round(sum_billed),
                 'actual': target_currency.round(sum_actual),
-                'dso_days': round(avg_dso_days, 2),
+                'dso_days': int(round(avg_dso_days)),
                 'dso_amount': target_currency.round(sum_dso_amount),
                 'expenses': target_currency.round(sum_expenses),
                 'profit': target_currency.round(total_profit),
@@ -359,6 +354,15 @@ class FbookReportWizard(models.TransientModel):
 
                 y1_booking = 0.0
                 y2_booking = 0.0
+
+                if contract.contract_start_date:
+                    val_converted = contract.currency_id._convert(
+                        contract.contract_amount, target_currency, get_rate_company(contract), fields.Date.today()
+                    )
+                    if y1_start_date <= contract.contract_start_date <= y1_end_date:
+                        y1_booking += val_converted
+                    elif y2_start_date <= contract.contract_start_date <= y2_end_date:
+                        y2_booking += val_converted
 
                 # Billed Y1 & Y2
                 y1_billed = 0.0
@@ -440,8 +444,12 @@ class FbookReportWizard(models.TransientModel):
                     'contract_value': target_currency.round(pd['contract_value']),
                     'y1_booking': target_currency.round(pd['y1_booking']),
                     'y1_billed': target_currency.round(pd['y1_billed']),
+                    'y1_expenses': 0.0,
+                    'y1_margin': 0.0,
                     'y2_booking': target_currency.round(pd['y2_booking']),
-                    'y2_billed': target_currency.round(pd['y2_billed'])
+                    'y2_billed': target_currency.round(pd['y2_billed']),
+                    'y2_expenses': 0.0,
+                    'y2_margin': 0.0
                 })
 
         total_contract_value = sum(c['contract_value'] for c in contracts_data)
@@ -539,6 +547,8 @@ class FbookReportWizard(models.TransientModel):
                 ('date_to', '>=', y1_start_date),
                 ('date_to', '<=', y2_end_date),
             ])
+            y1_salaries = []
+            y2_salaries = []
             for slip in payslips:
                 y_key = _get_y_key(slip.date_to)
                 if not y_key:
@@ -553,8 +563,33 @@ class FbookReportWizard(models.TransientModel):
                 conv = slip.company_id.currency_id._convert(
                     net_amt, target_currency, get_rate_company(slip), slip.date_to or fields.Date.today()
                 )
-                # Salary Plan and Actual values are the same
-                _add_expense_val('Employee(salary)', y_key, conv, conv)
+                if y_key == 'y1':
+                    y1_salaries.append((slip.date_to, conv))
+                elif y_key == 'y2':
+                    y2_salaries.append((slip.date_to, conv))
+
+            today = fields.Date.today()
+            current_ym = today.strftime('%Y-%m')
+
+            def _calc_year_salary(salaries, start_date, end_date):
+                actual_val = sum(val for date_val, val in salaries)
+                if end_date < today:
+                    return actual_val, actual_val
+
+                # Ongoing financial year:
+                # Exclude the current ongoing month from the average calculation
+                past_salaries = [(d, val) for d, val in salaries if d and d.strftime('%Y-%m') != current_ym]
+                past_months = {d.strftime('%Y-%m') for d, val in past_salaries if d}
+                total_past_sal = sum(val for d, val in past_salaries)
+                num_past_months = len(past_months)
+                plan_val = (total_past_sal / num_past_months * 12) if num_past_months > 0 else 0.0
+                return plan_val, actual_val
+
+            y1_plan, y1_actual = _calc_year_salary(y1_salaries, y1_start_date, y1_end_date)
+            y2_plan, y2_actual = _calc_year_salary(y2_salaries, y2_start_date, y2_end_date)
+
+            _add_expense_val('Employee(salary)', 'y1', y1_plan, y1_actual)
+            _add_expense_val('Employee(salary)', 'y2', y2_plan, y2_actual)
 
         # Populate expenses_data
         for cat_label in sorted(categories_dict.keys()):
@@ -592,6 +627,10 @@ class FbookReportWizard(models.TransientModel):
             'total_y1_billed': target_currency.round(total_y1_billed),
             'total_y2_booking': target_currency.round(total_y2_booking),
             'total_y2_billed': target_currency.round(total_y2_billed),
+            'total_y1_expenses': 0.0,
+            'total_y1_margin': 0.0,
+            'total_y2_expenses': 0.0,
+            'total_y2_margin': 0.0,
             'expenses_data': expenses_data,
             'salary_data': salary_data,
             'total_exp_y1_booked': total_exp_y1_booked,
