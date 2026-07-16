@@ -153,9 +153,21 @@
             <div class="alert alert-info" style="margin-top: 10px; margin-bottom: 15px; padding: 8px 12px; border-left: 4px solid #3b82f6; background-color: #eff6ff; color: #1e3a8a; border-radius: 4px; font-size: 13px; font-weight: 500; display: inline-block;">
                 <i class="fa fa-info-circle" style="margin-right: 6px;"></i>
                 <strong>Exchange Rates Used:</strong>
-                <span style="margin-left: 12px;">AED - INR (<t t-esc="state.report_data.y1_short_label"/>: 24.5 | <t t-esc="state.report_data.y2_short_label"/>: 25.6)</span>
+                <span style="margin-left: 12px;">
+                    AED - INR (
+                    <span style="color: #dc2626;"><t t-esc="state.report_data.y1_short_label"/>: 24.5</span>
+                    <span style="margin-left: 4px; margin-right: 4px; color: #93c5fd;">|</span>
+                    <span style="color: #16a34a;"><t t-esc="state.report_data.y2_short_label"/>: 25.6</span>
+                    )
+                </span>
                 <span style="margin-left: 16px; margin-right: 16px; color: #93c5fd;">|</span>
-                <span>USD - INR (<t t-esc="state.report_data.y1_short_label"/>: 90 | <t t-esc="state.report_data.y2_short_label"/>: 93)</span>
+                <span>
+                    USD - INR (
+                    <span style="color: #dc2626;"><t t-esc="state.report_data.y1_short_label"/>: 90</span>
+                    <span style="margin-left: 4px; margin-right: 4px; color: #93c5fd;">|</span>
+                    <span style="color: #16a34a;"><t t-esc="state.report_data.y2_short_label"/>: 93</span>
+                    )
+                </span>
             </div>
 
 
@@ -346,17 +358,11 @@
             <div class="fbook-title" style="margin-top: 40px; margin-bottom: 16px;">Revenue</div>
             <table class="fbook-table">
                 <thead>
-                    <!-- Row 1: Header ranges -->
+                    <!-- Row 1: FY Labels -->
                     <tr>
-                        <th colspan="5" class="main-header" style="text-align: left;">Details</th>
-                        <th colspan="2" class="main-header" style="text-align: center;"><t t-esc="state.report_data.y1_date_range_label"/></th>
-                        <th colspan="2" class="main-header" style="text-align: center;"><t t-esc="state.report_data.y2_date_range_label"/></th>
-                    </tr>
-                    <!-- Row 2: FY Labels -->
-                    <tr>
-                        <th colspan="5" class="sub-main-header" style="text-align: left; background: #e2e8f0; color: #1e293b;">Contract Metadata</th>
-                        <th colspan="2" class="sub-main-header" style="text-align: center;"><t t-esc="state.report_data.y1_short_label"/></th>
-                        <th colspan="2" class="sub-main-header" style="text-align: center;"><t t-esc="state.report_data.y2_short_label"/></th>
+                        <th colspan="5" class="main-header" style="text-align: left;">Contract</th>
+                        <th colspan="2" class="main-header" style="text-align: center;"><t t-esc="state.report_data.year1_label"/></th>
+                        <th colspan="2" class="main-header" style="text-align: center;"><t t-esc="state.report_data.year2_label"/></th>
                     </tr>
                     <!-- Row 3: Column names -->
                     <tr>
@@ -406,17 +412,11 @@
             <div class="fbook-title" style="margin-top: 40px; margin-bottom: 16px;">Expense</div>
             <table class="fbook-table">
                 <thead>
-                    <!-- Row 1: Header ranges -->
+                    <!-- Row 1: FY Labels -->
                     <tr>
-                        <th colspan="1" class="main-header" style="text-align: left;">Details</th>
-                        <th colspan="2" class="main-header" style="text-align: center;"><t t-esc="state.report_data.y1_date_range_label"/></th>
-                        <th colspan="2" class="main-header" style="text-align: center;"><t t-esc="state.report_data.y2_date_range_label"/></th>
-                    </tr>
-                    <!-- Row 2: FY Labels -->
-                    <tr>
-                        <th colspan="1" class="sub-main-header" style="text-align: left; background: #e2e8f0; color: #1e293b;">Expense Metadata</th>
-                        <th colspan="2" class="sub-main-header" style="text-align: center;"><t t-esc="state.report_data.y1_short_label"/></th>
-                        <th colspan="2" class="sub-main-header" style="text-align: center;"><t t-esc="state.report_data.y2_short_label"/></th>
+                        <th colspan="1" class="main-header" style="text-align: left;">Expense</th>
+                        <th colspan="2" class="main-header" style="text-align: center;"><t t-esc="state.report_data.year1_label"/></th>
+                        <th colspan="2" class="main-header" style="text-align: center;"><t t-esc="state.report_data.year2_label"/></th>
                     </tr>
                     <!-- Row 3: Column names -->
                     <tr>
