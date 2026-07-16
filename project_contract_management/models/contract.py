@@ -11,55 +11,147 @@ class ProjectContract(models.Model):
 
     lead_id = fields.Many2one(
         'crm.lead',
-        string='Opportunity'
+        string='Opportunity',
+        tracking=True
     )
+
+
+
 
     sale_order_ids = fields.Many2many(
         'sale.order',
         'contract_sale_order_rel',
         'contract_id',
         'sale_order_id',
-        string="Sales Orders"
+        string="Sales Orders",
+        tracking=True
     )
+
     
     project_ids = fields.Many2many(
         'project.project',
         'contract_project_rel',
         'contract_id',
         'project_id',
-        string="Projects"
+        string="Projects",
+        tracking=True
     )
+
 
     client_ids = fields.Many2many(
         'res.partner',
         'contract_partner_rel',
         'contract_id',
         'partner_id',
-        string="Clients"
+        string="Clients",
+        tracking=True
     )
+
+
+
     project_count = fields.Integer(compute="_compute_counts")
     client_count = fields.Integer(compute="_compute_counts")
 
-    contract_start_date = fields.Date("Start Date")
-    contract_end_date = fields.Date("End Date")
+    contract_start_date = fields.Date("Start Date", tracking=True)
+
+    contract_end_date = fields.Date("End Date", tracking=True)
+
+    invoice_ids = fields.Many2many(
+        'account.move',
+        'contract_invoice_rel',
+        'contract_id',
+        'invoice_id',
+        string="Linked Invoices",
+        domain="[('move_type', '=', 'out_invoice')]",
+        tracking=True
+    )
+
+    invoice_count = fields.Integer(compute="_compute_invoice_count", string="Invoice Count")
+
+    def _compute_invoice_count(self):
+        for rec in self:
+            direct_invoices = self.env['account.move'].search([('contract_id', '=', rec.id)])
+            so_invoices = rec.sale_order_ids.invoice_ids
+            m2m_invoices = rec.invoice_ids
+            rec.invoice_count = len(direct_invoices | so_invoices | m2m_invoices)
+
+    def action_view_invoices(self):
+        self.ensure_one()
+        direct_invoices = self.env['account.move'].search([('contract_id', '=', self.id)])
+        so_invoices = self.sale_order_ids.invoice_ids
+        m2m_invoices = self.invoice_ids
+        all_invoices = direct_invoices | so_invoices | m2m_invoices
+        return {
+            'name': 'Invoices',
+            'type': 'ir.actions.act_window',
+            'res_model': 'account.move',
+            'view_mode': 'list,form',
+            'domain': [('id', 'in', all_invoices.ids)],
+            'context': {
+                'default_move_type': 'out_invoice',
+                'default_contract_id': self.id,
+                'default_partner_id': self.client_ids[0].id if self.client_ids else False,
+                'default_currency_id': self.currency_id.id if self.currency_id else False,
+            }
+        }
+
+
+
 
     contract_tenure = fields.Float("Tenure (Years)", compute="_compute_tenure", store=True)
 
-    contract_amount = fields.Float("Contract Amount")
-    milestone_no = fields.Integer("No. Of Milestones")
-    currency_id = fields.Many2one('res.currency', default=lambda self: self.env.company.currency_id)
+    company_id = fields.Many2one(
+        'res.company',
+        string='Company',
+        default=lambda self: self.env.company,
+        tracking=True
+    )
+
+
+    contract_amount = fields.Monetary("Contract Amount", currency_field='currency_id', tracking=True)
+    industry_id = fields.Many2one('res.partner.industry', string="Industry", tracking=True)
+
+    milestone_no = fields.Integer("No. Of Milestones", tracking=True)
+
+    currency_id = fields.Many2one(
+        'res.currency',
+        string='Currency',
+        default=lambda self: self.env.company.currency_id,
+        required=True
+    )
 
     contract_type = fields.Selection([
-        ('fixed', 'Fixed'),
-        ('tnm', 'Time & Material')
-    ], string="Contract Type")
+        ('fixed', 'Fixed Price (Lump Sum)'),
+        ('tnm', 'Time & Material (T&M)'),
+        ('retainer', 'Retainer / Support (SLA)'),
+        ('staff_aug', 'Staff Augmentation'),
+        ('cost_plus', 'Cost Plus / Reimbursable'),
+        ('saas', 'SaaS / Subscription')
+    ], string="Contract Type", tracking=True)
+
 
     billing_cycle = fields.Selection([
         ('monthly', 'Monthly'),
         ('quarterly', 'Quarterly'),
         ('yearly', 'Yearly'),
         ('milestone', 'Milestone'),
-    ], string="Billing Cycle")
+        ('bi_weekly', 'Bi-weekly'),
+        ('one_time', 'One-time / Upfront')
+    ], string="Billing Cycle", tracking=True)
+
+    @api.onchange('contract_type')
+    def _onchange_contract_type(self):
+        if self.contract_type:
+            if self.contract_type == 'fixed':
+                self.billing_cycle = 'milestone'
+            elif self.contract_type == 'saas':
+                self.billing_cycle = 'yearly'
+            elif self.contract_type in ('tnm', 'staff_aug', 'cost_plus', 'retainer'):
+                self.billing_cycle = 'monthly'
+
+
+
+
 
     stage_id = fields.Many2one(
         'project.contract.stage',
@@ -82,7 +174,8 @@ class ProjectContract(models.Model):
         string="Quarter Breakdown"
     )
 
-    total_quarter_amount = fields.Float(
+    total_quarter_amount = fields.Monetary(
+        currency_field='currency_id',
         compute="_compute_total",
         store=True
     )
@@ -212,32 +305,57 @@ class ProjectContract(models.Model):
                 rec.contract_tenure = 0
 
     # =========================
-    # GENERATE QUARTERS
+    # GENERATE DYNAMIC BREAKDOWN BASED ON BILLING CYCLE
     # =========================
-    def action_generate_quarters(self):
+    def action_generate_monthly_breakdown(self):
         for rec in self:
             rec.contract_quarter_ids.unlink()
 
             if not rec.contract_start_date or not rec.contract_end_date:
                 continue
 
-            total_years = int(rec.contract_tenure)
-            if total_years <= 0:
-                total_years = 1
+            cycle = rec.billing_cycle or 'monthly'
+            dates = []
 
-            yearly_amount = rec.contract_amount / total_years
-            quarterly_amount = yearly_amount / 4
+            from dateutil.rrule import rrule, MONTHLY, YEARLY
+            start = rec.contract_start_date
+            end = rec.contract_end_date
 
-            year = rec.contract_start_date.year
+            if cycle == 'monthly':
+                dates = [d.date() for d in rrule(MONTHLY, dtstart=start, until=end)]
+            elif cycle == 'quarterly':
+                dates = [d.date() for d in rrule(MONTHLY, interval=3, dtstart=start, until=end)]
+            elif cycle == 'yearly':
+                dates = [d.date() for d in rrule(YEARLY, dtstart=start, until=end)]
+            elif cycle == 'bi_weekly':
+                from dateutil.rrule import WEEKLY
+                dates = [d.date() for d in rrule(WEEKLY, interval=2, dtstart=start, until=end)]
+            elif cycle == 'one_time':
+                dates = [start]
+            elif cycle == 'milestone':
+                count = rec.milestone_no or 1
+                if count <= 1:
+                    dates = [start]
+                else:
+                    days_diff = (end - start).days
+                    step = days_diff / (count - 1)
+                    from datetime import timedelta
+                    dates = [start + timedelta(days=int(i * step)) for i in range(count)]
 
-            for y in range(total_years):
-                for q in range(1, 5):
-                    self.env['contract.quarter.line'].create({
-                        'contract_id': rec.id,
-                        'year': year + y,
-                        'quarter': f'Q{q}',
-                        'amount': quarterly_amount,
-                    })
+
+            if not dates:
+                dates = [start]
+
+            count = len(dates)
+            amount_per_line = rec.contract_amount / count if count > 0 else 0.0
+
+            for d in dates:
+                self.env['contract.quarter.line'].create({
+                    'contract_id': rec.id,
+                    'invoice_date': d,
+                    'amount': amount_per_line,
+                })
+
 
 
 class ContractQuarterLine(models.Model):
@@ -245,14 +363,31 @@ class ContractQuarterLine(models.Model):
     _description = 'Contract Quarter Line'
 
     contract_id = fields.Many2one('project.contract.management', ondelete='cascade')
-
-    year = fields.Integer("Year")
-    quarter = fields.Selection([
-        ('Q1', 'Q1'),
-        ('Q2', 'Q2'),
-        ('Q3', 'Q3'),
-        ('Q4', 'Q4'),
-    ])
-
-    amount = fields.Float("Amount")
+    invoice_date = fields.Date("Invoice Date", required=True)
+    currency_id = fields.Many2one(
+        'res.currency',
+        related='contract_id.currency_id',
+        store=True,
+        readonly=True
+    )
+    amount = fields.Monetary("Invoice Value", currency_field='currency_id', required=True)
     billed = fields.Boolean("Billed")
+
+
+
+class AccountMove(models.Model):
+    _inherit = 'account.move'
+
+    contract_id = fields.Many2one(
+        'project.contract.management',
+        string="Contract"
+    )
+
+    @api.onchange('contract_id')
+    def _onchange_contract_id(self):
+        if self.contract_id:
+            if self.contract_id.client_ids:
+                self.partner_id = self.contract_id.client_ids[0]
+            if self.contract_id.currency_id:
+                self.currency_id = self.contract_id.currency_id
+
