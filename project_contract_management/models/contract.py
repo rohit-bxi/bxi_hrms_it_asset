@@ -14,6 +14,11 @@ class ProjectContract(models.Model):
         string='Opportunity',
         tracking=True
     )
+    service_line_id = fields.Many2one(
+        'project.contract.service.line',
+        string='Service Line',
+        tracking=True
+    )
 
 
 
@@ -279,4 +284,14 @@ class AccountMove(models.Model):
                 self.partner_id = self.contract_id.client_ids[0]
             if self.contract_id.currency_id:
                 self.currency_id = self.contract_id.currency_id
+
+
+class ProjectContractServiceLine(models.Model):
+    _name = 'project.contract.service.line'
+    _description = 'Contract Service Line'
+    _order = 'sequence, id'
+
+    name = fields.Char("Service Line", required=True)
+    active = fields.Boolean("Active", default=True)
+    sequence = fields.Integer("Sequence", default=10)
 

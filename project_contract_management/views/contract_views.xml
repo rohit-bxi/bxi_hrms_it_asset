@@ -15,6 +15,7 @@
                 <field name="lead_id" string="Opportunity"/>
                 <field name="client_ids" widget="many2many_tags"/>
                 <field name="industry_id"/>
+                <field name="service_line_id" options="{'no_create': True, 'no_open': True, 'no_edit': True, 'no_delete': True}"/>
                 <field name="contract_type"/>
                 <field name="billing_cycle"/>
                 <field name="contract_start_date"/>
@@ -166,6 +167,7 @@
                         <group string="Basic Classification">
                             <field name="lead_id"/>
                             <field name="industry_id" required="1"/>
+                            <field name="service_line_id" options="{'no_create': True, 'no_open': True, 'no_edit': True, 'no_delete': True}"/>
                             <field name="client_ids" widget="many2many_tags" required="1"/>
                             <field name="project_ids" widget="many2many_tags"/>
                             <field name="sale_order_ids" widget="many2many_tags"/>

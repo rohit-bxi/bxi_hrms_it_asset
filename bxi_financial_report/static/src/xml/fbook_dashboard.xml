@@ -67,6 +67,22 @@
                 font-weight: 700;
                 border: 1px solid #1e293b;
             }
+            .fbook-table th.fbook-header-cy {
+                text-align: center;
+                background: #1d4ed8;
+                color: #ffffff;
+                font-size: 14px;
+                font-weight: 700;
+                border: 1px solid #172554;
+            }
+            .fbook-table th.fbook-header-fy {
+                text-align: center;
+                background: #475569;
+                color: #ffffff;
+                font-size: 14px;
+                font-weight: 700;
+                border: 1px solid #334155;
+            }
             .fbook-table th.sub-main-header {
                 text-align: center;
                 background: #e2e8f0;
@@ -99,6 +115,7 @@
                 border-right: none;
                 border-top: none;
                 border-bottom: none;
+                border-top: none;
             }
             .fbook-table td.total-cell {
                 font-weight: bold;
@@ -178,10 +195,10 @@
                         <th class="main-header" style="text-align: left;">
                             <t t-esc="state.report_data.currency_symbol"/>
                         </th>
-                        <th colspan="5" class="main-header" style="color: #f87171;">
+                        <th colspan="5" t-att-class="state.report_data.y1_prefix == 'CY' ? 'fbook-header-cy' : 'fbook-header-fy'">
                             <t t-esc="state.report_data.year1_label"/>
                         </th>
-                        <th colspan="5" class="main-header" style="color: #4ade80;">
+                        <th colspan="5" t-att-class="state.report_data.y2_prefix == 'CY' ? 'fbook-header-cy' : 'fbook-header-fy'">
                             <t t-esc="state.report_data.year2_label"/>
                         </th>
                     </tr>
@@ -357,8 +374,8 @@
                     <!-- Row 1: FY Labels -->
                     <tr>
                         <th colspan="5" class="main-header" style="text-align: left;"><t t-esc="state.report_data.currency_symbol"/></th>
-                        <th colspan="4" class="main-header" style="text-align: center; color: #f87171;"><t t-esc="state.report_data.year1_label"/></th>
-                        <th colspan="4" class="main-header" style="text-align: center; color: #4ade80;"><t t-esc="state.report_data.year2_label"/></th>
+                        <th colspan="4" t-att-class="state.report_data.y1_prefix == 'CY' ? 'fbook-header-cy' : 'fbook-header-fy'"><t t-esc="state.report_data.year1_label"/></th>
+                        <th colspan="4" t-att-class="state.report_data.y2_prefix == 'CY' ? 'fbook-header-cy' : 'fbook-header-fy'"><t t-esc="state.report_data.year2_label"/></th>
                     </tr>
                     <!-- Row 3: Column names -->
                     <tr>
@@ -370,11 +387,11 @@
                         <th style="text-align: right; width: 90px;">Booking</th>
                         <th style="text-align: right; width: 90px;">Billed</th>
                         <th style="text-align: right; width: 90px;">Expenses</th>
-                        <th style="text-align: right; width: 100px;">Profit Margin (%)</th>
+                        <th style="text-align: right; width: 100px;">GM(%)</th>
                         <th style="text-align: right; width: 90px;">Booking</th>
                         <th style="text-align: right; width: 90px;">Billed</th>
                         <th style="text-align: right; width: 90px;">Expenses</th>
-                        <th style="text-align: right; width: 100px;">Profit Margin (%)</th>
+                        <th style="text-align: right; width: 100px;">GM(%)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -423,8 +440,8 @@
                     <!-- Row 1: FY Labels -->
                     <tr>
                         <th colspan="1" class="main-header" style="text-align: left;"><t t-esc="state.report_data.currency_symbol"/></th>
-                        <th colspan="2" class="main-header" style="text-align: center; color: #f87171;"><t t-esc="state.report_data.year1_label"/></th>
-                        <th colspan="2" class="main-header" style="text-align: center; color: #4ade80;"><t t-esc="state.report_data.year2_label"/></th>
+                        <th colspan="2" t-att-class="state.report_data.y1_prefix == 'CY' ? 'fbook-header-cy' : 'fbook-header-fy'"><t t-esc="state.report_data.year1_label"/></th>
+                        <th colspan="2" t-att-class="state.report_data.y2_prefix == 'CY' ? 'fbook-header-cy' : 'fbook-header-fy'"><t t-esc="state.report_data.year2_label"/></th>
                     </tr>
                     <!-- Row 3: Column names -->
                     <tr>

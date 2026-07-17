@@ -80,6 +80,10 @@ class FbookReportWizard(models.TransientModel):
         y2_start = int(start_financial_year)
         y1_start = y2_start - 1
 
+        from datetime import date
+        today_date = date.today()
+        current_fy_start = today_date.year - 1 if today_date.month < 4 else today_date.year
+
 
         # We construct dates for 2 financial years side-by-side: April 1st to March 31st.
         quarters_def = [
@@ -304,8 +308,22 @@ class FbookReportWizard(models.TransientModel):
             sum_booking = sum(data[y][q]['booking'] for q in ['q1', 'q2', 'q3', 'q4'])
             sum_billed = sum(data[y][q]['billed'] for q in ['q1', 'q2', 'q3', 'q4'])
             sum_actual = sum(data[y][q]['actual'] for q in ['q1', 'q2', 'q3', 'q4'])
-            avg_dso_days = data[y]['q4']['dso_days']
-            sum_dso_amount = data[y]['q4']['dso_amount']
+
+            # Point-in-time DSO totals default to q4
+            dso_q = 'q4'
+            y_start = y1_start if y == 'y1' else y2_start
+            if y_start == current_fy_start:
+                if today_date.month in [4, 5, 6]:
+                    dso_q = 'q1'
+                elif today_date.month in [7, 8, 9]:
+                    dso_q = 'q2'
+                elif today_date.month in [10, 11, 12]:
+                    dso_q = 'q3'
+                else:
+                    dso_q = 'q4'
+
+            avg_dso_days = data[y][dso_q]['dso_days']
+            sum_dso_amount = data[y][dso_q]['dso_amount']
             sum_expenses = sum(data[y][q]['expenses'] for q in ['q1', 'q2', 'q3', 'q4'])
             total_profit = sum_billed - sum_expenses
             total_margin = (total_profit / sum_billed * 100) if sum_billed > 0 else 0.0
@@ -610,15 +628,20 @@ class FbookReportWizard(models.TransientModel):
         total_sal_y1_booked = 0.0
         total_sal_y2_booked = 0.0
 
+        y1_prefix = 'CY' if y1_start == current_fy_start else 'FY'
+        y2_prefix = 'CY' if y2_start == current_fy_start else 'FY'
+
         return {
             'company_name': company.name,
             'currency_symbol': f"{target_currency.symbol} {target_currency.name}" if target_currency.symbol else target_currency.name,
-            'year1_label': f'FY{y1_start - 2000 + 1} - {y1_start} -{y1_start + 1}',
-            'year2_label': f'FY{y2_start - 2000 + 1} - {y2_start} -{y2_start + 1}',
+            'year1_label': f'{y1_prefix}{y1_start - 2000 + 1} - {y1_start} -{y1_start + 1}',
+            'year2_label': f'{y2_prefix}{y2_start - 2000 + 1} - {y2_start} -{y2_start + 1}',
+            'y1_prefix': y1_prefix,
+            'y2_prefix': y2_prefix,
             'y1_date_range_label': f'1st Apr-{y1_start-2000} to 31st Mar-{y1_start-2000+1}',
-            'y1_short_label': f'FY{y1_start - 2000 + 1}',
+            'y1_short_label': f'{y1_prefix}{y1_start - 2000 + 1}',
             'y2_date_range_label': f'1st Apr-{y2_start-2000} to 31st Mar-{y2_start-2000+1}',
-            'y2_short_label': f'FY{y2_start - 2000 + 1}',
+            'y2_short_label': f'{y2_prefix}{y2_start - 2000 + 1}',
             'data': data,
             'contracts_data': contracts_data,
             'total_contract_value': target_currency.round(total_contract_value),
