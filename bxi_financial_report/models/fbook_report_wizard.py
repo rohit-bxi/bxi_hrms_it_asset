@@ -229,6 +229,12 @@ class FbookReportWizard(models.TransientModel):
                 running_dso_days = 0.0
             dso_days_val = running_dso_days
 
+            # If the quarter has not started yet relative to today's date, set point-in-time DSO to 0
+            q_start_date = fields.Date.from_string(qdef['start'])
+            if q_start_date > today_date:
+                dso_amount_val = 0.0
+                dso_days_val = 0.0
+
 
 
 
