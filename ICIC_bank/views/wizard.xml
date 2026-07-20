@@ -47,4 +47,53 @@
         </form>
         </field>
     </record>
+
+    <record id="icici_transaction_status_wizard_expense" model="ir.ui.view">
+        <field name="name">icici.transaction.status.wizard.expense.form</field>
+        <field name="model">icici.transaction.status.wizard.expense</field>
+        <field name="arch" type="xml">
+        <form string="Transaction Status">
+            <group>
+                <field name="expense_id" readonly="1"/>
+                <field name="file_seq_num" required="1" placeholder="Enter ICICI File Sequence Number"/>
+            </group>
+            <footer>
+                <button
+                    name="action_check_status_expense"
+                    string="Check Payment Status"
+                    type="object"
+                    class="btn-primary"
+                />
+                <button
+                    string="Cancel"
+                    special="cancel"
+                    class="btn-secondary"
+                />
+            </footer>
+        </form>
+        </field>
+    </record>
+
+     <record id="view_icici_otp_wizard_form_expense" model="ir.ui.view">
+        <field name="name">icici.otp.wizard.expense.form</field>
+        <field name="model">icici.otp.wizard.expense</field>
+        <field name="arch" type="xml">
+            <form string="ICICI OTP Verification">
+                <group>
+                    <field name="otp" password="True" required="1" placeholder="Enter OTP received from ICICI" default_focus="1"/>
+                    <field name="payment_date" required="1"/>
+                </group>
+                <footer>
+                    <button
+                        name="action_confirm_otp_expense"
+                        string="Verify OTP"
+                        type="object"
+                        class="btn-primary"
+                    />
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
 </odoo>
