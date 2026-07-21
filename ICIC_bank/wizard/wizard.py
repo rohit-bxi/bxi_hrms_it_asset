@@ -294,19 +294,16 @@ class IciciTransactionStatusWizard(models.TransientModel):
     payslip_id = fields.Many2one(
         "hr.payslip",
         string="Payslip",
-        required=True,
         readonly=True,
     )
     expense_id = fields.Many2one(
         "hr.expense",
         string="Expense",
-        required=True,
         readonly=True,
     )
     vendor_bill_id = fields.Many2one(
         "account.move",
         string="Vendor Bill",
-        required=True,
         readonly=True,
     )
 

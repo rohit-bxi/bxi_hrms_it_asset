@@ -761,14 +761,14 @@ class HrPayslip(models.Model):
                     partner_name,
                     f"{amount:.2f}",
                     "INR",
-                    "Salary",
+                    "Vendor Bill",
                     network,
                     beneficiary_ifsc,
                 ]) + "^"
             )
 
             _logger.info(
-                "Employee : %s | Type : %s | Amount : %.2f | IFSC : %s",
+                "Partner : %s | Type : %s | Amount : %.2f | IFSC : %s",
                 partner.name,
                 transaction_type,
                 amount,
@@ -777,14 +777,14 @@ class HrPayslip(models.Model):
 
         if transaction_count == 0:
             raise ValidationError(
-                _("No valid payslips found.")
+                _("No valid Vendor Bill found.")
             )
         total_records = transaction_count + 1
 
         header = (
             f"FHR|{total_records}|"
             f"{payment_date}|"
-            f"SALARY|"
+            f"VENDOR_BILL|"
             f"{total_amount:.2f}|"
             f"INR|"
             f"{debit_account}|"
@@ -795,24 +795,24 @@ class HrPayslip(models.Model):
             f"MDR|"
             f"{debit_account}|"
             f"{debit_branch}|"
-            f"SALARY|"
+            f"VENDOR_BILL|"
             f"{total_amount:.2f}|"
             f"INR|"
-            f"Salary Batch|"
+            f"Vendor Bill Batch|"
             f"ICIC0000011|"
             f"WIB^"
         )
 
-        salary_file = "\r\n".join(
+        expense_file = "\r\n".join(
             [header, maker] + detail_lines
         )
 
         _logger.info("=" * 80)
-        _logger.info("ICICI SALARY FILE GENERATED")
-        _logger.info("\n%s", salary_file)
+        _logger.info("ICICI EXPENSE FILE GENERATED")
+        _logger.info("\n%s", expense_file)
         _logger.info("=" * 80)
 
-        return salary_file
+        return expense_file
     
     def action_check_transaction_status(self, file_seq_num):
         """Fetch transaction status from ICICI Reverse MIS API."""
@@ -1029,7 +1029,7 @@ class HrPayslip(models.Model):
 
         if not self:
             raise ValidationError(
-                _("No payslips selected.")
+                _("No Vendors selected.")
             )
 
         otp = (otp or "").strip()
@@ -1044,7 +1044,7 @@ class HrPayslip(models.Model):
             if slip.icici_payment_status != "otp_pending":
                 raise ValidationError(
                     _(
-                        "Salary payment is not awaiting OTP for %s."
+                        "Vendor bill payment is not awaiting OTP for %s."
                     )
                     % slip.partner_id.name
                 )
@@ -1057,16 +1057,16 @@ class HrPayslip(models.Model):
                     % slip.partner_id.name
                 )
 
-        salary_file = self.generate_vendor_bill_file(
+        vendor_file = self.generate_expense_file(
             payment_date
         )
 
         encoded_file = base64.b64encode(
-            salary_file.encode("utf-8")
+            vendor_file.encode("utf-8")
         ).decode("utf-8")
 
         payload = {
-            "FILE_DESCRIPTION": "Salary Payment",
+            "FILE_DESCRIPTION": "Vendor Bill Payment",
             "AGGR_ID": "BULK0173",
             "URN": "SR283346233",
             "AGGR_NAME": "BXITECH",
@@ -1075,7 +1075,7 @@ class HrPayslip(models.Model):
             "UNIQUE_ID": self[0].icici_reference,
             "AGOTP": otp,
             "FILE_NAME": (
-                f"SALARY_"
+                f"VENDOR_BILL_"
                 f"{datetime.now().strftime('%Y%m%d%H%M%S')}.txt"
             ),
             "FILE_CONTENT": encoded_file,
@@ -1231,7 +1231,7 @@ class HrPayslip(models.Model):
         ):
             raise ValidationError(
                 _(
-                    "Transaction status can only be checked after salary processing has started."
+                    "Transaction status can only be checked after vendor bill processing has started."
                 )
             )
 
