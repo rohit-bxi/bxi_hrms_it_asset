@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="action_bulk_expense_release" model="ir.actions.server">
+    <field name="name">Release Vendor Bill</field>
+    <field name="model_id" ref="account.model_account_move"/>
+    <field name="binding_model_id" ref="account.model_account_move"/>
+    <field name="binding_view_types">list</field>
+    <field name="state">code</field>
+    <field name="code">
+        action = records.action_vendor_bill_release()
+    </field>
+</record>
+
+    <record id="view_account_move_icici_form" model="ir.ui.view">
+        <field name="name">account.move.form.icici</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+             <xpath expr="//header[1]/field[@name='state'][2]" position="after">
+                <button
+                    name="action_vendor_bill_release"
+                    string="Release Vendor Bill"
+                    type="object"
+                    class="btn-primary"
+                    invisible="state != 'posted'"/>
+                <button
+                    name="action_open_transaction_status_wizard"
+                    string="Check Payment Status"
+                    type="object"
+                    class="btn-primary"
+                    invisible="icici_payment_status != 'processing'"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
