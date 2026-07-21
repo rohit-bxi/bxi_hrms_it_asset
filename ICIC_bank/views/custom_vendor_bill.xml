@@ -33,7 +33,9 @@
              <xpath expr="//group[2]" position="after">
                 <group string="ICICI Payment">
                     <field name="icici_payment_status" readonly="1"/>
+                    <field name="icici_reference" readonly="1"/>
                     <field name="icici_file_seq_num" readonly="1"/>
+                    <field name="icici_utr" readonly="1"/>
                     <field name="icici_response" readonly="1" widget="text"/>
                 </group>
             </xpath>
