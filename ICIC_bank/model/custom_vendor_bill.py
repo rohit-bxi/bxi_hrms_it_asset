@@ -664,7 +664,7 @@ class HrPayslip(models.Model):
             "view_mode": "form",
             "target": "new",
             "context": {
-                "default_payslip_ids": self.ids,
+                "default_vendor_bill_ids": self.ids,
             },
         }    
     
@@ -1247,7 +1247,7 @@ class HrPayslip(models.Model):
             "view_mode": "form",
             "target": "new",
             "context": {
-                "default_payslip_id": self.id,
+                "default_vendor_bill_id": self.id,
                 "default_file_seq_num": self.icici_file_seq_num,
             },
         }

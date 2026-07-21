@@ -22,6 +22,13 @@ class ICICIOtpWizard(models.TransientModel):
         required=True,
         readonly=True,
     )
+    vendor_bills_ids = fields.Many2many(
+        "account.move",
+        string="Vendor Bills",
+        required=True,
+        readonly=True,
+    )
+
     expense_ids = fields.Many2many(
         "hr.expense",
         string="Expenses",
@@ -140,10 +147,10 @@ class ICICIOtpWizard(models.TransientModel):
             )
 
         # ------------------------------------------------------
-        # Validate Payslips
+        # Validate Expense Bills
         # ------------------------------------------------------
 
-        for slip in self.payslip_ids:
+        for slip in self.expense_ids:
 
             if slip.icici_payment_status != "otp_pending":
                 raise ValidationError(
@@ -164,12 +171,12 @@ class ICICIOtpWizard(models.TransientModel):
         _logger.info("=" * 80)
         _logger.info("ICICI OTP VERIFIED")
         _logger.info("Payment Date : %s", self.payment_date)
-        _logger.info("Payslips : %s", self.payslip_ids.ids)
+        _logger.info("Expense Bills : %s", self.expense_ids.ids)
         _logger.info("=" * 80)
 
         try:
 
-            self.payslip_ids.process_bulk_payment(
+            self.expense_ids.process_bulk_payment(
                 otp,
                 self.payment_date,
             )
@@ -197,6 +204,87 @@ class ICICIOtpWizard(models.TransientModel):
                     "An unexpected error occurred while processing the salary payment."
                 )
             ) from exc
+        
+    def action_confirm_otp_vendor(self):
+        """Submit Bulk Payment after OTP verification."""
+
+        self.ensure_one()
+
+        if not self.vendor_bills_ids:
+            raise ValidationError(
+                _("No vendor bills selected.")
+            )
+
+        otp = (self.otp or "").strip()
+
+        if not otp:
+            raise ValidationError(
+                _("Please enter the OTP.")
+            )
+
+        if not self.payment_date:
+            raise ValidationError(
+                _("Please select the Payment Date.")
+            )
+
+        # ------------------------------------------------------
+        # Validate Vendor Bills
+        # ------------------------------------------------------
+
+        for slip in self.vendor_bills_ids:
+
+            if slip.icici_payment_status != "otp_pending":
+                raise ValidationError(
+                    _(
+                        "%s is not waiting for OTP confirmation."
+                    )
+                    % slip.partner_id.name
+                )
+
+            if not slip.icici_reference:
+                raise ValidationError(
+                    _(
+                        "ICICI Reference is missing for %s."
+                    )
+                    % slip.partner_id.name
+                )
+
+        _logger.info("=" * 80)
+        _logger.info("ICICI OTP VERIFIED")
+        _logger.info("Payment Date : %s", self.payment_date)
+        _logger.info("Vendor Bills : %s", self.vendor_bills_ids.ids)
+        _logger.info("=" * 80)
+
+        try:
+
+            self.vendor_bills_ids.process_bulk_payment(
+                otp,
+                self.payment_date,
+            )
+
+            _logger.info(
+                "ICICI Bulk Payment submitted successfully."
+            )
+
+            return {
+                "type": "ir.actions.client",
+                "tag": "reload",
+            }
+
+        except ValidationError:
+            raise
+
+        except Exception as exc:
+
+            _logger.exception(
+                "Unexpected ICICI Bulk Payment Error."
+            )
+
+            raise ValidationError(
+                _(
+                    "An unexpected error occurred while processing the vendor bills."
+                )
+            ) from exc
 
 
 class IciciTransactionStatusWizard(models.TransientModel):
@@ -212,6 +300,12 @@ class IciciTransactionStatusWizard(models.TransientModel):
     expense_id = fields.Many2one(
         "hr.expense",
         string="Expense",
+        required=True,
+        readonly=True,
+    )
+    vendor_bill_id = fields.Many2one(
+        "account.move",
+        string="Vendor Bill",
         required=True,
         readonly=True,
     )
@@ -335,6 +429,76 @@ class IciciTransactionStatusWizard(models.TransientModel):
         try:
 
             self.expense_id.action_check_transaction_status(
+                self.file_seq_num
+            )
+
+            _logger.info(
+                "ICICI Transaction Status fetched successfully."
+            )
+
+            return {
+                "type": "ir.actions.client",
+                "tag": "reload",
+            }
+
+        except ValidationError:
+            raise
+
+        except Exception as exc:
+
+            _logger.exception(
+                "Unexpected ICICI Transaction Status Error."
+            )
+
+            raise ValidationError(
+                _(
+                    "An unexpected error occurred while fetching the transaction status."
+                )
+            ) from exc
+        
+    def action_check_status_vendor(self):
+        """Fetch ICICI Transaction Status."""
+
+        self.ensure_one()
+
+        if not self.vendor_bill_id:
+            raise ValidationError(
+                _("Vendor bill not found.")
+            )
+
+        if not self.file_seq_num:
+            raise ValidationError(
+                _("File Sequence Number is required.")
+            )
+
+        if self.vendor_bill_id.icici_payment_status not in (
+            "processing",
+            "paid",
+            "failed",
+        ):
+            raise ValidationError(
+                _(
+                    "Transaction status can only be checked after salary processing has started."
+                )
+            )
+
+        _logger.info("=" * 80)
+        _logger.info(
+            "ICICI TRANSACTION STATUS CHECK STARTED"
+        )
+        _logger.info(
+            "Vendor Bill : %s",
+            self.vendor_bill_id.name,
+        )
+        _logger.info(
+            "File Sequence Number : %s",
+            self.file_seq_num,
+        )
+        _logger.info("=" * 80)
+
+        try:
+
+            self.vendor_bill_id.action_check_transaction_status(
                 self.file_seq_num
             )
 
