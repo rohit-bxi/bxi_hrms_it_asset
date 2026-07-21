@@ -22,6 +22,12 @@ class ICICIOtpWizard(models.TransientModel):
         required=True,
         readonly=True,
     )
+    expense_ids = fields.Many2many(
+        "hr.expense",
+        string="Expenses",
+        required=True,
+        readonly=True,
+    )
 
     payment_date = fields.Date(
         string="Payment Date",
@@ -116,9 +122,9 @@ class ICICIOtpWizard(models.TransientModel):
 
         self.ensure_one()
 
-        if not self.payslip_ids:
+        if not self.expense_ids:
             raise ValidationError(
-                _("No payslips selected.")
+                _("No expenses selected.")
             )
 
         otp = (self.otp or "").strip()

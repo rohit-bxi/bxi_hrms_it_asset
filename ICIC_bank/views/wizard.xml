@@ -50,7 +50,7 @@
 
     <record id="icici_transaction_status_wizard_expense" model="ir.ui.view">
         <field name="name">icici.transaction.status.wizard.expense.form</field>
-        <field name="model">icici.transaction.status.wizard.expense</field>
+        <field name="model">icici.transaction.status.wizard</field>
         <field name="arch" type="xml">
         <form string="Transaction Status">
             <group>
@@ -76,7 +76,7 @@
 
      <record id="view_icici_otp_wizard_form_expense" model="ir.ui.view">
         <field name="name">icici.otp.wizard.expense.form</field>
-        <field name="model">icici.otp.wizard.expense</field>
+        <field name="model">icici.otp.wizard</field>
         <field name="arch" type="xml">
             <form string="ICICI OTP Verification">
                 <group>
