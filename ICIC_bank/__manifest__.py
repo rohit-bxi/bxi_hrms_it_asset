@@ -8,12 +8,15 @@
     'author': 'BXI',
     'depends': [
         'hr_payroll',
-        'hr'
+        'hr',
+        'portal_employee_expense',
     ],
     'data': [
         'security/ir.model.access.csv',
         'views/payslip_view.xml',
         'views/wizard.xml',
+        'views/expense_view.xml',
+        'views/custom_vendor_bill.xml',
     ],
     'summary': 'Bank Integration ICICI',
     'description': 'Bank Integration ICICI',

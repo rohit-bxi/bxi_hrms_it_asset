@@ -22,6 +22,19 @@ class ICICIOtpWizard(models.TransientModel):
         required=True,
         readonly=True,
     )
+    vendor_bills_ids = fields.Many2many(
+        "account.move",
+        string="Vendor Bills",
+        required=True,
+        readonly=True,
+    )
+
+    expense_ids = fields.Many2many(
+        "hr.expense",
+        string="Expenses",
+        required=True,
+        readonly=True,
+    )
 
     payment_date = fields.Date(
         string="Payment Date",
@@ -110,62 +123,66 @@ class ICICIOtpWizard(models.TransientModel):
                     "An unexpected error occurred while processing the salary payment."
                 )
             ) from exc
-
-
-class IciciReverseWizard(models.TransientModel):
-    _name = "icici.reverse.wizard"
-    _description = "ICICI Reverse Payment Wizard"
-
-    payslip_id = fields.Many2one(
-        "hr.payslip",
-        string="Payslip",
-        required=True,
-        readonly=True,
-    )
-
-    file_seq_num = fields.Char(
-        string="File Sequence Number",
-        required=True,
-        readonly=True,
-    )
-
-    def action_reverse(self):
-        """Reverse ICICI Salary Payment."""
+    
+    def action_confirm_otp_expense(self):
+        """Submit Bulk Payment after OTP verification."""
 
         self.ensure_one()
 
-        if not self.payslip_id:
+        if not self.expense_ids:
             raise ValidationError(
-                _("Payslip not found.")
+                _("No expenses selected.")
             )
 
-        if not self.file_seq_num:
+        otp = (self.otp or "").strip()
+
+        if not otp:
             raise ValidationError(
-                _("File Sequence Number is required.")
+                _("Please enter the OTP.")
             )
 
-        if self.payslip_id.icici_payment_status != "processing":
+        if not self.payment_date:
             raise ValidationError(
-                _(
-                    "Only payments in Processing state can be reversed."
+                _("Please select the Payment Date.")
+            )
+
+        # ------------------------------------------------------
+        # Validate Expense Bills
+        # ------------------------------------------------------
+
+        for slip in self.expense_ids:
+
+            if slip.icici_payment_status != "otp_pending":
+                raise ValidationError(
+                    _(
+                        "%s is not waiting for OTP confirmation."
+                    )
+                    % slip.employee_id.name
                 )
-            )
+
+            if not slip.icici_reference:
+                raise ValidationError(
+                    _(
+                        "ICICI Reference is missing for %s."
+                    )
+                    % slip.employee_id.name
+                )
 
         _logger.info("=" * 80)
-        _logger.info(
-            "ICICI Reverse Started : %s",
-            self.payslip_id,
-        )
+        _logger.info("ICICI OTP VERIFIED")
+        _logger.info("Payment Date : %s", self.payment_date)
+        _logger.info("Expense Bills : %s", self.expense_ids.ids)
         _logger.info("=" * 80)
 
         try:
 
-            self.payslip_id.action_reverse_payment(
-                self.file_seq_num
+            self.expense_ids.process_bulk_payment(
+                otp,
+                self.payment_date,
             )
 
             _logger.info(
-                "ICICI payment reversed successfully."
+                "ICICI Bulk Payment submitted successfully."
             )
 
             return {
@@ -179,11 +196,329 @@ class IciciReverseWizard(models.TransientModel):
         except Exception as exc:
 
             _logger.exception(
-                "Unexpected ICICI Reverse Payment Error."
+                "Unexpected ICICI Bulk Payment Error."
             )
 
             raise ValidationError(
                 _(
-                    "An unexpected error occurred while reversing the payment."
+                    "An unexpected error occurred while processing the salary payment."
+                )
+            ) from exc
+        
+    def action_confirm_otp_vendor(self):
+        """Submit Bulk Payment after OTP verification."""
+
+        self.ensure_one()
+
+        if not self.vendor_bills_ids:
+            raise ValidationError(
+                _("No vendor bills selected.")
+            )
+
+        otp = (self.otp or "").strip()
+
+        if not otp:
+            raise ValidationError(
+                _("Please enter the OTP.")
+            )
+
+        if not self.payment_date:
+            raise ValidationError(
+                _("Please select the Payment Date.")
+            )
+
+        # ------------------------------------------------------
+        # Validate Vendor Bills
+        # ------------------------------------------------------
+
+        for slip in self.vendor_bills_ids:
+
+            if slip.icici_payment_status != "otp_pending":
+                raise ValidationError(
+                    _(
+                        "%s is not waiting for OTP confirmation."
+                    )
+                    % slip.partner_id.name
+                )
+
+            if not slip.icici_reference:
+                raise ValidationError(
+                    _(
+                        "ICICI Reference is missing for %s."
+                    )
+                    % slip.partner_id.name
+                )
+
+        _logger.info("=" * 80)
+        _logger.info("ICICI OTP VERIFIED")
+        _logger.info("Payment Date : %s", self.payment_date)
+        _logger.info("Vendor Bills : %s", self.vendor_bills_ids.ids)
+        _logger.info("=" * 80)
+
+        try:
+
+            self.vendor_bills_ids.process_bulk_payment(
+                otp,
+                self.payment_date,
+            )
+
+            _logger.info(
+                "ICICI Bulk Payment submitted successfully."
+            )
+
+            return {
+                "type": "ir.actions.client",
+                "tag": "reload",
+            }
+
+        except ValidationError:
+            raise
+
+        except Exception as exc:
+
+            _logger.exception(
+                "Unexpected ICICI Bulk Payment Error."
+            )
+
+            raise ValidationError(
+                _(
+                    "An unexpected error occurred while processing the vendor bills."
+                )
+            ) from exc
+
+
+class IciciTransactionStatusWizard(models.TransientModel):
+    _name = "icici.transaction.status.wizard"
+    _description = "ICICI Transaction Status Wizard"
+
+    payslip_id = fields.Many2one(
+        "hr.payslip",
+        string="Payslip",
+        readonly=True,
+    )
+    expense_id = fields.Many2one(
+        "hr.expense",
+        string="Expense",
+        readonly=True,
+    )
+    vendor_bill_id = fields.Many2one(
+        "account.move",
+        string="Vendor Bill",
+        readonly=True,
+    )
+
+    file_seq_num = fields.Char(
+        string="File Sequence Number",
+        required=True,
+        readonly=True,
+    )
+
+    def action_check_status(self):
+        """Fetch ICICI Transaction Status."""
+
+        self.ensure_one()
+
+        if not self.payslip_id:
+            raise ValidationError(
+                _("Payslip not found.")
+            )
+
+        if not self.file_seq_num:
+            raise ValidationError(
+                _("File Sequence Number is required.")
+            )
+
+        if self.payslip_id.icici_payment_status not in (
+            "processing",
+            "paid",
+            "failed",
+        ):
+            raise ValidationError(
+                _(
+                    "Transaction status can only be checked after salary processing has started."
+                )
+            )
+
+        _logger.info("=" * 80)
+        _logger.info(
+            "ICICI TRANSACTION STATUS CHECK STARTED"
+        )
+        _logger.info(
+            "Payslip : %s",
+            self.payslip_id.display_name,
+        )
+        _logger.info(
+            "File Sequence Number : %s",
+            self.file_seq_num,
+        )
+        _logger.info("=" * 80)
+
+        try:
+
+            self.payslip_id.action_check_transaction_status(
+                self.file_seq_num
+            )
+
+            _logger.info(
+                "ICICI Transaction Status fetched successfully."
+            )
+
+            return {
+                "type": "ir.actions.client",
+                "tag": "reload",
+            }
+
+        except ValidationError:
+            raise
+
+        except Exception as exc:
+
+            _logger.exception(
+                "Unexpected ICICI Transaction Status Error."
+            )
+
+            raise ValidationError(
+                _(
+                    "An unexpected error occurred while fetching the transaction status."
+                )
+            ) from exc
+    
+    def action_check_status_expense(self):
+        """Fetch ICICI Transaction Status."""
+
+        self.ensure_one()
+
+        if not self.expense_id:
+            raise ValidationError(
+                _("Expense not found.")
+            )
+
+        if not self.file_seq_num:
+            raise ValidationError(
+                _("File Sequence Number is required.")
+            )
+
+        if self.expense_id.icici_payment_status not in (
+            "processing",
+            "paid",
+            "failed",
+        ):
+            raise ValidationError(
+                _(
+                    "Transaction status can only be checked after salary processing has started."
+                )
+            )
+
+        _logger.info("=" * 80)
+        _logger.info(
+            "ICICI TRANSACTION STATUS CHECK STARTED"
+        )
+        _logger.info(
+            "Expense : %s",
+            self.expense_id.display_name,
+        )
+        _logger.info(
+            "File Sequence Number : %s",
+            self.file_seq_num,
+        )
+        _logger.info("=" * 80)
+
+        try:
+
+            self.expense_id.action_check_transaction_status(
+                self.file_seq_num
+            )
+
+            _logger.info(
+                "ICICI Transaction Status fetched successfully."
+            )
+
+            return {
+                "type": "ir.actions.client",
+                "tag": "reload",
+            }
+
+        except ValidationError:
+            raise
+
+        except Exception as exc:
+
+            _logger.exception(
+                "Unexpected ICICI Transaction Status Error."
+            )
+
+            raise ValidationError(
+                _(
+                    "An unexpected error occurred while fetching the transaction status."
+                )
+            ) from exc
+        
+    def action_check_status_vendor(self):
+        """Fetch ICICI Transaction Status."""
+
+        self.ensure_one()
+
+        if not self.vendor_bill_id:
+            raise ValidationError(
+                _("Vendor bill not found.")
+            )
+
+        if not self.file_seq_num:
+            raise ValidationError(
+                _("File Sequence Number is required.")
+            )
+
+        if self.vendor_bill_id.icici_payment_status not in (
+            "processing",
+            "paid",
+            "failed",
+        ):
+            raise ValidationError(
+                _(
+                    "Transaction status can only be checked after salary processing has started."
+                )
+            )
+
+        _logger.info("=" * 80)
+        _logger.info(
+            "ICICI TRANSACTION STATUS CHECK STARTED"
+        )
+        _logger.info(
+            "Vendor Bill : %s",
+            self.vendor_bill_id.name,
+        )
+        _logger.info(
+            "File Sequence Number : %s",
+            self.file_seq_num,
+        )
+        _logger.info("=" * 80)
+
+        try:
+
+            self.vendor_bill_id.action_check_transaction_status(
+                self.file_seq_num
+            )
+
+            _logger.info(
+                "ICICI Transaction Status fetched successfully."
+            )
+
+            return {
+                "type": "ir.actions.client",
+                "tag": "reload",
+            }
+
+        except ValidationError:
+            raise
+
+        except Exception as exc:
+
+            _logger.exception(
+                "Unexpected ICICI Transaction Status Error."
+            )
+
+            raise ValidationError(
+                _(
+                    "An unexpected error occurred while fetching the transaction status."
                 )
             ) from exc

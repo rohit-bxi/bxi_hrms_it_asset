@@ -18,7 +18,7 @@ _logger = logging.getLogger(__name__)
 
 
 class HrPayslip(models.Model):
-    _inherit = "hr.payslip"
+    _inherit = "account.move"
 
     icici_payment_status = fields.Selection(
         [
@@ -478,12 +478,12 @@ class HrPayslip(models.Model):
             _("Unable to process the ICICI request.")
         )
     
-    def action_release_salary(self):
-        """Validate payslips, call ICICI Create API and open OTP wizard."""
+    def action_vendor_bill_release(self):
+        """Validate expenses, call ICICI Create API and open OTP wizard."""
 
         if not self:
             raise ValidationError(
-                _("No payslips selected.")
+                _("No Vendor Bill selected.")
             )
         for slip in self:
 
@@ -494,22 +494,22 @@ class HrPayslip(models.Model):
             ):
                 raise ValidationError(
                     _(
-                        "Salary payment has already been initiated for %s."
+                        "Vendor bill payment has already been initiated for %s."
                     )
-                    % slip.employee_id.name
+                    % slip.partner_id.name
                 )
 
-            if slip.state != "validated":
+            if slip.state != "posted":
                 raise ValidationError(
                     _(
-                        "%s payslip must be validated before salary release."
+                        "%s vendor bill must be posted before payment release."
                     )
-                    % slip.employee_id.name
+                    % slip.partner_id.name
                 )
 
-            employee = slip.employee_id
+            partner = slip.partner_id
 
-            bank_account = employee.bank_account_ids.filtered(
+            bank_account = partner.bank_ids.filtered(
                 lambda account:
                     account.acc_number
                     and account.bank_id
@@ -521,33 +521,33 @@ class HrPayslip(models.Model):
                     _(
                         "Please configure a valid bank account for %s."
                     )
-                    % employee.name
+                    % partner.name
                 )
 
             if not bank_account.acc_number:
                 raise ValidationError(
                     _("Account Number is missing for %s.")
-                    % employee.name
+                    % partner.name
                 )
 
             if not bank_account.bank_id:
                 raise ValidationError(
                     _("Bank is not configured for %s.")
-                    % employee.name
+                    % partner.name
                 )
 
             if not bank_account.bank_id.bic:
                 raise ValidationError(
                     _("IFSC Code is missing for %s.")
-                    % employee.name
+                    % partner.name
                 )
 
-            amount = float(slip.net_wage or 0.0)
+            amount = float(slip.amount_residual or 0.0)
 
             if amount <= 0:
                 raise ValidationError(
-                    _("Invalid salary amount for %s.")
-                    % employee.name
+                    _("Invalid Vendor Bill amount for %s.")
+                    % partner.name
                 )
 
         # ------------------------------------------------------------------
@@ -664,12 +664,12 @@ class HrPayslip(models.Model):
             "view_mode": "form",
             "target": "new",
             "context": {
-                "default_payslip_ids": self.ids,
+                "default_vendor_bill_ids": self.ids,
             },
         }    
     
-    def generate_salary_file(self, payment_date):
-        """Generate ICICI Salary File."""
+    def generate_vendor_bill_file(self, payment_date):
+        """Generate ICICI Vendor Bill File."""
         payment_date = fields.Date.to_date(
             payment_date
         ).strftime("%m/%d/%Y")
@@ -683,9 +683,9 @@ class HrPayslip(models.Model):
 
         for slip in self:
 
-            employee = slip.employee_id
+            partner = slip.partner_id
 
-            bank_account = employee.bank_account_ids.filtered(
+            bank_account = partner.bank_ids.filtered(
                 lambda account:
                     account.acc_number
                     and account.bank_id
@@ -695,7 +695,7 @@ class HrPayslip(models.Model):
             if not bank_account:
                 raise ValidationError(
                     _("Bank account is missing for %s.")
-                    % employee.name
+                    % partner.name
                 )
 
             account_number = (
@@ -705,13 +705,13 @@ class HrPayslip(models.Model):
             if not account_number:
                 raise ValidationError(
                     _("Account Number is missing for %s.")
-                    % employee.name
+                    % partner.name
                 )
 
             if len(account_number) < 9:
                 raise ValidationError(
                     _("Invalid Account Number for %s.")
-                    % employee.name
+                    % partner.name
                 )
 
             ifsc = (
@@ -721,18 +721,18 @@ class HrPayslip(models.Model):
             if len(ifsc) != 11:
                 raise ValidationError(
                     _("Invalid IFSC Code for %s.")
-                    % employee.name
+                    % partner.name
                 )
 
             amount = round(
-                float(slip.net_wage or 0.0),
+                float(slip.amount_residual or 0.0),
                 2,
             )
 
             if amount <= 0:
                 raise ValidationError(
-                    _("Invalid salary amount for %s.")
-                    % employee.name
+                    _("Invalid vendor bill amount for %s.")
+                    % partner.name
                 )
 
             transaction_count += 1
@@ -749,8 +749,8 @@ class HrPayslip(models.Model):
                 branch_code = "0011"
                 beneficiary_ifsc = ifsc
 
-            employee_name = " ".join(
-                employee.name.split()
+            partner_name = " ".join(
+                partner.name.split()
             )[:35]
 
             detail_lines.append(
@@ -758,18 +758,18 @@ class HrPayslip(models.Model):
                     transaction_type,
                     account_number,
                     branch_code,
-                    employee_name,
+                    partner_name,
                     f"{amount:.2f}",
                     "INR",
-                    "Salary",
+                    "Vendor Bill",
                     network,
                     beneficiary_ifsc,
                 ]) + "^"
             )
 
             _logger.info(
-                "Employee : %s | Type : %s | Amount : %.2f | IFSC : %s",
-                employee.name,
+                "Partner : %s | Type : %s | Amount : %.2f | IFSC : %s",
+                partner.name,
                 transaction_type,
                 amount,
                 beneficiary_ifsc,
@@ -777,14 +777,14 @@ class HrPayslip(models.Model):
 
         if transaction_count == 0:
             raise ValidationError(
-                _("No valid payslips found.")
+                _("No valid Vendor Bill found.")
             )
         total_records = transaction_count + 1
 
         header = (
             f"FHR|{total_records}|"
             f"{payment_date}|"
-            f"SALARY|"
+            f"VENDOR_BILL|"
             f"{total_amount:.2f}|"
             f"INR|"
             f"{debit_account}|"
@@ -795,24 +795,24 @@ class HrPayslip(models.Model):
             f"MDR|"
             f"{debit_account}|"
             f"{debit_branch}|"
-            f"SALARY|"
+            f"VENDOR_BILL|"
             f"{total_amount:.2f}|"
             f"INR|"
-            f"Salary Batch|"
+            f"Vendor Bill Batch|"
             f"ICIC0000011|"
             f"WIB^"
         )
 
-        salary_file = "\r\n".join(
+        expense_file = "\r\n".join(
             [header, maker] + detail_lines
         )
 
         _logger.info("=" * 80)
-        _logger.info("ICICI SALARY FILE GENERATED")
-        _logger.info("\n%s", salary_file)
+        _logger.info("ICICI EXPENSE FILE GENERATED")
+        _logger.info("\n%s", expense_file)
         _logger.info("=" * 80)
 
-        return salary_file
+        return expense_file
     
     def action_check_transaction_status(self, file_seq_num):
         """Fetch transaction status from ICICI Reverse MIS API."""
@@ -1029,7 +1029,7 @@ class HrPayslip(models.Model):
 
         if not self:
             raise ValidationError(
-                _("No payslips selected.")
+                _("No Vendors selected.")
             )
 
         otp = (otp or "").strip()
@@ -1044,9 +1044,9 @@ class HrPayslip(models.Model):
             if slip.icici_payment_status != "otp_pending":
                 raise ValidationError(
                     _(
-                        "Salary payment is not awaiting OTP for %s."
+                        "Vendor bill payment is not awaiting OTP for %s."
                     )
-                    % slip.employee_id.name
+                    % slip.partner_id.name
                 )
 
             if not slip.icici_reference:
@@ -1054,19 +1054,19 @@ class HrPayslip(models.Model):
                     _(
                         "ICICI Reference is missing for %s."
                     )
-                    % slip.employee_id.name
+                    % slip.partner_id.name
                 )
 
-        salary_file = self.generate_salary_file(
+        vendor_file = self.generate_expense_file(
             payment_date
         )
 
         encoded_file = base64.b64encode(
-            salary_file.encode("utf-8")
+            vendor_file.encode("utf-8")
         ).decode("utf-8")
 
         payload = {
-            "FILE_DESCRIPTION": "Salary Payment",
+            "FILE_DESCRIPTION": "Vendor Bill Payment",
             "AGGR_ID": "BULK0173",
             "URN": "SR283346233",
             "AGGR_NAME": "BXITECH",
@@ -1075,7 +1075,7 @@ class HrPayslip(models.Model):
             "UNIQUE_ID": self[0].icici_reference,
             "AGOTP": otp,
             "FILE_NAME": (
-                f"SALARY_"
+                f"VENDOR_BILL_"
                 f"{datetime.now().strftime('%Y%m%d%H%M%S')}.txt"
             ),
             "FILE_CONTENT": encoded_file,
@@ -1231,7 +1231,7 @@ class HrPayslip(models.Model):
         ):
             raise ValidationError(
                 _(
-                    "Transaction status can only be checked after salary processing has started."
+                    "Transaction status can only be checked after vendor bill processing has started."
                 )
             )
 
@@ -1247,7 +1247,7 @@ class HrPayslip(models.Model):
             "view_mode": "form",
             "target": "new",
             "context": {
-                "default_payslip_id": self.id,
+                "default_vendor_bill_id": self.id,
                 "default_file_seq_num": self.icici_file_seq_num,
             },
         }

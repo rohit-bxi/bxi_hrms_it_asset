@@ -22,29 +22,130 @@
         </field>
     </record>
 
-    <record id="view_icici_reverse_wizard_form" model="ir.ui.view">
-        <field name="name">icici.reverse.wizard.form</field>
-        <field name="model">icici.reverse.wizard</field>
+    <record id="view_icici_transaction_status_wizard" model="ir.ui.view">
+        <field name="name">icici.transaction.status.wizard.form</field>
+        <field name="model">icici.transaction.status.wizard</field>
         <field name="arch" type="xml">
-            <form string="Reverse Payment">
+        <form string="Transaction Status">
+            <group>
+                <field name="payslip_id" readonly="1"/>
+                <field name="file_seq_num" required="1" placeholder="Enter ICICI File Sequence Number"/>
+            </group>
+            <footer>
+                <button
+                    name="action_check_status"
+                    string="Check Payment Status"
+                    type="object"
+                    class="btn-primary"
+                />
+                <button
+                    string="Cancel"
+                    special="cancel"
+                    class="btn-secondary"
+                />
+            </footer>
+        </form>
+        </field>
+    </record>
+
+
+    <!-- expense -->
+    <record id="icici_transaction_status_wizard_expense" model="ir.ui.view">
+        <field name="name">icici.transaction.status.wizard.expense.form</field>
+        <field name="model">icici.transaction.status.wizard</field>
+        <field name="arch" type="xml">
+        <form string="Transaction Status">
+            <group>
+                <field name="expense_id" readonly="1"/>
+                <field name="file_seq_num" required="1" placeholder="Enter ICICI File Sequence Number"/>
+            </group>
+            <footer>
+                <button
+                    name="action_check_status_expense"
+                    string="Check Payment Status"
+                    type="object"
+                    class="btn-primary"
+                />
+                <button
+                    string="Cancel"
+                    special="cancel"
+                    class="btn-secondary"
+                />
+            </footer>
+        </form>
+        </field>
+    </record>
+
+     <record id="view_icici_otp_wizard_form_expense" model="ir.ui.view">
+        <field name="name">icici.otp.wizard.expense.form</field>
+        <field name="model">icici.otp.wizard</field>
+        <field name="arch" type="xml">
+            <form string="ICICI OTP Verification">
                 <group>
-                    <field name="payslip_id" readonly="1"/>
-                    <field name="file_seq_num" required="1" placeholder="Enter ICICI File Sequence Number"/>
+                    <field name="otp" password="True" required="1" placeholder="Enter OTP received from ICICI" default_focus="1"/>
+                    <field name="payment_date" required="1"/>
                 </group>
                 <footer>
                     <button
-                        name="action_reverse"
-                        string="Reverse Payment"
+                        name="action_confirm_otp_expense"
+                        string="Verify OTP"
                         type="object"
                         class="btn-primary"
                     />
-                    <button
-                        string="Cancel"
-                        special="cancel"
-                        class="btn-secondary"
-                    />
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
                 </footer>
             </form>
         </field>
     </record>
+
+    <!-- vendor -->
+
+    <record id="view_icici_otp_wizard_form_vendor" model="ir.ui.view">
+        <field name="name">icici.otp.wizard.vendor.form</field>
+        <field name="model">icici.otp.wizard</field>
+        <field name="arch" type="xml">
+            <form string="ICICI OTP Verification">
+                <group>
+                    <field name="otp" password="True" required="1" placeholder="Enter OTP received from ICICI" default_focus="1"/>
+                    <field name="payment_date" required="1"/>
+                </group>
+                <footer>
+                    <button
+                        name="action_confirm_otp_vendor"
+                        string="Verify OTP"
+                        type="object"
+                        class="btn-primary"
+                    />
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    
+     <record id="icici_transaction_status_wizard_vendor" model="ir.ui.view">
+        <field name="name">icici.transaction.status.wizard.vendor.form</field>
+        <field name="model">icici.transaction.status.wizard</field>
+        <field name="arch" type="xml">
+        <form string="Transaction Status">
+            <group>
+                <field name="vendor_bill_id" readonly="1"/>
+                <field name="file_seq_num" required="1" placeholder="Enter ICICI File Sequence Number"/>
+            </group>
+            <footer>
+                <button
+                    name="action_check_status_vendor"
+                    string="Check Payment Status"
+                    type="object"
+                    class="btn-primary"
+                />
+                <button
+                    string="Cancel"
+                    special="cancel"
+                    class="btn-secondary"
+                />
+            </footer>
+        </form>
+        </field>
+    </record>
+
 </odoo>
