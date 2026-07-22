@@ -765,7 +765,7 @@ class HrPayslip(models.Model):
                     partner_name,
                     f"{amount:.2f}",
                     "INR",
-                    "Vendor Payment",
+                    "Payment",
                     network,
                     beneficiary_ifsc,
                 ]) + "^"
@@ -788,7 +788,7 @@ class HrPayslip(models.Model):
         header = (
             f"FHR|{total_records}|"
             f"{payment_date}|"
-            f"VENDOR_PAYMENT|"
+            f"PAYMENT|"
             f"{total_amount:.2f}|"
             f"INR|"
             f"{debit_account}|"
@@ -799,10 +799,10 @@ class HrPayslip(models.Model):
             f"MDR|"
             f"{debit_account}|"
             f"{debit_branch}|"
-            f"VENDOR_PAYMENT|"
+            f"PAYMENT|"
             f"{total_amount:.2f}|"
             f"INR|"
-            f"Vendor Payment Batch|"
+            f"Payment Batch|"
             f"ICIC0000011|"
             f"WIB^"
         )
