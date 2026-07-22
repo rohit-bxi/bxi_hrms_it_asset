@@ -23,8 +23,8 @@ class ICICIOtpWizard(models.TransientModel):
         readonly=True,
     )
     vendor_bills_ids = fields.Many2many(
-        "account.move",
-        string="Vendor Bills",
+        "account.payment",
+        string="Vendor Payments",
         required=True,
         readonly=True,
     )
@@ -212,7 +212,7 @@ class ICICIOtpWizard(models.TransientModel):
 
         if not self.vendor_bills_ids:
             raise ValidationError(
-                _("No vendor bills selected.")
+                _("No vendor payments selected.")
             )
 
         otp = (self.otp or "").strip()
@@ -228,7 +228,7 @@ class ICICIOtpWizard(models.TransientModel):
             )
 
         # ------------------------------------------------------
-        # Validate Vendor Bills
+        # Validate Vendor Payments
         # ------------------------------------------------------
 
         for slip in self.vendor_bills_ids:
@@ -252,7 +252,7 @@ class ICICIOtpWizard(models.TransientModel):
         _logger.info("=" * 80)
         _logger.info("ICICI OTP VERIFIED")
         _logger.info("Payment Date : %s", self.payment_date)
-        _logger.info("Vendor Bills : %s", self.vendor_bills_ids.ids)
+        _logger.info("Vendor Payments : %s", self.vendor_bills_ids.ids)
         _logger.info("=" * 80)
 
         try:
