@@ -302,8 +302,8 @@ class IciciTransactionStatusWizard(models.TransientModel):
         readonly=True,
     )
     vendor_bill_id = fields.Many2one(
-        "account.move",
-        string="Vendor Bill",
+        "account.payment",
+        string="Vendor Payment",
         readonly=True,
     )
 
@@ -405,7 +405,7 @@ class IciciTransactionStatusWizard(models.TransientModel):
         ):
             raise ValidationError(
                 _(
-                    "Transaction status can only be checked after salary processing has started."
+                    "Transaction status can only be checked after expense processing has started."
                 )
             )
 
@@ -475,7 +475,7 @@ class IciciTransactionStatusWizard(models.TransientModel):
         ):
             raise ValidationError(
                 _(
-                    "Transaction status can only be checked after salary processing has started."
+                    "Transaction status can only be checked after vendor bill processing has started."
                 )
             )
 
