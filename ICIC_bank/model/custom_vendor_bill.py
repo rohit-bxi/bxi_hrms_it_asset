@@ -480,6 +480,7 @@ class HrPayslip(models.Model):
     
     def action_vendor_bill_release(self):
         """Validate Vendor Bills, call ICICI Create API and open OTP wizard."""
+        _logger.info("SELF IDS = %s", self.ids)
 
         if not self:
             raise ValidationError(
@@ -1060,7 +1061,7 @@ class HrPayslip(models.Model):
                     % slip.partner_id.name
                 )
 
-        vendor_file = self.generate_expense_file(
+        vendor_file = self.generate_vendor_bill_file(
             payment_date
         )
 

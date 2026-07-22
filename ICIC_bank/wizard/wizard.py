@@ -1,4 +1,4 @@
-from odoo import _, fields, models
+from odoo import _, fields, models, api
 from odoo.exceptions import ValidationError
 
 import logging
@@ -19,20 +19,17 @@ class ICICIOtpWizard(models.TransientModel):
     payslip_ids = fields.Many2many(
         "hr.payslip",
         string="Payslips",
-        required=True,
         readonly=True,
     )
     vendor_bills_ids = fields.Many2many(
         "account.payment",
         string="Vendor Payments",
-        required=True,
         readonly=True,
     )
 
     expense_ids = fields.Many2many(
         "hr.expense",
         string="Expenses",
-        required=True,
         readonly=True,
     )
 
@@ -42,6 +39,21 @@ class ICICIOtpWizard(models.TransientModel):
         default=fields.Date.today,
         copy=False,
     )
+
+    @api.model
+    def default_get(self, fields_list):
+        res = super().default_get(fields_list)
+
+        if self.env.context.get("default_vendor_bills_ids"):
+            res["vendor_bills_ids"] = self.env.context["default_vendor_bills_ids"]
+
+        if self.env.context.get("default_payslip_ids"):
+            res["payslip_ids"] = self.env.context["default_payslip_ids"]
+
+        if self.env.context.get("default_expense_ids"):
+            res["expense_ids"] = self.env.context["default_expense_ids"]
+
+        return res
 
     def action_confirm_otp(self):
         """Submit Bulk Payment after OTP verification."""
@@ -209,6 +221,11 @@ class ICICIOtpWizard(models.TransientModel):
         """Submit Bulk Payment after OTP verification."""
 
         self.ensure_one()
+
+        _logger.info("=" * 80)
+        _logger.info("CONTEXT = %s", self.env.context)
+        _logger.info("VENDOR IDS = %s", self.vendor_bills_ids.ids)
+        _logger.info("=" * 80)
 
         if not self.vendor_bills_ids:
             raise ValidationError(
