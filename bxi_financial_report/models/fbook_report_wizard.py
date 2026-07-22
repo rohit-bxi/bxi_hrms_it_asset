@@ -512,7 +512,7 @@ class FbookReportWizard(models.TransientModel):
                 return 'y2'
             return None
 
-        # A. hr.expense -> consolidated under "Employee(rimbusement)"
+        # A. hr.expense -> consolidated under "Employee(reimbursement)"
         if 'hr.expense' in self.env:
             exps = self.env['hr.expense'].sudo().search([
                 ('company_id', 'in', company_ids),
@@ -528,7 +528,7 @@ class FbookReportWizard(models.TransientModel):
                     get_rate_company(exp), exp.date or fields.Date.today()
                 )
                 is_paid = getattr(exp, 'state', '') in ('paid', 'posted', 'in_payment', 'done')
-                _add_expense_val('Employee(rimbusement)', y_key, conv, conv if is_paid else 0.0)
+                _add_expense_val('Employee(reimbursement)', y_key, conv, conv if is_paid else 0.0)
 
         # B. Vendor Bills -> consolidated by vendor_category
         category_labels = {

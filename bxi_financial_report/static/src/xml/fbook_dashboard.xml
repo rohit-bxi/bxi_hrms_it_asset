@@ -69,19 +69,19 @@
             }
             .fbook-table th.fbook-header-cy {
                 text-align: center;
-                background: #1d4ed8;
+                background: #16a34a;
                 color: #ffffff;
                 font-size: 14px;
                 font-weight: 700;
-                border: 1px solid #172554;
+                border: 1px solid #15803d;
             }
             .fbook-table th.fbook-header-fy {
                 text-align: center;
-                background: #475569;
+                background: #ea580c;
                 color: #ffffff;
                 font-size: 14px;
                 font-weight: 700;
-                border: 1px solid #334155;
+                border: 1px solid #c2410c;
             }
             .fbook-table th.sub-main-header {
                 text-align: center;
@@ -172,17 +172,17 @@
                 <strong>Exchange Rates Used:</strong>
                 <span style="margin-left: 12px;">
                     AED - INR (
-                    <span style="color: #dc2626;"><t t-esc="state.report_data.y1_short_label"/>: 24.5</span>
+                    <span t-att-style="state.report_data.y1_prefix == 'CY' ? 'color: #16a34a; font-weight: 600;' : 'color: #ea580c; font-weight: 600;'"><t t-esc="state.report_data.y1_short_label"/>: 24.5</span>
                     <span style="margin-left: 4px; margin-right: 4px; color: #93c5fd;">|</span>
-                    <span style="color: #16a34a;"><t t-esc="state.report_data.y2_short_label"/>: 25.6</span>
+                    <span t-att-style="state.report_data.y2_prefix == 'CY' ? 'color: #16a34a; font-weight: 600;' : 'color: #ea580c; font-weight: 600;'"><t t-esc="state.report_data.y2_short_label"/>: 25.6</span>
                     )
                 </span>
                 <span style="margin-left: 16px; margin-right: 16px; color: #93c5fd;">|</span>
                 <span>
                     USD - INR (
-                    <span style="color: #dc2626;"><t t-esc="state.report_data.y1_short_label"/>: 90</span>
+                    <span t-att-style="state.report_data.y1_prefix == 'CY' ? 'color: #16a34a; font-weight: 600;' : 'color: #ea580c; font-weight: 600;'"><t t-esc="state.report_data.y1_short_label"/>: 90</span>
                     <span style="margin-left: 4px; margin-right: 4px; color: #93c5fd;">|</span>
-                    <span style="color: #16a34a;"><t t-esc="state.report_data.y2_short_label"/>: 93</span>
+                    <span t-att-style="state.report_data.y2_prefix == 'CY' ? 'color: #16a34a; font-weight: 600;' : 'color: #ea580c; font-weight: 600;'"><t t-esc="state.report_data.y2_short_label"/>: 93</span>
                     )
                 </span>
             </div>
