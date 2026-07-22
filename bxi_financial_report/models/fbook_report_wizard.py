@@ -297,6 +297,7 @@ class FbookReportWizard(models.TransientModel):
 
             # 7. Margin %
             margin_val = (profit_val / billed_val * 100) if billed_val > 0 else 0.0
+            margin_val = min(100.0, margin_val)
 
             data[year_key][q_key] = {
                 'booking': target_currency.round(booking_val),
@@ -333,6 +334,7 @@ class FbookReportWizard(models.TransientModel):
             sum_expenses = sum(data[y][q]['expenses'] for q in ['q1', 'q2', 'q3', 'q4'])
             total_profit = sum_billed - sum_expenses
             total_margin = (total_profit / sum_billed * 100) if sum_billed > 0 else 0.0
+            total_margin = min(100.0, total_margin)
 
             data[y]['total'] = {
                 'booking': target_currency.round(sum_booking),
