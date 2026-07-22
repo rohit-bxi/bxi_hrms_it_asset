@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
   <record id="action_bulk_expense_release" model="ir.actions.server">
-    <field name="name">Release Vendor Bill</field>
-    <field name="model_id" ref="account.model_account_move"/>
-    <field name="binding_model_id" ref="account.model_account_move"/>
+    <field name="name">Release Vendor Payment</field>
+    <field name="model_id" ref="account.model_account_payment"/>
+    <field name="binding_model_id" ref="account.model_account_payment"/>
     <field name="binding_view_types">list</field>
     <field name="state">code</field>
     <field name="code">
@@ -11,18 +11,18 @@
     </field>
 </record>
 
-    <record id="view_account_move_icici_form" model="ir.ui.view">
-        <field name="name">account.move.form.icici</field>
-        <field name="model">account.move</field>
-        <field name="inherit_id" ref="account.view_move_form"/>
+    <record id="view_account_payment_icici_form" model="ir.ui.view">
+        <field name="name">account.payment.form.icici</field>
+        <field name="model">account.payment</field>
+        <field name="inherit_id" ref="account.view_account_payment_form"/>
         <field name="arch" type="xml">
-             <xpath expr="//header[1]/field[@name='state'][2]" position="after">
+             <xpath expr='//button[@name="action_cancel"]' position="after">
                 <button
                     name="action_vendor_bill_release"
-                    string="Release Vendor Bill"
+                    string="Release Vendor Payment"
                     type="object"
                     class="btn-primary"
-                    invisible="state != 'posted'"/>
+                    invisible="state != 'in_process'"/>
                 <button
                     name="action_open_transaction_status_wizard"
                     string="Check Payment Status"
