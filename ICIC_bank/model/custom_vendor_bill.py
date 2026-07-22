@@ -667,7 +667,7 @@ class HrPayslip(models.Model):
             ).id,
             "target": "new",
             "context": {
-                "default_vendor_bill_ids": self.ids,
+                "default_vendor_bills_ids": [(6, 0, self.ids)],
             },
         }    
     
