@@ -18,7 +18,7 @@ _logger = logging.getLogger(__name__)
 
 
 class HrPayslip(models.Model):
-    _inherit = "hr.payslip"
+    _inherit = "hr.expense"
 
     icici_payment_status = fields.Selection(
         [
@@ -478,12 +478,12 @@ class HrPayslip(models.Model):
             _("Unable to process the ICICI request.")
         )
     
-    def action_release_salary(self):
-        """Validate payslips, call ICICI Create API and open OTP wizard."""
+    def action_expense_release(self):
+        """Validate expenses, call ICICI Create API and open OTP wizard."""
 
         if not self:
             raise ValidationError(
-                _("No payslips selected.")
+                _("No expenses selected.")
             )
         for slip in self:
 
@@ -494,15 +494,15 @@ class HrPayslip(models.Model):
             ):
                 raise ValidationError(
                     _(
-                        "Salary payment has already been initiated for %s."
+                        "Expense payment has already been initiated for %s."
                     )
                     % slip.employee_id.name
                 )
 
-            if slip.state != "validated":
+            if slip.state != "posted":
                 raise ValidationError(
                     _(
-                        "%s payslip must be validated before salary release."
+                        "%s expense must be posted before payment release."
                     )
                     % slip.employee_id.name
                 )
@@ -542,11 +542,11 @@ class HrPayslip(models.Model):
                     % employee.name
                 )
 
-            amount = float(slip.net_wage or 0.0)
+            amount = float(slip.total_amount_currency or 0.0)
 
             if amount <= 0:
                 raise ValidationError(
-                    _("Invalid salary amount for %s.")
+                    _("Invalid Expense amount for %s.")
                     % employee.name
                 )
 
@@ -664,12 +664,12 @@ class HrPayslip(models.Model):
             "view_mode": "form",
             "target": "new",
             "context": {
-                "default_payslip_ids": self.ids,
+                "default_expense_ids": self.ids,
             },
         }    
     
-    def generate_salary_file(self, payment_date):
-        """Generate ICICI Salary File."""
+    def generate_expense_file(self, payment_date):
+        """Generate ICICI Expense File."""
         payment_date = fields.Date.to_date(
             payment_date
         ).strftime("%m/%d/%Y")
@@ -725,13 +725,13 @@ class HrPayslip(models.Model):
                 )
 
             amount = round(
-                float(slip.net_wage or 0.0),
+                float(slip.total_amount_currency or 0.0),
                 2,
             )
 
             if amount <= 0:
                 raise ValidationError(
-                    _("Invalid salary amount for %s.")
+                    _("Invalid expense amount for %s.")
                     % employee.name
                 )
 
@@ -761,7 +761,7 @@ class HrPayslip(models.Model):
                     employee_name,
                     f"{amount:.2f}",
                     "INR",
-                    "Salary",
+                    "Expense",
                     network,
                     beneficiary_ifsc,
                 ]) + "^"
@@ -777,14 +777,14 @@ class HrPayslip(models.Model):
 
         if transaction_count == 0:
             raise ValidationError(
-                _("No valid payslips found.")
+                _("No valid Expense found.")
             )
         total_records = transaction_count + 1
 
         header = (
             f"FHR|{total_records}|"
             f"{payment_date}|"
-            f"SALARY|"
+            f"EXPENSE|"
             f"{total_amount:.2f}|"
             f"INR|"
             f"{debit_account}|"
@@ -795,24 +795,24 @@ class HrPayslip(models.Model):
             f"MDR|"
             f"{debit_account}|"
             f"{debit_branch}|"
-            f"SALARY|"
+            f"EXPENSE|"
             f"{total_amount:.2f}|"
             f"INR|"
-            f"Salary Batch|"
+            f"Expense Batch|"
             f"ICIC0000011|"
             f"WIB^"
         )
 
-        salary_file = "\r\n".join(
+        expense_file = "\r\n".join(
             [header, maker] + detail_lines
         )
 
         _logger.info("=" * 80)
-        _logger.info("ICICI SALARY FILE GENERATED")
-        _logger.info("\n%s", salary_file)
+        _logger.info("ICICI EXPENSE FILE GENERATED")
+        _logger.info("\n%s", expense_file)
         _logger.info("=" * 80)
 
-        return salary_file
+        return expense_file
     
     def action_check_transaction_status(self, file_seq_num):
         """Fetch transaction status from ICICI Reverse MIS API."""
@@ -835,7 +835,7 @@ class HrPayslip(models.Model):
             "failed",
         ):
             raise ValidationError(
-                _("Transaction status can only be checked after salary processing has started.")
+                _("Transaction status can only be checked after expense processing has started.")
             )
 
         payload = {
@@ -1025,11 +1025,11 @@ class HrPayslip(models.Model):
         return True
     
     def process_bulk_payment(self, otp, payment_date):
-        """Submit salary file to ICICI after OTP verification."""
+        """Submit expense file to ICICI after OTP verification."""
 
         if not self:
             raise ValidationError(
-                _("No payslips selected.")
+                _("No expenses selected.")
             )
 
         otp = (otp or "").strip()
@@ -1044,7 +1044,7 @@ class HrPayslip(models.Model):
             if slip.icici_payment_status != "otp_pending":
                 raise ValidationError(
                     _(
-                        "Salary payment is not awaiting OTP for %s."
+                        "Expense payment is not awaiting OTP for %s."
                     )
                     % slip.employee_id.name
                 )
@@ -1057,16 +1057,16 @@ class HrPayslip(models.Model):
                     % slip.employee_id.name
                 )
 
-        salary_file = self.generate_salary_file(
+        expense_file = self.generate_expense_file(
             payment_date
         )
 
         encoded_file = base64.b64encode(
-            salary_file.encode("utf-8")
+            expense_file.encode("utf-8")
         ).decode("utf-8")
 
         payload = {
-            "FILE_DESCRIPTION": "Salary Payment",
+            "FILE_DESCRIPTION": "Expense Payment",
             "AGGR_ID": "BULK0173",
             "URN": "SR283346233",
             "AGGR_NAME": "BXITECH",
@@ -1075,7 +1075,7 @@ class HrPayslip(models.Model):
             "UNIQUE_ID": self[0].icici_reference,
             "AGOTP": otp,
             "FILE_NAME": (
-                f"SALARY_"
+                f"EXPENSE_"
                 f"{datetime.now().strftime('%Y%m%d%H%M%S')}.txt"
             ),
             "FILE_CONTENT": encoded_file,
@@ -1231,7 +1231,7 @@ class HrPayslip(models.Model):
         ):
             raise ValidationError(
                 _(
-                    "Transaction status can only be checked after salary processing has started."
+                    "Transaction status can only be checked after expense processing has started."
                 )
             )
 
@@ -1247,7 +1247,7 @@ class HrPayslip(models.Model):
             "view_mode": "form",
             "target": "new",
             "context": {
-                "default_payslip_id": self.id,
+                "default_expense_id": self.id,
                 "default_file_seq_num": self.icici_file_seq_num,
             },
         }

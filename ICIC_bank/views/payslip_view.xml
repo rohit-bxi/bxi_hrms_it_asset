@@ -19,7 +19,7 @@
                     decoration-success="icici_payment_status == 'paid'"
                     decoration-warning="icici_payment_status == 'processing'"
                     decoration-danger="icici_payment_status == 'failed'"
-                    decoration-info="icici_payment_status == 'reversed'"
+                    decoration-info="icici_payment_status == 'Fetching'"
                 />
                 <field name="icici_reference" optional="hide"/>
                 <field name="icici_file_seq_num"/>
@@ -51,10 +51,10 @@
                     class="btn-primary"
                     invisible="state != 'validated' or icici_payment_status in ('processing','paid','reversed')"/>
                 <button
-                    name="action_open_reverse_wizard"
-                    string="Reverse Payment"
+                    name="action_open_transaction_status_wizard"
+                    string="Check Payment Status"
                     type="object"
-                    class="btn-danger"
+                    class="btn-primary"
                     invisible="icici_payment_status != 'processing'"/>
             </xpath>
 
