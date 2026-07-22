@@ -18,7 +18,7 @@ _logger = logging.getLogger(__name__)
 
 
 class HrPayslip(models.Model):
-    _inherit = "account.move"
+    _inherit = "account.payment"
 
     icici_payment_status = fields.Selection(
         [
@@ -479,11 +479,11 @@ class HrPayslip(models.Model):
         )
     
     def action_vendor_bill_release(self):
-        """Validate expenses, call ICICI Create API and open OTP wizard."""
+        """Validate Vendor Bills, call ICICI Create API and open OTP wizard."""
 
         if not self:
             raise ValidationError(
-                _("No Vendor Bill selected.")
+                _("No Payment for Vendor Bills are selected.")
             )
         for slip in self:
 
@@ -499,10 +499,10 @@ class HrPayslip(models.Model):
                     % slip.partner_id.name
                 )
 
-            if slip.state != "posted":
+            if slip.state != "in_process":
                 raise ValidationError(
                     _(
-                        "%s vendor bill must be posted before payment release."
+                        "%s Payment must be in In Process before payment release."
                     )
                     % slip.partner_id.name
                 )
@@ -542,11 +542,11 @@ class HrPayslip(models.Model):
                     % partner.name
                 )
 
-            amount = float(slip.amount_residual or 0.0)
+            amount = float(slip.amount or 0.0)
 
             if amount <= 0:
                 raise ValidationError(
-                    _("Invalid Vendor Bill amount for %s.")
+                    _("Invalid Payment amount for %s.")
                     % partner.name
                 )
 
@@ -669,7 +669,7 @@ class HrPayslip(models.Model):
         }    
     
     def generate_vendor_bill_file(self, payment_date):
-        """Generate ICICI Vendor Bill File."""
+        """Generate ICICI Payment File."""
         payment_date = fields.Date.to_date(
             payment_date
         ).strftime("%m/%d/%Y")
@@ -725,13 +725,13 @@ class HrPayslip(models.Model):
                 )
 
             amount = round(
-                float(slip.amount_residual or 0.0),
+                float(slip.amount or 0.0),
                 2,
             )
 
             if amount <= 0:
                 raise ValidationError(
-                    _("Invalid vendor bill amount for %s.")
+                    _("Invalid Payment amount for %s.")
                     % partner.name
                 )
 
@@ -761,7 +761,7 @@ class HrPayslip(models.Model):
                     partner_name,
                     f"{amount:.2f}",
                     "INR",
-                    "Vendor Bill",
+                    "Vendor Payment",
                     network,
                     beneficiary_ifsc,
                 ]) + "^"
@@ -777,14 +777,14 @@ class HrPayslip(models.Model):
 
         if transaction_count == 0:
             raise ValidationError(
-                _("No valid Vendor Bill found.")
+                _("No valid Payment for vendor found.")
             )
         total_records = transaction_count + 1
 
         header = (
             f"FHR|{total_records}|"
             f"{payment_date}|"
-            f"VENDOR_BILL|"
+            f"VENDOR_PAYMENT|"
             f"{total_amount:.2f}|"
             f"INR|"
             f"{debit_account}|"
@@ -795,10 +795,10 @@ class HrPayslip(models.Model):
             f"MDR|"
             f"{debit_account}|"
             f"{debit_branch}|"
-            f"VENDOR_BILL|"
+            f"VENDOR_PAYMENT|"
             f"{total_amount:.2f}|"
             f"INR|"
-            f"Vendor Bill Batch|"
+            f"Vendor Payment Batch|"
             f"ICIC0000011|"
             f"WIB^"
         )
@@ -835,7 +835,7 @@ class HrPayslip(models.Model):
             "failed",
         ):
             raise ValidationError(
-                _("Transaction status can only be checked after salary processing has started.")
+                _("Transaction status can only be checked after Payment processing has started.")
             )
 
         payload = {
@@ -1029,7 +1029,7 @@ class HrPayslip(models.Model):
 
         if not self:
             raise ValidationError(
-                _("No Vendors selected.")
+                _("No Payments are selected.")
             )
 
         otp = (otp or "").strip()
@@ -1231,7 +1231,7 @@ class HrPayslip(models.Model):
         ):
             raise ValidationError(
                 _(
-                    "Transaction status can only be checked after vendor bill processing has started."
+                    "Transaction status can only be checked after vendor Payment processing has started."
                 )
             )
 
@@ -1247,7 +1247,7 @@ class HrPayslip(models.Model):
             "view_mode": "form",
             "target": "new",
             "context": {
-                "default_vendor_bill_id": self.id,
+                "default_vendor_payment_id": self.id,
                 "default_file_seq_num": self.icici_file_seq_num,
             },
         }
