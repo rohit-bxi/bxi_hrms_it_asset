@@ -662,6 +662,9 @@ class HrPayslip(models.Model):
             "name": _("ICICI OTP Verification"),
             "res_model": "icici.otp.wizard",
             "view_mode": "form",
+            "view_id": self.env.ref(
+                "ICIC_bank.view_icici_otp_wizard_form_vendor"
+            ).id,
             "target": "new",
             "context": {
                 "default_vendor_bill_ids": self.ids,
