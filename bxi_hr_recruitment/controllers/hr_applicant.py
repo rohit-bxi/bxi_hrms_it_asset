@@ -174,6 +174,7 @@ class ApplicantCreation(http.Controller):
                 'cur_pre_hr_contact': data.get('cur_pre_hr_contact'),
                 'cur_pre_reporting_manager': data.get('cur_pre_reporting_manager'),
                 'cur_pre_reporting_manager_contact': data.get('cur_pre_reporting_manager_contact'),
+                
             })
 
             def create_attachment(file_obj):
@@ -202,6 +203,8 @@ class ApplicantCreation(http.Controller):
                 'doc_master_id': m2m(data.get('doc_master')),
                 'any_certificate': m2m(data.get('any_certificate')),
                 'photograph': m2m(data.get('photograph')),
+                'adhar_card_proof': m2m(data.get('adhar_card_proof')),
+                'pan_number_proof': m2m(data.get('pan_number_proof')),
             })
             def create_exp_attachment(file_obj, exp_record):
                 if not file_obj or not file_obj.get('data'):
