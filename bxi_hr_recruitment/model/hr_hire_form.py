@@ -64,7 +64,21 @@ class HrHire(models.Model):
     mother_name = fields.Char("Mother Name")
     contact_number = fields.Char("Contact Number")
     aadhar_number = fields.Char("Aadhar Number")
+    adhar_card_proof = fields.Many2many(
+            'ir.attachment',
+            'hr_applicant_adhar_card_proof_rel',
+            'applicant_id',
+            'attachment_id',
+            string="Aadhar Card(Front and Back)"
+        )
     pan_number = fields.Char("PAN Number")
+    pan_number_proof = fields.Many2many(
+            'ir.attachment',
+            'hr_applicant_pan_number_proof_rel',
+            'applicant_id',
+            'attachment_id',
+            string="PAN Card Proof"
+        )
     full_address = fields.Char("Full Address")
     joining_date = fields.Date(string="Joining Date")
 
