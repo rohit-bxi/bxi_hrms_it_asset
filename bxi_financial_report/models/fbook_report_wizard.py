@@ -144,8 +144,15 @@ class FbookReportWizard(models.TransientModel):
             'y2': {'q1': {}, 'q2': {}, 'q3': {}, 'q4': {}, 'total': {}}
         }
 
-        running_dso_amount = 0.0
-        running_dso_days = 0.0
+        # DSO running accumulators — tracked separately per year
+        # DSO Amount = cumulative AR outstanding (billed but unpaid) to date within the year
+        # DSO Days   = (Cumulative AR Outstanding / Cumulative Revenue) × Days elapsed since year start
+        running_dso_amount = {'y1': 0.0, 'y2': 0.0}
+        running_billed     = {'y1': 0.0, 'y2': 0.0}
+        year_start_dates   = {
+            'y1': fields.Date.from_string(f'{y1_start}-04-01'),
+            'y2': fields.Date.from_string(f'{y2_start}-04-01'),
+        }
         for qdef in quarters_def:
             year_key = qdef['year']
             q_key = qdef['q']
@@ -220,20 +227,49 @@ class FbookReportWizard(models.TransientModel):
 
 
 
-            # 4. DSO — Split into DSO (Days) and DSO (Amount)
-            running_dso_amount += billed_val - actual_val
-            dso_amount_val = running_dso_amount
-
-            running_dso_days += ((billed_val - actual_val) / billed_val * 90) if billed_val > 0 else 0.0
-            if running_dso_days < 0.0:
-                running_dso_days = 0.0
-            dso_days_val = running_dso_days
-
-            # If the quarter has not started yet relative to today's date, set point-in-time DSO to 0
+            # 4. DSO Calculation
+            # ------------------------------------------------------------------
+            # DSO Amount = Cumulative AR outstanding (billed but not yet paid)
+            #              It accumulates quarter-over-quarter within the same year.
+            #
+            # DSO Days   = Standard formula:
+            #              (Cumulative AR Outstanding / Cumulative Revenue Billed) × Days elapsed
+            #
+            #   Per-Quarter DSO Days = (This quarter outstanding / This quarter billed) × 90
+            #   Running    DSO Days  = (All AR outstanding so far / All revenue so far) × Days elapsed this year
+            #
+            # We show the running DSO for each quarter so you can see the trend improving or worsening.
+            # ------------------------------------------------------------------
             q_start_date = fields.Date.from_string(qdef['start'])
-            if q_start_date > today_date:
-                dso_amount_val = 0.0
-                dso_days_val = 0.0
+            q_end_date   = fields.Date.from_string(qdef['end'])
+
+            dso_amount_val = 0.0
+            dso_days_val   = 0
+
+            if q_start_date <= today_date:
+                # Accumulate per year
+                outstanding_this_q = billed_val - actual_val
+                running_dso_amount[year_key] += outstanding_this_q
+                running_billed[year_key]     += billed_val
+
+                dso_amount_val = running_dso_amount[year_key]
+
+                # Days elapsed from year start to end of this quarter (or today if quarter not yet complete)
+                year_start_dt  = year_start_dates[year_key]
+                effective_end  = min(q_end_date, today_date)
+                days_elapsed   = (effective_end - year_start_dt).days + 1
+
+                # Standard DSO: (Cumulative Outstanding / Cumulative Billed) × Days Elapsed
+                if running_billed[year_key] > 0:
+                    dso_days_val = round(
+                        (running_dso_amount[year_key] / running_billed[year_key]) * days_elapsed
+                    )
+                else:
+                    dso_days_val = 0
+
+                # DSO days cannot be negative
+                if dso_days_val < 0:
+                    dso_days_val = 0
 
 
 
