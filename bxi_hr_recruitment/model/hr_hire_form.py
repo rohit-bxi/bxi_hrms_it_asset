@@ -64,6 +64,7 @@ class HrHire(models.Model):
     mother_name = fields.Char("Mother Name")
     contact_number = fields.Char("Contact Number")
     aadhar_number = fields.Char("Aadhar Number")
+    uan_number = fields.Char("UAN Number")
     adhar_card_proof = fields.Many2many(
             'ir.attachment',
             'hr_applicant_adhar_card_proof_rel',
