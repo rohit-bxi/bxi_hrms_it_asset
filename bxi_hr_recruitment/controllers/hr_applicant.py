@@ -166,6 +166,7 @@ class ApplicantCreation(http.Controller):
                 'email_from': data.get('email_from'),
                 'father_name': data.get('father_name'),
                 'mother_name': data.get('mother_name'),
+                'uan_number': data.get('uan_number'),
                 'aadhar_number': data.get('aadhar_number'),
                 'pan_number': data.get('pan_number'),
                 'full_address': data.get('full_address'),
