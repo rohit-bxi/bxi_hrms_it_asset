@@ -60,7 +60,7 @@
         <field name="name">Expense Request - Finance Approval</field>
         <field name="model_id" ref="model_hr_expense" />
         <field name="subject">Finance Approval Required - {{ object.employee_id.name }}</field>
-        <field name="email_to">fso@bxiventure.com</field>
+        <field name="email_to">fso@bxiventures.com</field>
         <field name="body_html" type="html">
             <div style="font-family: Arial; font-size:14px;">
                 <p>Dear Finance Team,</p>
