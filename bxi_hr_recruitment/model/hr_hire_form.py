@@ -65,13 +65,20 @@ class HrHire(models.Model):
     contact_number = fields.Char("Contact Number")
     aadhar_number = fields.Char("Aadhar Number")
     uan_number = fields.Char("UAN Number")
-    adhar_card_proof = fields.Many2many(
+    adhar_card_front = fields.Many2many(
             'ir.attachment',
             'hr_applicant_adhar_card_proof_rel',
             'applicant_id',
             'attachment_id',
-            string="Aadhar Card(Front and Back)"
+            string="Aadhar Card Front"
         )
+    adhar_card_back = fields.Many2many(
+                'ir.attachment',
+                'hr_applicant_adhar_card_back_rel',
+                'applicant_id',
+                'attachment_id',
+                string="Aadhar Card Back"
+            )
     pan_number = fields.Char("PAN Number")
     pan_number_proof = fields.Many2many(
             'ir.attachment',
