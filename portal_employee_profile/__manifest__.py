@@ -11,13 +11,14 @@
         'hr',
         'portal',
         'website',
-        'l10n_in_hr_payroll',
+        'om_hr_payroll',
         'bxi_hr_employee',
+        'custom_payslip_report',
     ],
     'data': [
         'views/portal_menu.xml',
         'views/portal_templates.xml',
-        # 'views/portal_my_payslips.xml',
+        'views/portal_my_payslips.xml',
     ],
     "assets": {
         "web.assets_frontend": [
