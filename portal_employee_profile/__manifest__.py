@@ -11,7 +11,7 @@
         'hr',
         'portal',
         'website',
-        'om_hr_payroll',
+        'hr_payroll',
         'bxi_hr_employee',
         'custom_payslip_report',
     ],
