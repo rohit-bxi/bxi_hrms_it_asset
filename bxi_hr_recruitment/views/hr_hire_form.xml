@@ -147,7 +147,8 @@
                             <field name="mother_name"/>
                             <field name="uan_number"/>
                             <field name="aadhar_number"/>
-                            <field name="adhar_card_proof" widget="many2many_binary"/>
+                            <field name="adhar_card_front" widget="many2many_binary"/>
+                            <field name="adhar_card_back" widget="many2many_binary"/>
                             <field name="pan_number"/>
                             <field name="pan_number_proof" widget="many2many_binary"/>
                         </group>
