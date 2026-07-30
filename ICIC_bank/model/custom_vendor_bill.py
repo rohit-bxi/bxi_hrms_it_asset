@@ -489,7 +489,6 @@ class HrPayslip(models.Model):
         for slip in self:
 
             if slip.icici_payment_status in (
-                "otp_pending",
                 "processing",
                 "paid",
             ):
