@@ -661,11 +661,14 @@ class HrPayslip(models.Model):
             "name": _("ICICI OTP Verification"),
             "res_model": "icici.otp.wizard",
             "view_mode": "form",
+            "view_id": self.env.ref(
+                "ICIC_bank.view_icici_otp_wizard_form"
+            ).id,
             "target": "new",
             "context": {
-                "default_payslip_ids": self.ids,
+                "default_payslip_ids": [(6, 0, self.ids)],
             },
-        }    
+        }   
     
     def generate_salary_file(self, payment_date):
         """Generate ICICI Salary File."""

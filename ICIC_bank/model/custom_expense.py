@@ -54,7 +54,7 @@ class HrPayslip(models.Model):
         readonly=True,
     )
 
-    icici_generated_otp = fields.Char(
+    icici_gerated_otp = fields.Char(
         string="Generated OTP",
         copy=False,
     )
