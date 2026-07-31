@@ -769,13 +769,14 @@ class HrPayslip(models.Model):
                     beneficiary_ifsc,
                 ]) + "^"
             )
-
+            _logger.info("detail_lines = %s", detail_lines)
             _logger.info(
-                "Partner : %s | Type : %s | Amount : %.2f | IFSC : %s",
+                "Partner : %s | Type : %s | Amount : %.2f | IFSC : %s | Network : %s",
                 partner.name,
                 transaction_type,
                 amount,
                 beneficiary_ifsc,
+                network,
             )
 
         if transaction_count == 0:
@@ -1248,6 +1249,9 @@ class HrPayslip(models.Model):
             "name": _("Transaction Status"),
             "res_model": "icici.transaction.status.wizard",
             "view_mode": "form",
+            "view_id": self.env.ref(
+                "ICIC_bank.icici_transaction_status_wizard_vendor"
+            ).id,
             "target": "new",
             "context": {
                 "default_vendor_payment_id": self.id,
