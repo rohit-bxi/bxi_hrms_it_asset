@@ -832,14 +832,14 @@ class HrPayslip(models.Model):
                 _("ICICI Reference is missing.")
             )
 
-        if self.icici_payment_status not in (
-            "processing",
-            "paid",
-            "failed",
-        ):
-            raise ValidationError(
-                _("Transaction status can only be checked after salary processing has started.")
-            )
+        # if self.icici_payment_status not in (
+        #     "processing",
+        #     "paid",
+        #     "failed",
+        # ):
+        #     raise ValidationError(
+        #         _("Transaction status can only be checked after salary processing has started.")
+        #     )
 
         payload = {
             "AGGRID": "BULK0173",
