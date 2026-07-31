@@ -661,9 +661,12 @@ class HrPayslip(models.Model):
             "name": _("ICICI OTP Verification"),
             "res_model": "icici.otp.wizard",
             "view_mode": "form",
+            "view_id": self.env.ref(
+                "ICIC_bank.view_icici_otp_wizard_form"
+            ).id,
             "target": "new",
             "context": {
-                "default_expense_ids": self.ids,
+                "default_expense_ids": [(6, 0, self.ids)],
             },
         }    
     
@@ -766,12 +769,14 @@ class HrPayslip(models.Model):
                 ]) + "^"
             )
 
+            _logger.info("DETAIL LINE: %s", detail_lines)
             _logger.info(
-                "Employee : %s | Type : %s | Amount : %.2f | IFSC : %s",
+                "Employee : %s | Type : %s | Amount : %.2f | IFSC : %s | network : %s",
                 employee.name,
                 transaction_type,
                 amount,
                 beneficiary_ifsc,
+                network,
             )
 
         if transaction_count == 0:
@@ -1244,6 +1249,9 @@ class HrPayslip(models.Model):
             "name": _("Transaction Status"),
             "res_model": "icici.transaction.status.wizard",
             "view_mode": "form",
+            "view_id": self.env.ref(
+                "ICIC_bank.icici_transaction_status_wizard_expense"
+            ).id,
             "target": "new",
             "context": {
                 "default_expense_id": self.id,
