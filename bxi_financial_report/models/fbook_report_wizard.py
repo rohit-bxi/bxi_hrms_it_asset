@@ -67,8 +67,11 @@ class FbookReportWizard(models.TransientModel):
             company_ids = [company_ids]
 
         companies = self.env['res.company'].browse(company_ids)
-        # Primary company used as fallback for currency rate lookups
-        company = companies[0] if companies else self.env.company
+        # Resolve display company: prefer the root/parent company (no parent_id) among
+        # selected companies. If a parent is selected, always show parent name.
+        # If only child companies are selected, show the first child's name.
+        parent_company = companies.filtered(lambda c: not c.parent_id)
+        company = parent_company[0] if parent_company else (companies[0] if companies else self.env.company)
         target_currency = self.env['res.currency'].browse(currency_id)
 
         def get_rate_company(record):
@@ -169,7 +172,7 @@ class FbookReportWizard(models.TransientModel):
 
                     if contract.contract_start_date and q_start_dt <= contract.contract_start_date <= q_end_dt:
                         booking_val += contract.currency_id._convert(
-                            contract.contract_amount, target_currency, get_rate_company(contract), fields.Date.today()
+                            contract.contract_amount, target_currency, get_rate_company(contract), contract.contract_start_date or fields.Date.today()
                         )
 
 
@@ -200,27 +203,38 @@ class FbookReportWizard(models.TransientModel):
 
 
 
-            # 2. Billed — ALL customer invoices (except cancel/rejected) for selected companies in the quarter
+            # 2. Billed = invoiced amount (amount_total on posted customer invoices)
+            # Actual = amount actually received for those invoices (amount_total - amount_residual)
             billed_val = 0.0
             actual_val = 0.0
+            outstanding_val = 0.0  # AR still outstanding (amount_residual)
             invoices = self.env['account.move'].sudo().search([
                 ('company_id', 'in', company_ids),
                 ('move_type', '=', 'out_invoice'),
-                ('state', 'not in', ('cancel', 'rejected')),
+                ('state', '=', 'posted'),
                 ('invoice_date', '>=', qdef['start']),
                 ('invoice_date', '<=', qdef['end'])
             ])
             for inv in invoices:
+                if 'project.contract.management' in self.env and not is_linked_to_contract(inv):
+                    continue
                 inv_amount = inv.currency_id._convert(
                     inv.amount_total, target_currency,
                     get_rate_company(inv), inv.invoice_date or fields.Date.today()
                 )
-                # Billed = ALL posted invoices raised in the quarter
+                # Billed = invoiced amount for contract-linked invoices
                 billed_val += inv_amount
-                # Actual = invoices that are fully paid (payment_state = paid)
-                if inv.payment_state == 'paid':
-
-                    actual_val += inv_amount
+                # Actual = amount received = amount_total - amount_residual
+                residual = inv.currency_id._convert(
+                    inv.amount_residual, target_currency,
+                    get_rate_company(inv), inv.invoice_date or fields.Date.today()
+                )
+                received = inv_amount - residual
+                if received > 0:
+                    actual_val += received
+                # Outstanding AR = residual still to be collected
+                if residual > 0:
+                    outstanding_val += residual
 
 
 
@@ -229,16 +243,10 @@ class FbookReportWizard(models.TransientModel):
 
             # 4. DSO Calculation
             # ------------------------------------------------------------------
-            # DSO Amount = Cumulative AR outstanding (billed but not yet paid)
+            # DSO Amount = Cumulative AR outstanding (amount still to be received)
             #              It accumulates quarter-over-quarter within the same year.
             #
-            # DSO Days   = Standard formula:
-            #              (Cumulative AR Outstanding / Cumulative Revenue Billed) × Days elapsed
-            #
-            #   Per-Quarter DSO Days = (This quarter outstanding / This quarter billed) × 90
-            #   Running    DSO Days  = (All AR outstanding so far / All revenue so far) × Days elapsed this year
-            #
-            # We show the running DSO for each quarter so you can see the trend improving or worsening.
+            # DSO Days   = (Cumulative AR Outstanding / Cumulative Revenue Billed) × Days elapsed
             # ------------------------------------------------------------------
             q_start_date = fields.Date.from_string(qdef['start'])
             q_end_date   = fields.Date.from_string(qdef['end'])
@@ -247,9 +255,8 @@ class FbookReportWizard(models.TransientModel):
             dso_days_val   = 0
 
             if q_start_date <= today_date:
-                # Accumulate per year
-                outstanding_this_q = billed_val - actual_val
-                running_dso_amount[year_key] += outstanding_this_q
+                # Accumulate per year — outstanding_val is the actual amount_residual sum
+                running_dso_amount[year_key] += outstanding_val
                 running_billed[year_key]     += billed_val
 
                 dso_amount_val = running_dso_amount[year_key]
@@ -335,34 +342,54 @@ class FbookReportWizard(models.TransientModel):
             margin_val = (profit_val / billed_val * 100) if billed_val > 0 else 0.0
             margin_val = min(100.0, margin_val)
 
-            # 8. Cash Flow: IN (all bank/cash debits) - OUT (all bank/cash credits) = Net Cash
-            #    Strictly uses lines where account itself is bank/cash (asset_cash) to avoid double counting counterpart lines
+            # 8. Cash Flow: IN (all bank statement deposits > 0) - OUT (all bank statement withdrawals < 0) = Net Cash
+            #    Pulls directly from Bank Statements (account.bank.statement.line), fallback to asset_cash move lines
             cash_flow_val = 0.0
             q_start_date = fields.Date.from_string(qdef['start'])
             q_end_date = fields.Date.from_string(qdef['end'])
 
-            if 'account.move.line' in self.env and q_start_date <= today_date:
+            if q_start_date <= today_date:
                 effective_end = q_end_date if q_end_date <= today_date else today_date
-                domain = [
-                    ('company_id', 'in', company_ids),
-                    ('parent_state', '=', 'posted'),
-                    ('date', '>=', qdef['start']),
-                    ('date', '<=', effective_end),
-                    ('account_id.account_type', '=', 'asset_cash'),  # Only the bank/cash account lines itself
-                ]
-
                 q_in = 0.0
                 q_out = 0.0
-                cash_lines = self.env['account.move.line'].sudo().search(domain)
-                for cl in cash_lines:
-                    if cl.debit > 0:
-                        q_in += cl.company_id.currency_id._convert(
-                            cl.debit, target_currency, get_rate_company(cl), cl.date or fields.Date.today()
+                st_lines = False
+                if 'account.bank.statement.line' in self.env:
+                    bs_domain = [
+                        ('company_id', 'in', company_ids),
+                        ('date', '>=', qdef['start']),
+                        ('date', '<=', effective_end),
+                    ]
+                    st_lines = self.env['account.bank.statement.line'].sudo().search(bs_domain)
+
+                if st_lines:
+                    for stl in st_lines:
+                        amt = stl.amount
+                        curr = getattr(stl, 'foreign_currency_id', False) or stl.currency_id or stl.company_id.currency_id
+                        converted = curr._convert(
+                            abs(amt), target_currency, get_rate_company(stl), stl.date or fields.Date.today()
                         )
-                    elif cl.credit > 0:
-                        q_out += cl.company_id.currency_id._convert(
-                            cl.credit, target_currency, get_rate_company(cl), cl.date or fields.Date.today()
-                        )
+                        if amt > 0:
+                            q_in += converted
+                        elif amt < 0:
+                            q_out += converted
+                elif 'account.move.line' in self.env:
+                    domain = [
+                        ('company_id', 'in', company_ids),
+                        ('parent_state', '=', 'posted'),
+                        ('date', '>=', qdef['start']),
+                        ('date', '<=', effective_end),
+                        ('account_id.account_type', '=', 'asset_cash'),
+                    ]
+                    cash_lines = self.env['account.move.line'].sudo().search(domain)
+                    for cl in cash_lines:
+                        if cl.debit > 0:
+                            q_in += cl.company_id.currency_id._convert(
+                                cl.debit, target_currency, get_rate_company(cl), cl.date or fields.Date.today()
+                            )
+                        elif cl.credit > 0:
+                            q_out += cl.company_id.currency_id._convert(
+                                cl.credit, target_currency, get_rate_company(cl), cl.date or fields.Date.today()
+                            )
                 cash_flow_val = q_in - q_out
 
             # 9. Calibration: Incoming bank/cash receipts NOT linked to customer invoices
@@ -506,16 +533,18 @@ class FbookReportWizard(models.TransientModel):
 
                 if contract.contract_start_date:
                     val_converted = contract.currency_id._convert(
-                        contract.contract_amount, target_currency, get_rate_company(contract), fields.Date.today()
+                        contract.contract_amount, target_currency, get_rate_company(contract), contract.contract_start_date or fields.Date.today()
                     )
                     if y1_start_date <= contract.contract_start_date <= y1_end_date:
                         y1_booking += val_converted
                     elif y2_start_date <= contract.contract_start_date <= y2_end_date:
                         y2_booking += val_converted
 
-                # Billed Y1 & Y2
+                # Billed Y1 & Y2 and Actual Y1 & Y2
                 y1_billed = 0.0
                 y2_billed = 0.0
+                y1_actual = 0.0
+                y2_actual = 0.0
 
                 # Search invoices linked to this contract (use sudo to bypass company record rules)
                 invoices = self.env['account.move'].sudo().search([
@@ -546,11 +575,18 @@ class FbookReportWizard(models.TransientModel):
                             inv_val = inv.currency_id._convert(
                                 inv.amount_total, target_currency, get_rate_company(inv), inv_date
                             )
+                            # Actual = amount already received (amount_total - amount_residual)
+                            residual_val = inv.currency_id._convert(
+                                inv.amount_residual, target_currency, get_rate_company(inv), inv_date
+                            )
+                            received_val = max(0.0, inv_val - residual_val)
 
                             if y1_start_date <= inv_date <= y1_end_date:
                                 y1_billed += inv_val
+                                y1_actual += received_val
                             elif y2_start_date <= inv_date <= y2_end_date:
                                 y2_billed += inv_val
+                                y2_actual += received_val
 
                 # Convert contract amount to target currency
                 val_converted = contract.currency_id._convert(
@@ -570,8 +606,10 @@ class FbookReportWizard(models.TransientModel):
                             'contract_value': 0.0,
                             'y1_booking': 0.0,
                             'y1_billed': 0.0,
+                            'y1_actual': 0.0,
                             'y2_booking': 0.0,
-                            'y2_billed': 0.0
+                            'y2_billed': 0.0,
+                            'y2_actual': 0.0,
                         }
                     pd = partners_data[partner_key]
                     service_line_name = contract.service_line_id.name if contract.service_line_id else ''
@@ -582,8 +620,10 @@ class FbookReportWizard(models.TransientModel):
                     pd['contract_value'] += val_converted
                     pd['y1_booking'] += y1_booking
                     pd['y1_billed'] += y1_billed
+                    pd['y1_actual'] += y1_actual
                     pd['y2_booking'] += y2_booking
                     pd['y2_billed'] += y2_billed
+                    pd['y2_actual'] += y2_actual
 
             for key, pd in partners_data.items():
                 contracts_data.append({
@@ -594,10 +634,12 @@ class FbookReportWizard(models.TransientModel):
                     'contract_value': target_currency.round(pd['contract_value']),
                     'y1_booking': target_currency.round(pd['y1_booking']),
                     'y1_billed': target_currency.round(pd['y1_billed']),
+                    'y1_actual': target_currency.round(pd['y1_actual']),
                     'y1_expenses': 0.0,
                     'y1_margin': 0.0,
                     'y2_booking': target_currency.round(pd['y2_booking']),
                     'y2_billed': target_currency.round(pd['y2_billed']),
+                    'y2_actual': target_currency.round(pd['y2_actual']),
                     'y2_expenses': 0.0,
                     'y2_margin': 0.0
                 })
@@ -605,8 +647,10 @@ class FbookReportWizard(models.TransientModel):
         total_contract_value = sum(c['contract_value'] for c in contracts_data)
         total_y1_booking = sum(c['y1_booking'] for c in contracts_data)
         total_y1_billed = sum(c['y1_billed'] for c in contracts_data)
+        total_y1_actual = sum(c['y1_actual'] for c in contracts_data)
         total_y2_booking = sum(c['y2_booking'] for c in contracts_data)
         total_y2_billed = sum(c['y2_billed'] for c in contracts_data)
+        total_y2_actual = sum(c['y2_actual'] for c in contracts_data)
 
         # Calculate Detailed Expense Data consolidated by Category
         expenses_data = []
@@ -654,7 +698,8 @@ class FbookReportWizard(models.TransientModel):
                     get_rate_company(exp), exp.date or fields.Date.today()
                 )
                 is_paid = getattr(exp, 'state', '') in ('paid', 'posted', 'in_payment', 'done')
-                _add_expense_val('Employee(reimbursement)', y_key, conv, conv if is_paid else 0.0)
+                actual_exp = conv if is_paid else 0.0
+                _add_expense_val('Employee(reimbursement)', y_key, conv, actual_exp)
 
         # B. Vendor Bills -> consolidated by vendor_category
         category_labels = {
@@ -687,8 +732,12 @@ class FbookReportWizard(models.TransientModel):
                     bill.amount_total, target_currency,
                     get_rate_company(bill), bill.invoice_date or fields.Date.today()
                 )
-                is_paid = bill.payment_state in ('paid', 'in_payment', 'partial') if hasattr(bill, 'payment_state') else False
-                _add_expense_val(cat_label, y_key, conv, conv if is_paid else 0.0)
+                residual = sign * bill.currency_id._convert(
+                    bill.amount_residual, target_currency,
+                    get_rate_company(bill), bill.invoice_date or fields.Date.today()
+                )
+                paid_amt = max(0.0, conv - residual)
+                _add_expense_val(cat_label, y_key, conv, paid_amt)
 
         # C. Payroll / Payslips -> consolidated under "Employee(salary)"
         if 'hr.payslip' in self.env:
@@ -816,21 +865,41 @@ class FbookReportWizard(models.TransientModel):
                 in_val = 0.0
                 out_val = 0.0
 
-                if 'account.move.line' in self.env and m_start_dt <= today_date:
-                    domain_month = _get_bank_cash_account_type_domain(
-                        self.env, company_ids, m_start_str, m_end_str
-                    )
+                if m_start_dt <= today_date:
+                    st_lines = False
+                    if 'account.bank.statement.line' in self.env:
+                        bs_domain = [
+                            ('company_id', 'in', company_ids),
+                            ('date', '>=', m_start_str),
+                            ('date', '<=', m_end_str),
+                        ]
+                        st_lines = self.env['account.bank.statement.line'].sudo().search(bs_domain)
 
-                    m_lines = self.env['account.move.line'].sudo().search(domain_month)
-                    for ml in m_lines:
-                        if ml.debit > 0:
-                            in_val += ml.company_id.currency_id._convert(
-                                ml.debit, target_currency, get_rate_company(ml), ml.date or fields.Date.today()
+                    if st_lines:
+                        for stl in st_lines:
+                            amt = stl.amount
+                            curr = getattr(stl, 'foreign_currency_id', False) or stl.currency_id or stl.company_id.currency_id
+                            converted = curr._convert(
+                                abs(amt), target_currency, get_rate_company(stl), stl.date or fields.Date.today()
                             )
-                        elif ml.credit > 0:
-                            out_val += ml.company_id.currency_id._convert(
-                                ml.credit, target_currency, get_rate_company(ml), ml.date or fields.Date.today()
-                            )
+                            if amt > 0:
+                                in_val += converted
+                            elif amt < 0:
+                                out_val += converted
+                    elif 'account.move.line' in self.env:
+                        domain_month = _get_bank_cash_account_type_domain(
+                            self.env, company_ids, m_start_str, m_end_str
+                        )
+                        m_lines = self.env['account.move.line'].sudo().search(domain_month)
+                        for ml in m_lines:
+                            if ml.debit > 0:
+                                in_val += ml.company_id.currency_id._convert(
+                                    ml.debit, target_currency, get_rate_company(ml), ml.date or fields.Date.today()
+                                )
+                            elif ml.credit > 0:
+                                out_val += ml.company_id.currency_id._convert(
+                                    ml.credit, target_currency, get_rate_company(ml), ml.date or fields.Date.today()
+                                )
 
                 row_data[f'{y_key}_in'] = target_currency.round(in_val)
                 row_data[f'{y_key}_out'] = target_currency.round(out_val)
@@ -846,7 +915,7 @@ class FbookReportWizard(models.TransientModel):
         total_cf_y2_out = target_currency.round(sum(m['y2_out'] for m in monthly_cashflow))
         total_cf_y2_remaining = target_currency.round(total_cf_y2_in - total_cf_y2_out)
 
-        # Calibration / Investor Section Calculation (Received Amounts Only)
+        # Calibration Section Calculation (Only partners with BOTH customer invoices and vendor bills)
         def get_q_num(d_str, fy_yr):
             if f"{fy_yr:04d}-04-01" <= d_str <= f"{fy_yr:04d}-06-30":
                 return 1
@@ -867,77 +936,68 @@ class FbookReportWizard(models.TransientModel):
 
         investor_data_map = {}
 
-        if 'account.move.line' in self.env:
-            # Strictly only bank/cash account lines (asset_cash) with debit > 0 = received money
-            domain_inv = [
+        if 'account.move' in self.env:
+            # 1. Partners with posted customer invoices
+            customer_partners = self.env['account.move'].sudo().search([
                 ('company_id', 'in', company_ids),
-                ('parent_state', '=', 'posted'),
-                ('debit', '>', 0.0),
-                ('account_id.account_type', '=', 'asset_cash'),
-                ('date', '>=', min(y1_start_str, y2_start_str)),
-                ('date', '<=', max(y1_end_str, y2_end_str)),
-            ]
+                ('move_type', 'in', ('out_invoice', 'out_refund')),
+                ('state', '=', 'posted'),
+                ('partner_id', '!=', False)
+            ]).mapped('partner_id')
 
-            inv_lines = self.env['account.move.line'].sudo().search(domain_inv)
-            for line in inv_lines:
-                move = line.move_id
-                is_customer_invoice = False
+            # 2. Partners with posted vendor bills
+            vendor_partners = self.env['account.move'].sudo().search([
+                ('company_id', 'in', company_ids),
+                ('move_type', 'in', ('in_invoice', 'in_receipt', 'in_refund')),
+                ('state', '=', 'posted'),
+                ('partner_id', '!=', False)
+            ]).mapped('partner_id')
 
-                # Method 1: Check via payment's reconciled invoices
-                pay = getattr(line, 'payment_id', False) or getattr(move, 'payment_id', False)
-                if pay:
-                    reconciled_invs = getattr(pay, 'reconciled_invoice_ids', False)
-                    if reconciled_invs and any(getattr(m, 'move_type', '') == 'out_invoice' for m in reconciled_invs):
-                        is_customer_invoice = True
+            # 3. Intersect: Only partners having BOTH customer invoices and vendor bills
+            dual_partners = (customer_partners & vendor_partners)
 
-                # Method 2: Check reconciliation partials to detect customer invoice receipts
-                if not is_customer_invoice:
-                    for ml in move.line_ids:
-                        for partial in getattr(ml, 'matched_credit_ids', []):
-                            credit_move = getattr(getattr(partial, 'credit_move_id', False), 'move_id', False)
-                            if credit_move and getattr(credit_move, 'move_type', '') == 'out_invoice':
-                                is_customer_invoice = True
-                                break
-                        for partial in getattr(ml, 'matched_debit_ids', []):
-                            debit_move = getattr(getattr(partial, 'debit_move_id', False), 'move_id', False)
-                            if debit_move and getattr(debit_move, 'move_type', '') == 'out_invoice':
-                                is_customer_invoice = True
-                                break
-                        if is_customer_invoice:
-                            break
+            for partner in dual_partners:
+                partner_name = partner.name.strip() if partner.name else 'Unknown Partner'
+                category = ', '.join(partner.category_id.mapped('name')) if partner.category_id else 'General'
+                partner_key = partner_name.lower()
 
-                if is_customer_invoice:
-                    continue
-
-                partner = line.partner_id or move.partner_id
-                inv_name = partner.name.strip() if partner and partner.name else 'Direct / Miscellaneous Investor'
-                category = ', '.join(partner.category_id.mapped('name')) if partner and partner.category_id else 'General'
-                inv_key = inv_name.lower()
-
-                if inv_key not in investor_data_map:
-                    investor_data_map[inv_key] = {
-                        'name': inv_name,
+                if partner_key not in investor_data_map:
+                    investor_data_map[partner_key] = {
+                        'name': partner_name,
                         'category': category,
                         'y1_quarters': {f'q{i}': 0.0 for i in range(1, 5)},
                         'y2_quarters': {f'q{i}': 0.0 for i in range(1, 5)},
                     }
 
-                conv_debit = line.company_id.currency_id._convert(
-                    line.debit, target_currency, get_rate_company(line), line.date or fields.Date.today()
-                )
+                # Get all posted invoices/bills for this partner
+                moves = self.env['account.move'].sudo().search([
+                    ('company_id', 'in', company_ids),
+                    ('partner_id', '=', partner.id),
+                    ('move_type', 'in', ('out_invoice', 'out_refund', 'in_invoice', 'in_receipt', 'in_refund')),
+                    ('state', '=', 'posted'),
+                    ('invoice_date', '>=', min(y1_start_str, y2_start_str)),
+                    ('invoice_date', '<=', max(y1_end_str, y2_end_str)),
+                ])
 
-                ldate = line.date
-                ldate_str = ldate.strftime('%Y-%m-%d') if ldate else ''
+                for move in moves:
+                    ldate = move.invoice_date
+                    if not ldate:
+                        continue
+                    ldate_str = ldate.strftime('%Y-%m-%d')
 
-                if y1_start_str <= ldate_str <= y1_end_str:
-                    q_num = get_q_num(ldate_str, y1_fy_start)
-                    if q_num:
-                        investor_data_map[inv_key]['y1_quarters'][f'q{q_num}'] += conv_debit
+                    conv_amt = move.currency_id._convert(
+                        move.amount_total, target_currency, get_rate_company(move), ldate or fields.Date.today()
+                    )
 
-                if y2_start_str <= ldate_str <= y2_end_str:
-                    q_num = get_q_num(ldate_str, y2_cy_start)
-                    if q_num:
-                        investor_data_map[inv_key]['y2_quarters'][f'q{q_num}'] += conv_debit
+                    if y1_start_str <= ldate_str <= y1_end_str:
+                        q_num = get_q_num(ldate_str, y1_fy_start)
+                        if q_num:
+                            investor_data_map[partner_key]['y1_quarters'][f'q{q_num}'] += conv_amt
+
+                    if y2_start_str <= ldate_str <= y2_end_str:
+                        q_num = get_q_num(ldate_str, y2_cy_start)
+                        if q_num:
+                            investor_data_map[partner_key]['y2_quarters'][f'q{q_num}'] += conv_amt
 
         investor_rows = []
         for inv_key in sorted(investor_data_map.keys()):
@@ -1008,8 +1068,10 @@ class FbookReportWizard(models.TransientModel):
             'total_contract_value': target_currency.round(total_contract_value),
             'total_y1_booking': target_currency.round(total_y1_booking),
             'total_y1_billed': target_currency.round(total_y1_billed),
+            'total_y1_actual': target_currency.round(total_y1_actual),
             'total_y2_booking': target_currency.round(total_y2_booking),
             'total_y2_billed': target_currency.round(total_y2_billed),
+            'total_y2_actual': target_currency.round(total_y2_actual),
             'total_y1_expenses': 0.0,
             'total_y1_margin': 0.0,
             'total_y2_expenses': 0.0,
