@@ -138,3 +138,48 @@ class EmployeeAPIController(http.Controller):
                 "status": "error",
                 "message": str(e)
             }
+   
+    @http.route('/api/employee/data-privacy',type='json',auth='public',methods=['POST'],csrf=False)
+    def upload_data_privacy_document(self, **kwargs):
+        try:
+            data = kwargs
+            employee_id = data.get("employee_id")
+            if not employee_id:
+                return {
+                    "status": "error",
+                    "message": "Missing employee_id"
+                }
+            employee = request.env['hr.employee'].sudo().browse(int(employee_id))
+            if not employee.exists():
+                return {
+                    "status": "error",
+                    "message": "Employee not found."
+                }
+            file_obj = data.get("data_privacy_doc")
+            if not file_obj:
+                return {
+                    "status": "error",
+                    "message": "Data Privacy Document is required."
+                }
+            attachment = request.env['ir.attachment'].sudo().create({
+                "name": file_obj.get("name"),
+                "type": "binary",
+                "datas": file_obj.get("data"),
+                "res_model": "hr.employee",
+                "res_id": employee.id,
+                "mimetype": file_obj.get("mimetype"),
+            })
+            employee.write({
+                "data_privacy_doc": [(4, attachment.id)]
+            })
+            return {
+                "status": "success",
+                "message": "Data Privacy Document uploaded successfully.",
+                "employee_id": employee.id,
+                "attachment_id": attachment.id
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": str(e)
+            }

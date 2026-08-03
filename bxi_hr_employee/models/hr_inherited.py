@@ -1,3 +1,5 @@
+import hashlib
+
 from odoo import models, fields, _, api
 from odoo.exceptions import UserError
 from datetime import date
@@ -289,6 +291,32 @@ class HrEmployee(models.Model):
             'employee_id',
             string="Experience"
         )
+
+    data_privacy_doc = fields.Many2many(
+        'ir.attachment',
+        'hr_employee_data_privacy_rel',
+        'employee_id',
+        'attachment_id',
+        string="Data Privacy Document"
+    )
+    
+    # def action_send_application_form(self):
+    #     self.ensure_one()
+    #     if not self.email_from:
+    #         raise UserError(_("Employee email is missing."))
+        
+    #     # base_url = "https://careers.bxiventures.com/application-form/"
+    #     token_string = f"{self.id}-{self.create_date}"
+    #     token = hashlib.md5(token_string.encode()).hexdigest()
+    #     self.externals_form_token = token
+    #     url = (
+    #         f"{base_url}"
+    #         f"?CJM_hired=1"
+    #         f"&odoo_id={self.id}"
+    #         f"&job_platform={company_name}"
+    #     )
+
+    #     return True
 
 
 class HrApplicantExperience(models.Model):
