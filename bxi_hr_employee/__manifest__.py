@@ -9,6 +9,7 @@
     'description': 'Employee View Modification',
     'depends': ['hr','custom_template'],
     'data': [
+        'security/ir.model.access.csv',
         'views/hr_employee_view.xml',
         'report/payslip_contact_employee.xml',
     ],
