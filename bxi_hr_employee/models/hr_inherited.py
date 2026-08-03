@@ -1,3 +1,5 @@
+import hashlib
+
 from odoo import models, fields, _, api
 from odoo.exceptions import UserError
 from datetime import date
@@ -219,3 +221,136 @@ class HrEmployee(models.Model):
 
             if bank_account not in rec.bank_account_ids:
                 rec.write({'bank_account_ids': [(4, bank_account.id)]})
+
+    # Document section
+    adhar_card_front = fields.Many2many(
+        'ir.attachment',
+        'hr_employee_adhar_card_proof_rel',
+        'employee_id',
+        'attachment_id',
+        string="Aadhar Card Front"
+    )
+    adhar_card_back = fields.Many2many(
+            'ir.attachment',
+            'hr_employee_adhar_card_back_rel',
+            'employee_id',
+            'attachment_id',
+            string="Aadhar Card Back"
+    )
+    pan_number_proof = fields.Many2many(
+        'ir.attachment',
+        'hr_employee_pan_number_proof_rel',
+        'employee_id',
+        'attachment_id',
+        string="PAN Card Proof"
+    )
+    doc_10th_id = fields.Many2many(
+        'ir.attachment',
+        'hr_employee_doc_10th_rel',
+        'employee_id',
+        'attachment_id',
+        string="10th Marksheet"
+    )
+    doc_12th_id = fields.Many2many(
+        'ir.attachment',
+        'hr_employee_doc_12th_rel',
+        'employee_id',
+        'attachment_id',
+        string="12th Marksheet"
+    )
+    doc_graduation_id = fields.Many2many(
+        'ir.attachment',
+        'hr_employee_doc_grad_rel',
+        'employee_id',
+        'attachment_id',
+        string="Graduation Certificate"
+    )
+    doc_master_id = fields.Many2many(
+        'ir.attachment',
+        'hr_employee_doc_master_rel',
+        'employee_id',
+        'attachment_id',
+        string="Master Degree Certificate"
+    )
+    any_certificate = fields.Many2many(
+        'ir.attachment',
+        'hr_employee_any_certificate_rel',
+        'employee_id',
+        'attachment_id',
+        string="Any certificate(if any)"
+    )
+    photograph = fields.Many2many(
+        'ir.attachment',
+        'hr_employee_photo_rel',
+        'employee_id',
+        'attachment_id',
+        string="Photograph"
+    )
+    experience_ids = fields.One2many(
+            'hr.experience.employee',
+            'employee_id',
+            string="Experience"
+        )
+
+    data_privacy_doc = fields.Many2many(
+        'ir.attachment',
+        'hr_employee_data_privacy_rel',
+        'employee_id',
+        'attachment_id',
+        string="Data Privacy Document"
+    )
+    
+    # def action_send_application_form(self):
+    #     self.ensure_one()
+    #     if not self.email_from:
+    #         raise UserError(_("Employee email is missing."))
+        
+    #     # base_url = "https://careers.bxiventures.com/application-form/"
+    #     token_string = f"{self.id}-{self.create_date}"
+    #     token = hashlib.md5(token_string.encode()).hexdigest()
+    #     self.externals_form_token = token
+    #     url = (
+    #         f"{base_url}"
+    #         f"?CJM_hired=1"
+    #         f"&odoo_id={self.id}"
+    #         f"&job_platform={company_name}"
+    #     )
+
+    #     return True
+
+
+class HrApplicantExperience(models.Model):
+    _name = 'hr.experience.employee'
+    _description = 'Applicant Experience'
+
+    employee_id = fields.Many2one('hr.employee')
+    company_name = fields.Char(
+            string='Company Name'
+        ) 
+    bank_statement_id = fields.Many2many(
+        'ir.attachment',
+        'hr_employee_bank_stmt_rel',
+        'employee_id',
+        'attachment_id',
+        string="Bank Statement"
+    )
+    salary_slip_id = fields.Many2many(
+        'ir.attachment',
+        'hr_employee_salary_slip_rel',
+        'employee_id',
+        'attachment_id',
+        string="Last 3 Month Salary Slip"
+    )
+    years = fields.Float("Years")
+    experience_certificate = fields.Binary(
+        "Experience Letter", attachment=True
+    )
+    joining_letter = fields.Binary(
+        "Offer/Joining Letter", attachment=True
+    )
+    relieving_letter = fields.Binary(
+        "Relieving Letter", attachment=True
+    )
+    other_certificate = fields.Binary(
+        "Apprsail Letter", attachment=True
+    )

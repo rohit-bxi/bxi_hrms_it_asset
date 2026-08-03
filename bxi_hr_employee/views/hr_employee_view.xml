@@ -51,34 +51,64 @@
         <field name="arch" type="xml">
 
             <xpath expr="//page[@name='hr_settings']" position="after">
-
-    <page string="Contract Payroll" invisible="employee_type != 'contractor'">
-
-        <group string="Contract Payment Details">
-
-            <group>
-                <field name="template_company_id"/>
-                <field name="month_year"/>
-                <field name="meeting_qty"/>
-                <field name="meeting_rate"/>
-                <field name="script_qty"/>
-                <field name="script_rate"/>
-                <field name="video_qty"/>
-                <field name="video_rate"/>
-                <field name="total_amount" readonly="1"/>
-            </group>
-
-        </group>
-
-            <button name="action_download_contract_payslip"
-                    string="Download Contract Payslip"
-                    type="object"
-                    class="btn-primary"/>
-
-    </page>
-
-</xpath>
-
+                <page string="Contract Payroll" invisible="employee_type != 'contractor'">
+                    <group string="Contract Payment Details">
+                        <group>
+                            <field name="template_company_id" />
+                            <field name="month_year" />
+                            <field name="meeting_qty" />
+                            <field name="meeting_rate" />
+                            <field name="script_qty" />
+                            <field name="script_rate" />
+                            <field name="video_qty" />
+                            <field name="video_rate" />
+                            <field name="total_amount" readonly="1" />
+                        </group>
+                    </group>
+                    <button name="action_download_contract_payslip"
+                        string="Download Contract Payslip"
+                        type="object"
+                        class="btn-primary" />
+                </page>
+            </xpath>
         </field>
     </record>
+
+    <record id="view_employee_inherit_document" model="ir.ui.view">
+        <field name="name">hr.employee.inherit.document</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='hr_settings']" position="after">
+                <page string="Employee Documents">
+                    <group string="Data Privacy Document">
+                        <field name="data_privacy_doc" widget="many2many_binary" />
+                    </group>
+                    <group string="Employee Documents">
+                        <group>
+                            <field name="adhar_card_front" widget="many2many_binary" />
+                            <field name="adhar_card_back" widget="many2many_binary" />
+                            <field name="pan_number_proof" widget="many2many_binary" />
+                            <field name="doc_10th_id" widget="many2many_binary" />
+                            <field name="doc_12th_id" widget="many2many_binary" />
+                        </group>
+                        <group>
+                            <field name="doc_graduation_id" widget="many2many_binary" />
+                            <field name="doc_master_id" widget="many2many_binary" />
+                            <field name="any_certificate" widget="many2many_binary" />
+                            <field name="photograph" widget="many2many_binary" />
+                        </group>
+                        <group>
+                            <field name="experience_ids" />
+                        </group>
+                    </group>
+                    <!-- <button name="action_download_contract_payslip"
+                        string="Download Contract Payslip"
+                        type="object"
+                        class="btn-primary" /> -->
+                </page>
+            </xpath>
+        </field>
+    </record>
+
 </odoo>
