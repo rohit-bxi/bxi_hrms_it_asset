@@ -57,6 +57,11 @@ class EmployeeAPIController(http.Controller):
                     "status": "error",
                     "message": "Employee not found."
                 }
+            if employee.is_document_submitted:
+                return {
+                    "status": "error",
+                    "message": "You have already submitted your documents."
+            }
             def create_attachment(file_obj):
                 if not file_obj or not file_obj.get("data"):
                     return False
@@ -128,11 +133,16 @@ class EmployeeAPIController(http.Controller):
                     exp_record.write({
                         "salary_slip_id": [(4, salary_attachment)]
                     })
+            employee.write({
+                'is_document_submitted': True
+            })
+                        
             return {
                 "status": "success",
                 "message": "Employee documents submitted successfully.",
                 "employee_id": employee.id,
             }
+        
         except Exception as e:
             return {
                 "status": "error",
@@ -161,6 +171,11 @@ class EmployeeAPIController(http.Controller):
                     "status": "error",
                     "message": "Data Privacy Document is required."
                 }
+            if employee.is_document_submitted:
+                return {
+                    "status": "error",
+                    "message": "You have already submitted your documents."
+            }
             attachment = request.env['ir.attachment'].sudo().create({
                 "name": file_obj.get("name"),
                 "type": "binary",
@@ -171,6 +186,9 @@ class EmployeeAPIController(http.Controller):
             })
             employee.write({
                 "data_privacy_doc": [(4, attachment.id)]
+            })
+            employee.write({
+                'is_document_submitted': True
             })
             return {
                 "status": "success",

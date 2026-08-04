@@ -523,22 +523,38 @@ class HrApplicantExperience(models.Model):
         string="Last 3 Month Salary Slip"
     )
     years = fields.Float("Years")
-    experience_certificate = fields.Binary(
-        "Experience Letter", attachment=True
+    experience_certificate = fields.Many2many(
+        'ir.attachment',
+        'hr_applicant_experience_certificate_rel',
+        'applicant_id',
+        'attachment_id',
+        string="Experience Letter"
     )
     experience_certificate_filename = fields.Char()
 
-    joining_letter = fields.Binary(
-        "Offer/Joining Letter", attachment=True
+    joining_letter = fields.Many2many(
+        'ir.attachment',
+        'hr_applicant_joining_letter_rel',
+        'applicant_id',
+        'attachment_id',
+        string="Offer/Joining Letter"
     )
     joining_letter_filename = fields.Char()
 
-    relieving_letter = fields.Binary(
-        "Relieving Letter", attachment=True
+    relieving_letter = fields.Many2many(
+        'ir.attachment',
+        'hr_applicant_relieving_letter_rel',
+        'applicant_id',
+        'attachment_id',
+        string="Relieving Letter"
     )
     relieving_letter_filename = fields.Char()
 
-    other_certificate = fields.Binary(
-        "Apprsail Letter", attachment=True
+    other_certificate = fields.Many2many(
+        'ir.attachment',
+        'hr_applicant_apprsail_letter_rel',
+        'applicant_id',
+        'attachment_id',
+        string="Apprsail Letter"
     )
     other_certificate_filename = fields.Char()
