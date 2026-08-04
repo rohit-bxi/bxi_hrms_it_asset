@@ -81,7 +81,17 @@
         <field name="arch" type="xml">
             <xpath expr="//page[@name='hr_settings']" position="after">
                 <page string="Employee Documents">
-                    <group string="Data Privacy Document">
+                    <group>
+                        <button name="action_send_data_privacy_doc"
+                            string="Send Employee Addtional Documents"
+                            type="object"
+                            class="btn-primary" />
+                        <button name="action_send_employee_doc"
+                            string="Send Employee Document"
+                            type="object"
+                            class="btn-primary" />
+                    </group>
+                    <group name="name" string="Data Privacy Document">
                         <field name="data_privacy_doc" widget="many2many_binary" />
                     </group>
                     <group string="Employee Documents">
@@ -99,13 +109,43 @@
                             <field name="photograph" widget="many2many_binary" />
                         </group>
                         <group>
-                            <field name="experience_ids" />
+                            <field name="experience_ids"
+                               context="{'default_employee_id': id}"
+                               mode="list,form"
+                               nolabel="1">
+
+                            <list string="Experience">
+                                <field name="company_name"/>
+                                <field name="years"/>
+                            </list>
+
+                            <form string="Experience Details">
+                                <sheet>
+                                    <group>
+                                        <field name="company_name"/>
+                                        <field name="years"/>
+                                    </group>
+
+                                    <group string="Documents" col="2">
+                                        <field name="joining_letter"
+                                               filename="joining_letter_filename" widget="many2many_binary"/>
+                                        <field name="experience_certificate"
+                                               filename="experience_certificate_filename" widget="many2many_binary"/>
+
+                                        <field name="relieving_letter"
+                                               filename="relieving_letter_filename" widget="many2many_binary"/>
+
+                                        <field name="other_certificate"
+                                               filename="apprsail_letter_filename" widget="many2many_binary"/>
+                                        <field name="bank_statement_id" widget="many2many_binary"/>
+                                        <field name="salary_slip_id" widget="many2many_binary"/>
+                                    </group>
+                                </sheet>
+                            </form>
+
+                        </field>
                         </group>
                     </group>
-                    <!-- <button name="action_download_contract_payslip"
-                        string="Download Contract Payslip"
-                        type="object"
-                        class="btn-primary" /> -->
                 </page>
             </xpath>
         </field>
