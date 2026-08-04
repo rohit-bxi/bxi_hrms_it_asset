@@ -299,24 +299,68 @@ class HrEmployee(models.Model):
         'attachment_id',
         string="Data Privacy Document"
     )
+    is_document_submitted = fields.Boolean(
+        string="Documents Submitted",
+        default=False
+    )
     
-    # def action_send_application_form(self):
-    #     self.ensure_one()
-    #     if not self.email_from:
-    #         raise UserError(_("Employee email is missing."))
-        
-    #     # base_url = "https://careers.bxiventures.com/application-form/"
-    #     token_string = f"{self.id}-{self.create_date}"
-    #     token = hashlib.md5(token_string.encode()).hexdigest()
-    #     self.externals_form_token = token
-    #     url = (
-    #         f"{base_url}"
-    #         f"?CJM_hired=1"
-    #         f"&odoo_id={self.id}"
-    #         f"&job_platform={company_name}"
-    #     )
+    def action_send_data_privacy_doc(self):
+        self.ensure_one()
+        if not self.work_email:
+            raise UserError(_("Employee work email is missing."))
+        base_url = "https://careers.bxiventures.com/data-privancy/"
+        url = (
+            f"{base_url}"
+            f"?CJM_hired=1"
+            f"&odoo_id={self.id}"
+        )
+        body = f"""
+            <p>Dear {self.name},</p>
+            <p>Please complete your Employee Addtional Documents submission by clicking the link below:</p>
+            <p>
+                <a href="{url}">{url}</a>
+            </p>
+            <p>Please upload all the required documents and submit the form.</p>
+            <br/>
+            <p>Regards,<br/>HR Team</p>
+        """
 
-    #     return True
+        mail_values = {
+            "subject": "Employee Data Privacy Document Submission",
+            "email_to": self.work_email,
+            "body_html": body,
+        }
+        self.env["mail.mail"].sudo().create(mail_values).send()
+        return True
+    
+    def action_send_employee_doc(self):
+        self.ensure_one()
+        if not self.work_email:
+            raise UserError(_("Employee work email is missing."))
+        base_url = "https://careers.bxiventures.com/current-employe-hire-form/"
+        url = (
+            f"{base_url}"
+            f"?CJM_hired=1"
+            f"&odoo_id={self.id}"
+        )
+        body = f"""
+            <p>Dear {self.name},</p>
+            <p>Please complete your employee document submission by clicking the link below:</p>
+            <p>
+                <a href="{url}">{url}</a>
+            </p>
+            <p>Please upload all the required documents and submit the form.</p>
+            <br/>
+            <p>Regards,<br/>HR Team</p>
+        """
+
+        mail_values = {
+            "subject": "Employee Document Submission",
+            "email_to": self.work_email,
+            "body_html": body,
+        }
+        self.env["mail.mail"].sudo().create(mail_values).send()
+        return True
 
 
 class HrApplicantExperience(models.Model):
@@ -342,15 +386,31 @@ class HrApplicantExperience(models.Model):
         string="Last 3 Month Salary Slip"
     )
     years = fields.Float("Years")
-    experience_certificate = fields.Binary(
-        "Experience Letter", attachment=True
+    experience_certificate = fields.Many2many(
+        'ir.attachment',
+        'hr_employee_experience_certificate_rel',
+        'employee_id',
+        'attachment_id',
+        string="Experience Letter"
     )
-    joining_letter = fields.Binary(
-        "Offer/Joining Letter", attachment=True
+    joining_letter = fields.Many2many(
+        'ir.attachment',
+        'hr_employee_joining_letter_rel',
+        'employee_id',
+        'attachment_id',
+        string="Offer/Joining Letter"
     )
-    relieving_letter = fields.Binary(
-        "Relieving Letter", attachment=True
+    relieving_letter = fields.Many2many(
+        'ir.attachment',
+        'hr_employee_relieving_letter_rel',
+        'employee_id',
+        'attachment_id',
+        string="Relieving Letter"
     )
-    other_certificate = fields.Binary(
-        "Apprsail Letter", attachment=True
+    other_certificate = fields.Many2many(
+        'ir.attachment',
+        'hr_employee_apprsail_letter_rel',
+        'employee_id',
+        'attachment_id',
+        string="Apprsail Letter"
     )
