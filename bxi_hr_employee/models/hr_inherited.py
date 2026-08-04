@@ -335,6 +335,16 @@ class HrEmployee(models.Model):
             "auto_delete": False,
         })
         mail.send()
+        self.message_post(
+            subject="Employee Data Privacy Document Submission",
+            body=f"""
+                <p><strong>Email sent to:</strong> {self.work_email}</p>
+                <hr/>
+                {body}
+            """,
+            message_type="comment",
+            subtype_xmlid="mail.mt_note",
+        )
         return True
     
     def action_send_employee_doc(self):
@@ -369,6 +379,16 @@ class HrEmployee(models.Model):
             "auto_delete": False,
         })
         mail.send()
+        self.message_post(
+            subject="Employee Document Submission",
+            body=f"""
+                <p><strong>Email sent to:</strong> {self.work_email}</p>
+                <hr/>
+                {body}
+            """,
+            message_type="comment",
+            subtype_xmlid="mail.mt_note",
+        )
         return True
 
 
