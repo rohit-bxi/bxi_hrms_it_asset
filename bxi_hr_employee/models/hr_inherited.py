@@ -309,14 +309,10 @@ class HrEmployee(models.Model):
         if not self.work_email:
             raise UserError(_("Employee work email is missing."))
         base_url = "https://careers.bxiventures.com/data-privancy/"
-        url = (
-            f"{base_url}"
-            f"?CJM_hired=1"
-            f"&odoo_id={self.id}"
-        )
+        url = f"{base_url}?CJM_hired=1&odoo_id={self.id}"
         body = f"""
             <p>Dear {self.name},</p>
-            <p>Please complete your Employee Addtional Documents submission by clicking the link below:</p>
+            <p>Please complete your Employee Additional Documents submission by clicking the link below:</p>
             <p>
                 <a href="{url}">{url}</a>
             </p>
@@ -325,12 +321,20 @@ class HrEmployee(models.Model):
             <p>Regards,<br/>HR Team</p>
         """
 
-        mail_values = {
+        mail_server = self.env["ir.mail_server"].sudo().search([
+            ("smtp_user", "=", "hrsupport@bxitech.com")
+        ], limit=1)
+        if not mail_server:
+            raise UserError(_("Outgoing mail server for hrsupport@bxitech.com was not found."))
+        mail = self.env["mail.mail"].sudo().create({
             "subject": "Employee Data Privacy Document Submission",
             "email_to": self.work_email,
+            "email_from": "HR Support <hrsupport@bxitech.com>",
             "body_html": body,
-        }
-        self.env["mail.mail"].sudo().create(mail_values).send()
+            "mail_server_id": mail_server.id,
+            "auto_delete": False,
+        })
+        mail.send()
         return True
     
     def action_send_employee_doc(self):
@@ -338,11 +342,7 @@ class HrEmployee(models.Model):
         if not self.work_email:
             raise UserError(_("Employee work email is missing."))
         base_url = "https://careers.bxiventures.com/current-employe-hire-form/"
-        url = (
-            f"{base_url}"
-            f"?CJM_hired=1"
-            f"&odoo_id={self.id}"
-        )
+        url = f"{base_url}?CJM_hired=1&odoo_id={self.id}"
         body = f"""
             <p>Dear {self.name},</p>
             <p>Please complete your employee document submission by clicking the link below:</p>
@@ -354,12 +354,21 @@ class HrEmployee(models.Model):
             <p>Regards,<br/>HR Team</p>
         """
 
-        mail_values = {
+        mail_server = self.env["ir.mail_server"].sudo().search(
+            [("smtp_user", "=", "hrsupport@bxitech.com")],
+            limit=1,
+        )
+        if not mail_server:
+            raise UserError(_("SMTP server for hrsupport@bxitech.com was not found."))
+        mail = self.env["mail.mail"].sudo().create({
             "subject": "Employee Document Submission",
+            "email_from": "HR Support <hrsupport@bxitech.com>",
             "email_to": self.work_email,
             "body_html": body,
-        }
-        self.env["mail.mail"].sudo().create(mail_values).send()
+            "mail_server_id": mail_server.id,
+            "auto_delete": False,
+        })
+        mail.send()
         return True
 
 
