@@ -14,6 +14,8 @@
         'security/ir.model.access.csv',
         'views/res_partner_views.xml',
         'views/fbook_report_wizard_views.xml',
+        'views/epf_report_wizard_views.xml',
+        'views/tds_report_wizard_views.xml',
         'views/fbook_report_views.xml',
     ],
     'assets': {

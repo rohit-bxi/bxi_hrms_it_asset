@@ -46,13 +46,19 @@ class FbookReportWizard(models.TransientModel):
 
     def action_submit(self):
         self.ensure_one()
+        company_str_list = []
+        for comp in self.company_ids:
+            if comp.country_id and comp.country_id.code:
+                company_str_list.append(f"{comp.name} ({comp.country_id.code.upper()})")
+            else:
+                company_str_list.append(comp.name)
         return {
             'type': 'ir.actions.client',
             'tag': 'bxi_fbook_report_dashboard',
             'name': 'Financial Book',
             'context': {
                 'company_ids': self.company_ids.ids,
-                'company_names': ", ".join(self.company_ids.mapped('name')),
+                'company_names': ", ".join(company_str_list),
                 'start_financial_year': self.start_financial_year,
                 'currency_id': self.currency_id.id,
                 'currency_symbol': self.currency_id.symbol or self.currency_id.name,
@@ -72,6 +78,24 @@ class FbookReportWizard(models.TransientModel):
         # If only child companies are selected, show the first child's name.
         parent_company = companies.filtered(lambda c: not c.parent_id)
         company = parent_company[0] if parent_company else (companies[0] if companies else self.env.company)
+
+        if len(companies) == 1:
+            comp = companies[0]
+            c_code = comp.country_id.code.upper() if (comp.country_id and comp.country_id.code) else ''
+            company_name_only = comp.name
+            country_code_str = c_code
+            display_company_name = f"{comp.name} ({c_code})" if c_code else comp.name
+        else:
+            country_codes = [c.country_id.code.upper() for c in companies if c.country_id and c.country_id.code]
+            unique_country_codes = list(dict.fromkeys(country_codes))
+            country_code_str = ", ".join(unique_country_codes)
+            if parent_company:
+                company_name_only = parent_company[0].name
+                display_company_name = f"{parent_company[0].name} ({country_code_str})" if country_code_str else parent_company[0].name
+            else:
+                company_name_only = ", ".join(c.name for c in companies)
+                display_company_name = ", ".join(f"{c.name} ({c.country_id.code.upper()})" if (c.country_id and c.country_id.code) else c.name for c in companies)
+
         target_currency = self.env['res.currency'].browse(currency_id)
 
         def get_rate_company(record):
@@ -147,15 +171,56 @@ class FbookReportWizard(models.TransientModel):
             'y2': {'q1': {}, 'q2': {}, 'q3': {}, 'q4': {}, 'total': {}}
         }
 
-        # DSO running accumulators — tracked separately per year
-        # DSO Amount = cumulative AR outstanding (billed but unpaid) to date within the year
-        # DSO Days   = (Cumulative AR Outstanding / Cumulative Revenue) × Days elapsed since year start
-        running_dso_amount = {'y1': 0.0, 'y2': 0.0}
-        running_billed     = {'y1': 0.0, 'y2': 0.0}
-        year_start_dates   = {
+        # Helper function to check if an invoice is linked to a contract
+        def is_linked_to_contract(inv):
+            if inv.contract_id:
+                if inv.contract_id.company_id and inv.contract_id.company_id.id in company_ids:
+                    return True
+            # Check via Many2many invoice_ids on contract model
+            linked_m2m = self.env['project.contract.management'].sudo().search([
+                ('invoice_ids', 'in', [inv.id]),
+                ('company_id', 'in', company_ids)
+            ])
+            if linked_m2m:
+                return True
+            # Check via Sales Orders
+            sale_orders = inv.line_ids.sale_line_ids.order_id
+            if sale_orders:
+                linked_contracts = self.env['project.contract.management'].sudo().search([
+                    ('sale_order_ids', 'in', sale_orders.ids),
+                    ('company_id', 'in', company_ids)
+                ])
+                if linked_contracts:
+                    return True
+            return False
+
+        # Initial AR outstanding prior to Year 1 (posted customer invoices before y1_start with unpaid balance)
+        initial_ar = 0.0
+        if 'account.move' in self.env:
+            prior_invoices = self.env['account.move'].sudo().search([
+                ('company_id', 'in', company_ids),
+                ('move_type', '=', 'out_invoice'),
+                ('state', '=', 'posted'),
+                ('invoice_date', '<', f'{y1_start}-04-01')
+            ])
+            for inv in prior_invoices:
+                if 'project.contract.management' in self.env and not is_linked_to_contract(inv):
+                    continue
+                residual = inv.currency_id._convert(
+                    inv.amount_residual, target_currency,
+                    get_rate_company(inv), inv.invoice_date or fields.Date.today()
+                )
+                if residual > 0:
+                    initial_ar += residual
+
+        # Cumulative DSO Amount carry-forward across quarters and years
+        cumulative_dso_amount = initial_ar
+        running_billed = {'y1': 0.0, 'y2': 0.0}
+        year_start_dates = {
             'y1': fields.Date.from_string(f'{y1_start}-04-01'),
             'y2': fields.Date.from_string(f'{y2_start}-04-01'),
         }
+
         for qdef in quarters_def:
             year_key = qdef['year']
             q_key = qdef['q']
@@ -169,39 +234,10 @@ class FbookReportWizard(models.TransientModel):
                 q_start_dt = fields.Date.from_string(qdef['start'])
                 q_end_dt = fields.Date.from_string(qdef['end'])
                 for contract in contracts:
-
                     if contract.contract_start_date and q_start_dt <= contract.contract_start_date <= q_end_dt:
                         booking_val += contract.currency_id._convert(
                             contract.contract_amount, target_currency, get_rate_company(contract), contract.contract_start_date or fields.Date.today()
                         )
-
-
-
-
-            # Helper function to check if an invoice is linked to a contract
-            def is_linked_to_contract(inv):
-                if inv.contract_id:
-                    if inv.contract_id.company_id and inv.contract_id.company_id.id in company_ids:
-                        return True
-                # Check via Many2many invoice_ids on contract model
-                linked_m2m = self.env['project.contract.management'].sudo().search([
-                    ('invoice_ids', 'in', [inv.id]),
-                    ('company_id', 'in', company_ids)
-                ])
-                if linked_m2m:
-                    return True
-                # Check via Sales Orders
-                sale_orders = inv.line_ids.sale_line_ids.order_id
-                if sale_orders:
-                    linked_contracts = self.env['project.contract.management'].sudo().search([
-                        ('sale_order_ids', 'in', sale_orders.ids),
-                        ('company_id', 'in', company_ids)
-                    ])
-                    if linked_contracts:
-                        return True
-                return False
-
-
 
             # 2. Billed = invoiced amount (amount_total on posted customer invoices)
             # Actual = amount actually received for those invoices (amount_total - amount_residual)
@@ -236,16 +272,9 @@ class FbookReportWizard(models.TransientModel):
                 if residual > 0:
                     outstanding_val += residual
 
-
-
-
-
-
             # 4. DSO Calculation
             # ------------------------------------------------------------------
-            # DSO Amount = Cumulative AR outstanding (amount still to be received)
-            #              It accumulates quarter-over-quarter within the same year.
-            #
+            # DSO Amount = Cumulative AR outstanding (carried forward across quarters/years)
             # DSO Days   = (Cumulative AR Outstanding / Cumulative Revenue Billed) × Days elapsed
             # ------------------------------------------------------------------
             q_start_date = fields.Date.from_string(qdef['start'])
@@ -255,21 +284,25 @@ class FbookReportWizard(models.TransientModel):
             dso_days_val   = 0
 
             if q_start_date <= today_date:
-                # Accumulate per year — outstanding_val is the actual amount_residual sum
-                running_dso_amount[year_key] += outstanding_val
-                running_billed[year_key]     += billed_val
+                cumulative_dso_amount += outstanding_val
+                running_billed[year_key] += billed_val
 
-                dso_amount_val = running_dso_amount[year_key]
+                dso_amount_val = cumulative_dso_amount
 
                 # Days elapsed from year start to end of this quarter (or today if quarter not yet complete)
-                year_start_dt  = year_start_dates[year_key]
-                effective_end  = min(q_end_date, today_date)
-                days_elapsed   = (effective_end - year_start_dt).days + 1
+                year_start_dt = year_start_dates[year_key]
+                effective_end = min(q_end_date, today_date)
+                days_elapsed  = (effective_end - year_start_dt).days + 1
 
-                # Standard DSO: (Cumulative Outstanding / Cumulative Billed) × Days Elapsed
+                # Standard DSO Days: (Cumulative Outstanding / Cumulative Billed) × Days Elapsed
                 if running_billed[year_key] > 0:
                     dso_days_val = round(
-                        (running_dso_amount[year_key] / running_billed[year_key]) * days_elapsed
+                        (cumulative_dso_amount / running_billed[year_key]) * days_elapsed
+                    )
+                elif (running_billed['y1'] + running_billed['y2']) > 0:
+                    total_days = (effective_end - year_start_dates['y1']).days + 1
+                    dso_days_val = round(
+                        (cumulative_dso_amount / (running_billed['y1'] + running_billed['y2'])) * total_days
                     )
                 else:
                     dso_days_val = 0
@@ -392,8 +425,7 @@ class FbookReportWizard(models.TransientModel):
                             )
                 cash_flow_val = q_in - q_out
 
-            # 9. Calibration: Incoming bank/cash receipts NOT linked to customer invoices
-            #    = money received into bank other than customer invoice payments (e.g. investor funds, loans, etc.)
+            # 9. Calibration / Investors: Incoming bank/cash receipts NOT linked to customer invoices
             calibration_val = 0.0
             if 'account.move.line' in self.env and q_start_date <= today_date:
                 effective_end = q_end_date if q_end_date <= today_date else today_date
@@ -403,22 +435,19 @@ class FbookReportWizard(models.TransientModel):
                     ('debit', '>', 0.0),
                     ('date', '>=', qdef['start']),
                     ('date', '<=', effective_end),
-                    ('account_id.account_type', '=', 'asset_cash'),  # Only actual bank/cash account lines
+                    ('account_id.account_type', '=', 'asset_cash'),
                 ]
 
                 inflow_lines = self.env['account.move.line'].sudo().search(cal_domain)
                 for line in inflow_lines:
                     move = line.move_id
                     is_invoice_receipt = False
-
-                    # Method 1: Check via payment's reconciled invoices
                     pay = getattr(line, 'payment_id', False) or getattr(move, 'payment_id', False)
                     if pay:
                         reconciled_invs = getattr(pay, 'reconciled_invoice_ids', False)
                         if reconciled_invs and any(getattr(m, 'move_type', '') == 'out_invoice' for m in reconciled_invs):
                             is_invoice_receipt = True
 
-                    # Method 2: Check reconciliation partials on any line in the move
                     if not is_invoice_receipt:
                         for ml in move.line_ids:
                             for partial in getattr(ml, 'matched_credit_ids', []):
@@ -915,7 +944,7 @@ class FbookReportWizard(models.TransientModel):
         total_cf_y2_out = target_currency.round(sum(m['y2_out'] for m in monthly_cashflow))
         total_cf_y2_remaining = target_currency.round(total_cf_y2_in - total_cf_y2_out)
 
-        # Calibration Section Calculation (Only partners with BOTH customer invoices and vendor bills)
+        # Calibration / Investors Section Calculation (Only partners with BOTH customer invoices and vendor bills)
         def get_q_num(d_str, fy_yr):
             if f"{fy_yr:04d}-04-01" <= d_str <= f"{fy_yr:04d}-06-30":
                 return 1
@@ -959,28 +988,29 @@ class FbookReportWizard(models.TransientModel):
             for partner in dual_partners:
                 partner_name = partner.name.strip() if partner.name else 'Unknown Partner'
                 category = ', '.join(partner.category_id.mapped('name')) if partner.category_id else 'General'
-                partner_key = partner_name.lower()
+                partner_key = partner.id
 
                 if partner_key not in investor_data_map:
                     investor_data_map[partner_key] = {
                         'name': partner_name,
                         'category': category,
-                        'y1_quarters': {f'q{i}': 0.0 for i in range(1, 5)},
-                        'y2_quarters': {f'q{i}': 0.0 for i in range(1, 5)},
+                        'y1_q_in': {f'q{i}': 0.0 for i in range(1, 5)},
+                        'y1_q_out': {f'q{i}': 0.0 for i in range(1, 5)},
+                        'y2_q_in': {f'q{i}': 0.0 for i in range(1, 5)},
+                        'y2_q_out': {f'q{i}': 0.0 for i in range(1, 5)},
                     }
 
-                # Get all posted invoices/bills for this partner
                 moves = self.env['account.move'].sudo().search([
                     ('company_id', 'in', company_ids),
                     ('partner_id', '=', partner.id),
-                    ('move_type', 'in', ('out_invoice', 'out_refund', 'in_invoice', 'in_receipt', 'in_refund')),
+                    ('move_type', 'in', ('out_invoice', 'out_refund', 'in_invoice', 'in_receipt', 'in_refund', 'entry')),
                     ('state', '=', 'posted'),
-                    ('invoice_date', '>=', min(y1_start_str, y2_start_str)),
-                    ('invoice_date', '<=', max(y1_end_str, y2_end_str)),
+                    ('date', '>=', min(y1_start_str, y2_start_str)),
+                    ('date', '<=', max(y1_end_str, y2_end_str)),
                 ])
 
                 for move in moves:
-                    ldate = move.invoice_date
+                    ldate = move.invoice_date or move.date
                     if not ldate:
                         continue
                     ldate_str = ldate.strftime('%Y-%m-%d')
@@ -989,71 +1019,140 @@ class FbookReportWizard(models.TransientModel):
                         move.amount_total, target_currency, get_rate_company(move), ldate or fields.Date.today()
                     )
 
-                    if y1_start_str <= ldate_str <= y1_end_str:
-                        q_num = get_q_num(ldate_str, y1_fy_start)
-                        if q_num:
-                            investor_data_map[partner_key]['y1_quarters'][f'q{q_num}'] += conv_amt
-
-                    if y2_start_str <= ldate_str <= y2_end_str:
-                        q_num = get_q_num(ldate_str, y2_cy_start)
-                        if q_num:
-                            investor_data_map[partner_key]['y2_quarters'][f'q{q_num}'] += conv_amt
+                    mtype = move.move_type
+                    if mtype in ('out_invoice', 'in_refund'):
+                        if y1_start_str <= ldate_str <= y1_end_str:
+                            q_num = get_q_num(ldate_str, y1_fy_start)
+                            if q_num:
+                                investor_data_map[partner_key]['y1_q_in'][f'q{q_num}'] += conv_amt
+                        if y2_start_str <= ldate_str <= y2_end_str:
+                            q_num = get_q_num(ldate_str, y2_cy_start)
+                            if q_num:
+                                investor_data_map[partner_key]['y2_q_in'][f'q{q_num}'] += conv_amt
+                    elif mtype in ('in_invoice', 'in_receipt', 'out_refund'):
+                        if y1_start_str <= ldate_str <= y1_end_str:
+                            q_num = get_q_num(ldate_str, y1_fy_start)
+                            if q_num:
+                                investor_data_map[partner_key]['y1_q_out'][f'q{q_num}'] += conv_amt
+                        if y2_start_str <= ldate_str <= y2_end_str:
+                            q_num = get_q_num(ldate_str, y2_cy_start)
+                            if q_num:
+                                investor_data_map[partner_key]['y2_q_out'][f'q{q_num}'] += conv_amt
+                    elif mtype == 'entry':
+                        for line in move.line_ids:
+                            if line.partner_id == partner:
+                                line_conv = line.company_id.currency_id._convert(
+                                    abs(line.debit - line.credit), target_currency, get_rate_company(line), line.date or fields.Date.today()
+                                )
+                                if line.credit > 0:
+                                    if y1_start_str <= ldate_str <= y1_end_str:
+                                        q_num = get_q_num(ldate_str, y1_fy_start)
+                                        if q_num:
+                                            investor_data_map[partner_key]['y1_q_in'][f'q{q_num}'] += line_conv
+                                    if y2_start_str <= ldate_str <= y2_end_str:
+                                        q_num = get_q_num(ldate_str, y2_cy_start)
+                                        if q_num:
+                                            investor_data_map[partner_key]['y2_q_in'][f'q{q_num}'] += line_conv
+                                elif line.debit > 0:
+                                    if y1_start_str <= ldate_str <= y1_end_str:
+                                        q_num = get_q_num(ldate_str, y1_fy_start)
+                                        if q_num:
+                                            investor_data_map[partner_key]['y1_q_out'][f'q{q_num}'] += line_conv
+                                    if y2_start_str <= ldate_str <= y2_end_str:
+                                        q_num = get_q_num(ldate_str, y2_cy_start)
+                                        if q_num:
+                                            investor_data_map[partner_key]['y2_q_out'][f'q{q_num}'] += line_conv
 
         investor_rows = []
-        for inv_key in sorted(investor_data_map.keys()):
+        for inv_key in sorted(investor_data_map.keys(), key=lambda k: investor_data_map[k]['name']):
             inv_info = investor_data_map[inv_key]
 
-            y1_q1 = inv_info['y1_quarters']['q1']
-            y1_q2 = inv_info['y1_quarters']['q2']
-            y1_q3 = inv_info['y1_quarters']['q3']
-            y1_q4 = inv_info['y1_quarters']['q4']
-            y1_tot = y1_q1 + y1_q2 + y1_q3 + y1_q4
+            y1_q1_in = inv_info['y1_q_in']['q1']
+            y1_q1_out = inv_info['y1_q_out']['q1']
+            y1_q2_in = inv_info['y1_q_in']['q2']
+            y1_q2_out = inv_info['y1_q_out']['q2']
+            y1_q3_in = inv_info['y1_q_in']['q3']
+            y1_q3_out = inv_info['y1_q_out']['q3']
+            y1_q4_in = inv_info['y1_q_in']['q4']
+            y1_q4_out = inv_info['y1_q_out']['q4']
 
-            y2_q1 = inv_info['y2_quarters']['q1']
-            y2_q2 = inv_info['y2_quarters']['q2']
-            y2_q3 = inv_info['y2_quarters']['q3']
-            y2_q4 = inv_info['y2_quarters']['q4']
-            y2_tot = y2_q1 + y2_q2 + y2_q3 + y2_q4
+            y1_tot_in = y1_q1_in + y1_q2_in + y1_q3_in + y1_q4_in
+            y1_tot_out = y1_q1_out + y1_q2_out + y1_q3_out + y1_q4_out
 
-            if (y1_tot < 0.01 and y2_tot < 0.01):
+            y2_q1_in = inv_info['y2_q_in']['q1']
+            y2_q1_out = inv_info['y2_q_out']['q1']
+            y2_q2_in = inv_info['y2_q_in']['q2']
+            y2_q2_out = inv_info['y2_q_out']['q2']
+            y2_q3_in = inv_info['y2_q_in']['q3']
+            y2_q3_out = inv_info['y2_q_out']['q3']
+            y2_q4_in = inv_info['y2_q_in']['q4']
+            y2_q4_out = inv_info['y2_q_out']['q4']
+
+            y2_tot_in = y2_q1_in + y2_q2_in + y2_q3_in + y2_q4_in
+            y2_tot_out = y2_q1_out + y2_q2_out + y2_q3_out + y2_q4_out
+
+            if (y1_tot_in < 0.01 and y1_tot_out < 0.01 and y2_tot_in < 0.01 and y2_tot_out < 0.01):
                 continue
 
             row = {
                 'investor': inv_info['name'],
                 'category': inv_info['category'],
-                'y1_q1': target_currency.round(y1_q1),
-                'y1_q2': target_currency.round(y1_q2),
-                'y1_q3': target_currency.round(y1_q3),
-                'y1_q4': target_currency.round(y1_q4),
-                'y1_tot': target_currency.round(y1_tot),
 
-                'y2_q1': target_currency.round(y2_q1),
-                'y2_q2': target_currency.round(y2_q2),
-                'y2_q3': target_currency.round(y2_q3),
-                'y2_q4': target_currency.round(y2_q4),
-                'y2_tot': target_currency.round(y2_tot),
+                'y1_q1_in': target_currency.round(y1_q1_in),
+                'y1_q1_out': target_currency.round(y1_q1_out),
+                'y1_q2_in': target_currency.round(y1_q2_in),
+                'y1_q2_out': target_currency.round(y1_q2_out),
+                'y1_q3_in': target_currency.round(y1_q3_in),
+                'y1_q3_out': target_currency.round(y1_q3_out),
+                'y1_q4_in': target_currency.round(y1_q4_in),
+                'y1_q4_out': target_currency.round(y1_q4_out),
+                'y1_tot_in': target_currency.round(y1_tot_in),
+                'y1_tot_out': target_currency.round(y1_tot_out),
+
+                'y2_q1_in': target_currency.round(y2_q1_in),
+                'y2_q1_out': target_currency.round(y2_q1_out),
+                'y2_q2_in': target_currency.round(y2_q2_in),
+                'y2_q2_out': target_currency.round(y2_q2_out),
+                'y2_q3_in': target_currency.round(y2_q3_in),
+                'y2_q3_out': target_currency.round(y2_q3_out),
+                'y2_q4_in': target_currency.round(y2_q4_in),
+                'y2_q4_out': target_currency.round(y2_q4_out),
+                'y2_tot_in': target_currency.round(y2_tot_in),
+                'y2_tot_out': target_currency.round(y2_tot_out),
             }
             investor_rows.append(row)
 
         investor_totals = {
-            'y1_q1': target_currency.round(sum(r['y1_q1'] for r in investor_rows)),
-            'y1_q2': target_currency.round(sum(r['y1_q2'] for r in investor_rows)),
-            'y1_q3': target_currency.round(sum(r['y1_q3'] for r in investor_rows)),
-            'y1_q4': target_currency.round(sum(r['y1_q4'] for r in investor_rows)),
-            'y1_tot': target_currency.round(sum(r['y1_tot'] for r in investor_rows)),
+            'y1_q1_in': target_currency.round(sum(r['y1_q1_in'] for r in investor_rows)),
+            'y1_q1_out': target_currency.round(sum(r['y1_q1_out'] for r in investor_rows)),
+            'y1_q2_in': target_currency.round(sum(r['y1_q2_in'] for r in investor_rows)),
+            'y1_q2_out': target_currency.round(sum(r['y1_q2_out'] for r in investor_rows)),
+            'y1_q3_in': target_currency.round(sum(r['y1_q3_in'] for r in investor_rows)),
+            'y1_q3_out': target_currency.round(sum(r['y1_q3_out'] for r in investor_rows)),
+            'y1_q4_in': target_currency.round(sum(r['y1_q4_in'] for r in investor_rows)),
+            'y1_q4_out': target_currency.round(sum(r['y1_q4_out'] for r in investor_rows)),
+            'y1_tot_in': target_currency.round(sum(r['y1_tot_in'] for r in investor_rows)),
+            'y1_tot_out': target_currency.round(sum(r['y1_tot_out'] for r in investor_rows)),
 
-            'y2_q1': target_currency.round(sum(r['y2_q1'] for r in investor_rows)),
-            'y2_q2': target_currency.round(sum(r['y2_q2'] for r in investor_rows)),
-            'y2_q3': target_currency.round(sum(r['y2_q3'] for r in investor_rows)),
-            'y2_q4': target_currency.round(sum(r['y2_q4'] for r in investor_rows)),
-            'y2_tot': target_currency.round(sum(r['y2_tot'] for r in investor_rows)),
+            'y2_q1_in': target_currency.round(sum(r['y2_q1_in'] for r in investor_rows)),
+            'y2_q1_out': target_currency.round(sum(r['y2_q1_out'] for r in investor_rows)),
+            'y2_q2_in': target_currency.round(sum(r['y2_q2_in'] for r in investor_rows)),
+            'y2_q2_out': target_currency.round(sum(r['y2_q2_out'] for r in investor_rows)),
+            'y2_q3_in': target_currency.round(sum(r['y2_q3_in'] for r in investor_rows)),
+            'y2_q3_out': target_currency.round(sum(r['y2_q3_out'] for r in investor_rows)),
+            'y2_q4_in': target_currency.round(sum(r['y2_q4_in'] for r in investor_rows)),
+            'y2_q4_out': target_currency.round(sum(r['y2_q4_out'] for r in investor_rows)),
+            'y2_tot_in': target_currency.round(sum(r['y2_tot_in'] for r in investor_rows)),
+            'y2_tot_out': target_currency.round(sum(r['y2_tot_out'] for r in investor_rows)),
         }
 
         y1_prefix = 'CY' if y1_start == current_fy_start else 'FY'
         y2_prefix = 'CY' if y2_start == current_fy_start else 'FY'
 
         return {
-            'company_name': company.name,
+            'company_name': display_company_name,
+            'company_name_only': company_name_only,
+            'country_code': country_code_str,
             'currency_symbol': f"{target_currency.symbol} {target_currency.name}" if target_currency.symbol else target_currency.name,
             'year1_label': f'{y1_prefix}{y1_start - 2000 + 1} - {y1_start} -{y1_start + 1}',
             'year2_label': f'{y2_prefix}{y2_start - 2000 + 1} - {y2_start} -{y2_start + 1}',
