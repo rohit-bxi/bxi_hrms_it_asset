@@ -1,3 +1,4 @@
+import base64
 import hashlib
 
 from odoo import models, fields, _, api
@@ -134,7 +135,10 @@ class HrEmployee(models.Model):
         store=True,
     )
     template_company_id = fields.Many2one(
-        'res.company',
+            'res.company',
+            string='Template Company',
+            related='company_id',
+            readonly=True,
     )
     month_year = fields.Date(string="Release Month & Year")
 
@@ -310,38 +314,70 @@ class HrEmployee(models.Model):
             raise UserError(_("Employee work email is missing."))
         base_url = "https://careers.bxiventures.com/data-privancy/"
         url = f"{base_url}?CJM_hired=1&odoo_id={self.id}"
+        report = self.env.ref("bxi_hr_employee.action_report_data_privacy_letter")
+        pdf_content, _ = report._render_qweb_pdf(
+            report.report_name,
+            res_ids=[self.id],
+        )
+        attachment = self.env["ir.attachment"].sudo().create({
+            "name": f"Data_Privacy_Letter_{self.name}.pdf",
+            "type": "binary",
+            "datas": base64.b64encode(pdf_content),
+            "mimetype": "application/pdf",
+            "res_model": self._name,
+            "res_id": self.id,
+        })
+
         body = f"""
-            <p>Dear {self.name},</p>
-            <p>Please complete your Employee Additional Documents submission by clicking the link below:</p>
+            <p>Dear <strong>{self.name}</strong>,</p>
             <p>
+                Welcome to <strong>BXI Technology Pvt. Ltd.</strong>
+            </p>
+            <p>
+                Please complete your <strong>Data Privacy Document Submission</strong>
+                by clicking the link below:
+            </p>
+            <p style="margin:15px 0;">
                 <a href="{url}">{url}</a>
             </p>
-            <p>Please upload all the required documents and submit the form.</p>
+            <p>
+                Kindly upload all the required documents and submit the form at your earliest convenience.
+            </p>
+            <p>
+                Please find attached your
+                <strong>Data Privacy Acknowledgement Letter</strong>
+                for your reference.
+            </p>
             <br/>
-            <p>Regards,<br/>HR Team</p>
+            <p>
+                If you have any questions or face any issues while submitting the documents,
+                please contact the HR Team.
+            </p>
+            <br/>
+            <p>
+                Regards,<br/>
+                <strong>HR Team</strong><br/>
+                BXI Technology Pvt. Ltd.
+            </p>
         """
 
         mail_server = self.env["ir.mail_server"].sudo().search([
             ("smtp_user", "=", "hrsupport@bxitech.com")
         ], limit=1)
-        if not mail_server:
-            raise UserError(_("Outgoing mail server for hrsupport@bxitech.com was not found."))
         mail = self.env["mail.mail"].sudo().create({
-            "subject": "Employee Data Privacy Document Submission",
+            "subject": "Data Privacy Document Submission",
             "email_to": self.work_email,
             "email_from": "HR Support <hrsupport@bxitech.com>",
             "body_html": body,
             "mail_server_id": mail_server.id,
+            "attachment_ids": [(4, attachment.id)],
             "auto_delete": False,
         })
         mail.send()
         self.message_post(
-            subject="Employee Data Privacy Document Submission",
-            body=f"""
-                <p><strong>Email sent to:</strong> {self.work_email}</p>
-                <hr/>
-                {body}
-            """,
+            subject="Data Privacy Document Submission",
+            body=body,
+            attachment_ids=[attachment.id],
             message_type="comment",
             subtype_xmlid="mail.mt_note",
         )

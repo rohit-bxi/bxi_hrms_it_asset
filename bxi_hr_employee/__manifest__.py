@@ -12,6 +12,7 @@
         'security/ir.model.access.csv',
         'views/hr_employee_view.xml',
         'report/payslip_contact_employee.xml',
+        'report/data_privacy.xml',
     ],
     'installable': True,
     'application': False,
