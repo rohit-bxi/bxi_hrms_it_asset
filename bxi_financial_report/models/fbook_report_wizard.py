@@ -425,48 +425,30 @@ class FbookReportWizard(models.TransientModel):
                             )
                 cash_flow_val = q_in - q_out
 
-            # 9. Calibration / Investors: Incoming bank/cash receipts NOT linked to customer invoices
+            # 9. Investors: Net cash flow (IN - OUT) from posted journal entries of partners with is_partner_investor=True
             calibration_val = 0.0
-            if 'account.move.line' in self.env and q_start_date <= today_date:
+            if 'account.move.line' in self.env and 'res.partner' in self.env and q_start_date <= today_date:
                 effective_end = q_end_date if q_end_date <= today_date else today_date
-                cal_domain = [
+                cal_lines = self.env['account.move.line'].sudo().search([
                     ('company_id', 'in', company_ids),
+                    ('move_id.move_type', '=', 'entry'),
                     ('parent_state', '=', 'posted'),
-                    ('debit', '>', 0.0),
                     ('date', '>=', qdef['start']),
                     ('date', '<=', effective_end),
-                    ('account_id.account_type', '=', 'asset_cash'),
-                ]
-
-                inflow_lines = self.env['account.move.line'].sudo().search(cal_domain)
-                for line in inflow_lines:
-                    move = line.move_id
-                    is_invoice_receipt = False
-                    pay = getattr(line, 'payment_id', False) or getattr(move, 'payment_id', False)
-                    if pay:
-                        reconciled_invs = getattr(pay, 'reconciled_invoice_ids', False)
-                        if reconciled_invs and any(getattr(m, 'move_type', '') == 'out_invoice' for m in reconciled_invs):
-                            is_invoice_receipt = True
-
-                    if not is_invoice_receipt:
-                        for ml in move.line_ids:
-                            for partial in getattr(ml, 'matched_credit_ids', []):
-                                credit_move = getattr(getattr(partial, 'credit_move_id', False), 'move_id', False)
-                                if credit_move and getattr(credit_move, 'move_type', '') == 'out_invoice':
-                                    is_invoice_receipt = True
-                                    break
-                            for partial in getattr(ml, 'matched_debit_ids', []):
-                                debit_move = getattr(getattr(partial, 'debit_move_id', False), 'move_id', False)
-                                if debit_move and getattr(debit_move, 'move_type', '') == 'out_invoice':
-                                    is_invoice_receipt = True
-                                    break
-                            if is_invoice_receipt:
-                                break
-
-                    if not is_invoice_receipt:
-                        calibration_val += line.company_id.currency_id._convert(
-                            line.debit, target_currency, get_rate_company(line), line.date or fields.Date.today()
-                        )
+                    ('partner_id.is_partner_investor', '=', True),
+                    ('account_id.account_type', '!=', 'asset_cash'),
+                ])
+                q_inv_in = 0.0
+                q_inv_out = 0.0
+                for line in cal_lines:
+                    line_conv = line.company_id.currency_id._convert(
+                        abs(line.debit - line.credit), target_currency, get_rate_company(line), line.date or fields.Date.today()
+                    )
+                    if line.credit > 0:
+                        q_inv_in += line_conv
+                    elif line.debit > 0:
+                        q_inv_out += line_conv
+                calibration_val = q_inv_in - q_inv_out
 
             if q_start_date > today_date:
                 cash_flow_val = 0.0
@@ -944,7 +926,7 @@ class FbookReportWizard(models.TransientModel):
         total_cf_y2_out = target_currency.round(sum(m['y2_out'] for m in monthly_cashflow))
         total_cf_y2_remaining = target_currency.round(total_cf_y2_in - total_cf_y2_out)
 
-        # Calibration / Investors Section Calculation (Only partners with BOTH customer invoices and vendor bills)
+        # Calibration / Investors Section Calculation (Only partners marked with is_partner_investor=True)
         def get_q_num(d_str, fy_yr):
             if f"{fy_yr:04d}-04-01" <= d_str <= f"{fy_yr:04d}-06-30":
                 return 1
@@ -965,27 +947,13 @@ class FbookReportWizard(models.TransientModel):
 
         investor_data_map = {}
 
-        if 'account.move' in self.env:
-            # 1. Partners with posted customer invoices
-            customer_partners = self.env['account.move'].sudo().search([
-                ('company_id', 'in', company_ids),
-                ('move_type', 'in', ('out_invoice', 'out_refund')),
-                ('state', '=', 'posted'),
-                ('partner_id', '!=', False)
-            ]).mapped('partner_id')
+        if 'account.move' in self.env and 'res.partner' in self.env:
+            # Only partners marked with is_partner_investor as True
+            investor_partners = self.env['res.partner'].sudo().search([
+                ('is_partner_investor', '=', True)
+            ])
 
-            # 2. Partners with posted vendor bills
-            vendor_partners = self.env['account.move'].sudo().search([
-                ('company_id', 'in', company_ids),
-                ('move_type', 'in', ('in_invoice', 'in_receipt', 'in_refund')),
-                ('state', '=', 'posted'),
-                ('partner_id', '!=', False)
-            ]).mapped('partner_id')
-
-            # 3. Intersect: Only partners having BOTH customer invoices and vendor bills
-            dual_partners = (customer_partners & vendor_partners)
-
-            for partner in dual_partners:
+            for partner in investor_partners:
                 partner_name = partner.name.strip() if partner.name else 'Unknown Partner'
                 category = ', '.join(partner.category_id.mapped('name')) if partner.category_id else 'General'
                 partner_key = partner.id
@@ -1002,66 +970,42 @@ class FbookReportWizard(models.TransientModel):
 
                 moves = self.env['account.move'].sudo().search([
                     ('company_id', 'in', company_ids),
-                    ('partner_id', '=', partner.id),
-                    ('move_type', 'in', ('out_invoice', 'out_refund', 'in_invoice', 'in_receipt', 'in_refund', 'entry')),
+                    ('move_type', '=', 'entry'),
                     ('state', '=', 'posted'),
                     ('date', '>=', min(y1_start_str, y2_start_str)),
                     ('date', '<=', max(y1_end_str, y2_end_str)),
+                    '|', ('partner_id', '=', partner.id), ('line_ids.partner_id', '=', partner.id)
                 ])
 
                 for move in moves:
-                    ldate = move.invoice_date or move.date
+                    ldate = move.date
                     if not ldate:
                         continue
                     ldate_str = ldate.strftime('%Y-%m-%d')
 
-                    conv_amt = move.currency_id._convert(
-                        move.amount_total, target_currency, get_rate_company(move), ldate or fields.Date.today()
-                    )
-
-                    mtype = move.move_type
-                    if mtype in ('out_invoice', 'in_refund'):
-                        if y1_start_str <= ldate_str <= y1_end_str:
-                            q_num = get_q_num(ldate_str, y1_fy_start)
-                            if q_num:
-                                investor_data_map[partner_key]['y1_q_in'][f'q{q_num}'] += conv_amt
-                        if y2_start_str <= ldate_str <= y2_end_str:
-                            q_num = get_q_num(ldate_str, y2_cy_start)
-                            if q_num:
-                                investor_data_map[partner_key]['y2_q_in'][f'q{q_num}'] += conv_amt
-                    elif mtype in ('in_invoice', 'in_receipt', 'out_refund'):
-                        if y1_start_str <= ldate_str <= y1_end_str:
-                            q_num = get_q_num(ldate_str, y1_fy_start)
-                            if q_num:
-                                investor_data_map[partner_key]['y1_q_out'][f'q{q_num}'] += conv_amt
-                        if y2_start_str <= ldate_str <= y2_end_str:
-                            q_num = get_q_num(ldate_str, y2_cy_start)
-                            if q_num:
-                                investor_data_map[partner_key]['y2_q_out'][f'q{q_num}'] += conv_amt
-                    elif mtype == 'entry':
-                        for line in move.line_ids:
-                            if line.partner_id == partner:
-                                line_conv = line.company_id.currency_id._convert(
-                                    abs(line.debit - line.credit), target_currency, get_rate_company(line), line.date or fields.Date.today()
-                                )
-                                if line.credit > 0:
-                                    if y1_start_str <= ldate_str <= y1_end_str:
-                                        q_num = get_q_num(ldate_str, y1_fy_start)
-                                        if q_num:
-                                            investor_data_map[partner_key]['y1_q_in'][f'q{q_num}'] += line_conv
-                                    if y2_start_str <= ldate_str <= y2_end_str:
-                                        q_num = get_q_num(ldate_str, y2_cy_start)
-                                        if q_num:
-                                            investor_data_map[partner_key]['y2_q_in'][f'q{q_num}'] += line_conv
-                                elif line.debit > 0:
-                                    if y1_start_str <= ldate_str <= y1_end_str:
-                                        q_num = get_q_num(ldate_str, y1_fy_start)
-                                        if q_num:
-                                            investor_data_map[partner_key]['y1_q_out'][f'q{q_num}'] += line_conv
-                                    if y2_start_str <= ldate_str <= y2_end_str:
-                                        q_num = get_q_num(ldate_str, y2_cy_start)
-                                        if q_num:
-                                            investor_data_map[partner_key]['y2_q_out'][f'q{q_num}'] += line_conv
+                    for line in move.line_ids:
+                        if (line.partner_id == partner or (not line.partner_id and move.partner_id == partner)) and line.account_id.account_type != 'asset_cash':
+                            line_conv = line.company_id.currency_id._convert(
+                                abs(line.debit - line.credit), target_currency, get_rate_company(line), line.date or fields.Date.today()
+                            )
+                            if line.credit > 0:
+                                if y1_start_str <= ldate_str <= y1_end_str:
+                                    q_num = get_q_num(ldate_str, y1_fy_start)
+                                    if q_num:
+                                        investor_data_map[partner_key]['y1_q_in'][f'q{q_num}'] += line_conv
+                                if y2_start_str <= ldate_str <= y2_end_str:
+                                    q_num = get_q_num(ldate_str, y2_cy_start)
+                                    if q_num:
+                                        investor_data_map[partner_key]['y2_q_in'][f'q{q_num}'] += line_conv
+                            elif line.debit > 0:
+                                if y1_start_str <= ldate_str <= y1_end_str:
+                                    q_num = get_q_num(ldate_str, y1_fy_start)
+                                    if q_num:
+                                        investor_data_map[partner_key]['y1_q_out'][f'q{q_num}'] += line_conv
+                                if y2_start_str <= ldate_str <= y2_end_str:
+                                    q_num = get_q_num(ldate_str, y2_cy_start)
+                                    if q_num:
+                                        investor_data_map[partner_key]['y2_q_out'][f'q{q_num}'] += line_conv
 
         investor_rows = []
         for inv_key in sorted(investor_data_map.keys(), key=lambda k: investor_data_map[k]['name']):
