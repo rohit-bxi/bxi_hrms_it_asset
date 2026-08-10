@@ -218,6 +218,9 @@ class FbookReportWizard(models.TransientModel):
                 if residual > 0:
                     initial_ar += residual
 
+        # Cumulative DSO Amount across quarters/years
+        cumulative_dso_amount = initial_ar
+
         # DSO running totals per year based on Billed and Actuals
         running_billed = {'y1': 0.0, 'y2': 0.0}
         running_actual = {'y1': 0.0, 'y2': 0.0}
@@ -279,7 +282,7 @@ class FbookReportWizard(models.TransientModel):
 
             # 4. DSO Calculation based directly on Billed and Actuals
             # ------------------------------------------------------------------
-            # DSO Amount = Cumulative Billed - Cumulative Actual (Uncollected Revenue)
+            # DSO Amount = Cumulative Billed - Cumulative Actual (Carried forward across years)
             # DSO Days   = (DSO Amount / Cumulative Billed) × Days elapsed
             # ------------------------------------------------------------------
             q_start_date = fields.Date.from_string(qdef['start'])
@@ -292,8 +295,11 @@ class FbookReportWizard(models.TransientModel):
                 running_billed[year_key] += billed_val
                 running_actual[year_key] += actual_val
 
-                uncollected_amt = max(0.0, running_billed[year_key] - running_actual[year_key])
-                dso_amount_val = uncollected_amt
+                net_uncollected_q = billed_val - actual_val
+                cumulative_dso_amount += net_uncollected_q
+                cumulative_dso_amount = max(0.0, cumulative_dso_amount)
+
+                dso_amount_val = cumulative_dso_amount
 
                 # Days elapsed from year start to end of this quarter (or today if quarter not yet complete)
                 year_start_dt = year_start_dates[year_key]
@@ -302,7 +308,7 @@ class FbookReportWizard(models.TransientModel):
 
                 if running_billed[year_key] > 0:
                     dso_days_val = round(
-                        (uncollected_amt / running_billed[year_key]) * days_elapsed
+                        (cumulative_dso_amount / running_billed[year_key]) * days_elapsed
                     )
                 else:
                     dso_days_val = 0
