@@ -407,27 +407,45 @@ class FbookReportWizard(models.TransientModel):
             calibration_val = 0.0
             if 'account.move.line' in self.env and q_start_date <= today_date:
                 effective_end = q_end_date if q_end_date <= today_date else today_date
-                cal_lines = self.env['account.move.line'].sudo().search([
+                inv_lines = self.env['account.move.line'].sudo().search([
                     ('company_id', 'in', company_ids),
                     ('move_id.move_type', '=', 'entry'),
                     ('parent_state', '=', 'posted'),
                     ('date', '>=', qdef['start']),
                     ('date', '<=', effective_end),
-                    ('account_id.account_type', '!=', 'asset_cash'),
-                    '|',
                     ('partner_id.is_partner_investor', '=', True),
-                    ('journal_id.type', '=', 'cash')
                 ])
                 q_inv_in = 0.0
                 q_inv_out = 0.0
-                for line in cal_lines:
-                    line_conv = line.company_id.currency_id._convert(
-                        abs(line.debit - line.credit), target_currency, get_rate_company(line), line.date or fields.Date.today()
-                    )
+                for line in inv_lines:
                     if line.credit > 0:
-                        q_inv_in += line_conv
+                        q_inv_in += line.company_id.currency_id._convert(
+                            line.credit, target_currency, get_rate_company(line), line.date or fields.Date.today()
+                        )
                     elif line.debit > 0:
-                        q_inv_out += line_conv
+                        q_inv_out += line.company_id.currency_id._convert(
+                            line.debit, target_currency, get_rate_company(line), line.date or fields.Date.today()
+                        )
+
+                cash_lines = self.env['account.move.line'].sudo().search([
+                    ('company_id', 'in', company_ids),
+                    ('move_id.move_type', '=', 'entry'),
+                    ('parent_state', '=', 'posted'),
+                    ('journal_id.type', '=', 'cash'),
+                    ('date', '>=', qdef['start']),
+                    ('date', '<=', effective_end),
+                    ('account_id.account_type', '!=', 'asset_cash'),
+                    '|', ('partner_id', '=', False), ('partner_id.is_partner_investor', '=', False),
+                ])
+                for line in cash_lines:
+                    if line.credit > 0:
+                        q_inv_in += line.company_id.currency_id._convert(
+                            line.credit, target_currency, get_rate_company(line), line.date or fields.Date.today()
+                        )
+                    elif line.debit > 0:
+                        q_inv_out += line.company_id.currency_id._convert(
+                            line.debit, target_currency, get_rate_company(line), line.date or fields.Date.today()
+                        )
                 calibration_val = q_inv_in - q_inv_out
 
             if q_start_date > today_date:
@@ -959,44 +977,45 @@ class FbookReportWizard(models.TransientModel):
                         'y2_q_out': {f'q{i}': 0.0 for i in range(1, 5)},
                     }
 
-                moves = self.env['account.move'].sudo().search([
+                partner_lines = self.env['account.move.line'].sudo().search([
                     ('company_id', 'in', company_ids),
-                    ('move_type', '=', 'entry'),
-                    ('state', '=', 'posted'),
+                    ('move_id.move_type', '=', 'entry'),
+                    ('parent_state', '=', 'posted'),
+                    ('partner_id', '=', partner.id),
                     ('date', '>=', min(y1_start_str, y2_start_str)),
                     ('date', '<=', max(y1_end_str, y2_end_str)),
-                    '|', ('partner_id', '=', partner.id), ('line_ids.partner_id', '=', partner.id)
                 ])
 
-                for move in moves:
-                    ldate = move.date
+                for line in partner_lines:
+                    ldate = line.date
                     if not ldate:
                         continue
                     ldate_str = ldate.strftime('%Y-%m-%d')
 
-                    for line in move.line_ids:
-                        if (line.partner_id == partner or (not line.partner_id and move.partner_id == partner)) and line.account_id.account_type != 'asset_cash':
-                            line_conv = line.company_id.currency_id._convert(
-                                abs(line.debit - line.credit), target_currency, get_rate_company(line), line.date or fields.Date.today()
-                            )
-                            if line.credit > 0:
-                                if y1_start_str <= ldate_str <= y1_end_str:
-                                    q_num = get_q_num(ldate_str, y1_fy_start)
-                                    if q_num:
-                                        investor_data_map[partner_key]['y1_q_in'][f'q{q_num}'] += line_conv
-                                if y2_start_str <= ldate_str <= y2_end_str:
-                                    q_num = get_q_num(ldate_str, y2_cy_start)
-                                    if q_num:
-                                        investor_data_map[partner_key]['y2_q_in'][f'q{q_num}'] += line_conv
-                            elif line.debit > 0:
-                                if y1_start_str <= ldate_str <= y1_end_str:
-                                    q_num = get_q_num(ldate_str, y1_fy_start)
-                                    if q_num:
-                                        investor_data_map[partner_key]['y1_q_out'][f'q{q_num}'] += line_conv
-                                if y2_start_str <= ldate_str <= y2_end_str:
-                                    q_num = get_q_num(ldate_str, y2_cy_start)
-                                    if q_num:
-                                        investor_data_map[partner_key]['y2_q_out'][f'q{q_num}'] += line_conv
+                    if line.credit > 0:
+                        line_conv = line.company_id.currency_id._convert(
+                            line.credit, target_currency, get_rate_company(line), line.date or fields.Date.today()
+                        )
+                        if y1_start_str <= ldate_str <= y1_end_str:
+                            q_num = get_q_num(ldate_str, y1_fy_start)
+                            if q_num:
+                                investor_data_map[partner_key]['y1_q_in'][f'q{q_num}'] += line_conv
+                        if y2_start_str <= ldate_str <= y2_end_str:
+                            q_num = get_q_num(ldate_str, y2_cy_start)
+                            if q_num:
+                                investor_data_map[partner_key]['y2_q_in'][f'q{q_num}'] += line_conv
+                    elif line.debit > 0:
+                        line_conv = line.company_id.currency_id._convert(
+                            line.debit, target_currency, get_rate_company(line), line.date or fields.Date.today()
+                        )
+                        if y1_start_str <= ldate_str <= y1_end_str:
+                            q_num = get_q_num(ldate_str, y1_fy_start)
+                            if q_num:
+                                investor_data_map[partner_key]['y1_q_out'][f'q{q_num}'] += line_conv
+                        if y2_start_str <= ldate_str <= y2_end_str:
+                            q_num = get_q_num(ldate_str, y2_cy_start)
+                            if q_num:
+                                investor_data_map[partner_key]['y2_q_out'][f'q{q_num}'] += line_conv
 
             # Process Cash Journal Entries for "Unsecured Loan" row
             unsecured_loan_key = 'unsecured_loan'
