@@ -79,14 +79,19 @@ class FbookReportWizard(models.TransientModel):
         parent_company = companies.filtered(lambda c: not c.parent_id)
         company = parent_company[0] if parent_company else (companies[0] if companies else self.env.company)
 
+        def get_c_code(c):
+            if c.country_id:
+                return (c.country_id.country_code_3 or c.country_id.code or '').upper().strip()
+            return ''
+
         if len(companies) == 1:
             comp = companies[0]
-            c_code = comp.country_id.code.upper() if (comp.country_id and comp.country_id.code) else ''
+            c_code = get_c_code(comp)
             company_name_only = comp.name
             country_code_str = c_code
             display_company_name = f"{comp.name} ({c_code})" if c_code else comp.name
         else:
-            country_codes = [c.country_id.code.upper() for c in companies if c.country_id and c.country_id.code]
+            country_codes = [get_c_code(c) for c in companies if get_c_code(c)]
             unique_country_codes = list(dict.fromkeys(country_codes))
             country_code_str = ", ".join(unique_country_codes)
             if parent_company:
@@ -94,7 +99,7 @@ class FbookReportWizard(models.TransientModel):
                 display_company_name = f"{parent_company[0].name} ({country_code_str})" if country_code_str else parent_company[0].name
             else:
                 company_name_only = ", ".join(c.name for c in companies)
-                display_company_name = ", ".join(f"{c.name} ({c.country_id.code.upper()})" if (c.country_id and c.country_id.code) else c.name for c in companies)
+                display_company_name = ", ".join(f"{c.name} ({get_c_code(c)})" if get_c_code(c) else c.name for c in companies)
 
         target_currency = self.env['res.currency'].browse(currency_id)
 
@@ -213,9 +218,9 @@ class FbookReportWizard(models.TransientModel):
                 if residual > 0:
                     initial_ar += residual
 
-        # Cumulative DSO Amount carry-forward across quarters and years
-        cumulative_dso_amount = initial_ar
+        # DSO running totals per year based on Billed and Actuals
         running_billed = {'y1': 0.0, 'y2': 0.0}
+        running_actual = {'y1': 0.0, 'y2': 0.0}
         year_start_dates = {
             'y1': fields.Date.from_string(f'{y1_start}-04-01'),
             'y2': fields.Date.from_string(f'{y2_start}-04-01'),
@@ -272,10 +277,10 @@ class FbookReportWizard(models.TransientModel):
                 if residual > 0:
                     outstanding_val += residual
 
-            # 4. DSO Calculation
+            # 4. DSO Calculation based directly on Billed and Actuals
             # ------------------------------------------------------------------
-            # DSO Amount = Cumulative AR outstanding (carried forward across quarters/years)
-            # DSO Days   = (Cumulative AR Outstanding / Cumulative Revenue Billed) × Days elapsed
+            # DSO Amount = Cumulative Billed - Cumulative Actual (Uncollected Revenue)
+            # DSO Days   = (DSO Amount / Cumulative Billed) × Days elapsed
             # ------------------------------------------------------------------
             q_start_date = fields.Date.from_string(qdef['start'])
             q_end_date   = fields.Date.from_string(qdef['end'])
@@ -284,30 +289,24 @@ class FbookReportWizard(models.TransientModel):
             dso_days_val   = 0
 
             if q_start_date <= today_date:
-                cumulative_dso_amount += outstanding_val
                 running_billed[year_key] += billed_val
+                running_actual[year_key] += actual_val
 
-                dso_amount_val = cumulative_dso_amount
+                uncollected_amt = max(0.0, running_billed[year_key] - running_actual[year_key])
+                dso_amount_val = uncollected_amt
 
                 # Days elapsed from year start to end of this quarter (or today if quarter not yet complete)
                 year_start_dt = year_start_dates[year_key]
                 effective_end = min(q_end_date, today_date)
                 days_elapsed  = (effective_end - year_start_dt).days + 1
 
-                # Standard DSO Days: (Cumulative Outstanding / Cumulative Billed) × Days Elapsed
                 if running_billed[year_key] > 0:
                     dso_days_val = round(
-                        (cumulative_dso_amount / running_billed[year_key]) * days_elapsed
-                    )
-                elif (running_billed['y1'] + running_billed['y2']) > 0:
-                    total_days = (effective_end - year_start_dates['y1']).days + 1
-                    dso_days_val = round(
-                        (cumulative_dso_amount / (running_billed['y1'] + running_billed['y2'])) * total_days
+                        (uncollected_amt / running_billed[year_key]) * days_elapsed
                     )
                 else:
                     dso_days_val = 0
 
-                # DSO days cannot be negative
                 if dso_days_val < 0:
                     dso_days_val = 0
 
@@ -375,59 +374,32 @@ class FbookReportWizard(models.TransientModel):
             margin_val = (profit_val / billed_val * 100) if billed_val > 0 else 0.0
             margin_val = min(100.0, margin_val)
 
-            # 8. Cash Flow: IN (all bank statement deposits > 0) - OUT (all bank statement withdrawals < 0) = Net Cash
-            #    Pulls directly from Bank Statements (account.bank.statement.line), fallback to asset_cash move lines
+            # 8. Cash Flow: Current cumulative Bank & Cash balance as of quarter end (effective_end)
             cash_flow_val = 0.0
             q_start_date = fields.Date.from_string(qdef['start'])
             q_end_date = fields.Date.from_string(qdef['end'])
 
             if q_start_date <= today_date:
                 effective_end = q_end_date if q_end_date <= today_date else today_date
-                q_in = 0.0
-                q_out = 0.0
-                st_lines = False
-                if 'account.bank.statement.line' in self.env:
-                    bs_domain = [
-                        ('company_id', 'in', company_ids),
-                        ('date', '>=', qdef['start']),
-                        ('date', '<=', effective_end),
-                    ]
-                    st_lines = self.env['account.bank.statement.line'].sudo().search(bs_domain)
-
-                if st_lines:
-                    for stl in st_lines:
-                        amt = stl.amount
-                        curr = getattr(stl, 'foreign_currency_id', False) or stl.currency_id or stl.company_id.currency_id
-                        converted = curr._convert(
-                            abs(amt), target_currency, get_rate_company(stl), stl.date or fields.Date.today()
-                        )
-                        if amt > 0:
-                            q_in += converted
-                        elif amt < 0:
-                            q_out += converted
-                elif 'account.move.line' in self.env:
+                if 'account.move.line' in self.env:
                     domain = [
                         ('company_id', 'in', company_ids),
                         ('parent_state', '=', 'posted'),
-                        ('date', '>=', qdef['start']),
                         ('date', '<=', effective_end),
                         ('account_id.account_type', '=', 'asset_cash'),
                     ]
                     cash_lines = self.env['account.move.line'].sudo().search(domain)
+                    bank_balance = 0.0
                     for cl in cash_lines:
-                        if cl.debit > 0:
-                            q_in += cl.company_id.currency_id._convert(
-                                cl.debit, target_currency, get_rate_company(cl), cl.date or fields.Date.today()
-                            )
-                        elif cl.credit > 0:
-                            q_out += cl.company_id.currency_id._convert(
-                                cl.credit, target_currency, get_rate_company(cl), cl.date or fields.Date.today()
-                            )
-                cash_flow_val = q_in - q_out
+                        line_amt = cl.debit - cl.credit
+                        bank_balance += cl.company_id.currency_id._convert(
+                            line_amt, target_currency, get_rate_company(cl), cl.date or fields.Date.today()
+                        )
+                    cash_flow_val = bank_balance
 
-            # 9. Investors: Net cash flow (IN - OUT) from posted journal entries of partners with is_partner_investor=True
+            # 9. Investors: Net cash flow (IN - OUT) from posted journal entries of partners with is_partner_investor=True + Cash Journal Entries (Unsecured Loan)
             calibration_val = 0.0
-            if 'account.move.line' in self.env and 'res.partner' in self.env and q_start_date <= today_date:
+            if 'account.move.line' in self.env and q_start_date <= today_date:
                 effective_end = q_end_date if q_end_date <= today_date else today_date
                 cal_lines = self.env['account.move.line'].sudo().search([
                     ('company_id', 'in', company_ids),
@@ -435,8 +407,10 @@ class FbookReportWizard(models.TransientModel):
                     ('parent_state', '=', 'posted'),
                     ('date', '>=', qdef['start']),
                     ('date', '<=', effective_end),
-                    ('partner_id.is_partner_investor', '=', True),
                     ('account_id.account_type', '!=', 'asset_cash'),
+                    '|',
+                    ('partner_id.is_partner_investor', '=', True),
+                    ('journal_id.type', '=', 'cash')
                 ])
                 q_inv_in = 0.0
                 q_inv_out = 0.0
@@ -473,26 +447,37 @@ class FbookReportWizard(models.TransientModel):
             sum_billed = sum(data[y][q]['billed'] for q in ['q1', 'q2', 'q3', 'q4'])
             sum_actual = sum(data[y][q]['actual'] for q in ['q1', 'q2', 'q3', 'q4'])
 
-            # Point-in-time DSO and Cash Flow totals default to q4 or active quarter
-            dso_q = 'q4'
-            y_start = y1_start if y == 'y1' else y2_start
-            if y_start == current_fy_start:
-                if today_date.month in [4, 5, 6]:
-                    dso_q = 'q1'
-                elif today_date.month in [7, 8, 9]:
-                    dso_q = 'q2'
-                elif today_date.month in [10, 11, 12]:
-                    dso_q = 'q3'
-                else:
-                    dso_q = 'q4'
+            # DSO Amount & Days for Year Total based on Total Billed and Total Actual
+            total_uncollected = max(0.0, sum_billed - sum_actual)
+            sum_dso_amount = total_uncollected
 
-            avg_dso_days = data[y][dso_q]['dso_days']
-            sum_dso_amount = data[y][dso_q]['dso_amount']
+            y_start_dt = year_start_dates[y]
+            y_end_dt = fields.Date.from_string(f"{y1_start+1 if y == 'y1' else y2_start+1:04d}-03-31")
+            effective_year_end = min(y_end_dt, today_date)
+            year_days_elapsed = (effective_year_end - y_start_dt).days + 1
+
+            if sum_billed > 0:
+                avg_dso_days = round((total_uncollected / sum_billed) * year_days_elapsed)
+            else:
+                avg_dso_days = 0
             sum_expenses = sum(data[y][q]['expenses'] for q in ['q1', 'q2', 'q3', 'q4'])
             total_profit = sum_billed - sum_expenses
             total_margin = (total_profit / sum_billed * 100) if sum_billed > 0 else 0.0
             total_margin = min(100.0, total_margin)
-            sum_cash_flow = data[y][dso_q]['cash_flow']
+
+            active_q = 'q4'
+            y_start = y1_start if y == 'y1' else y2_start
+            if y_start == current_fy_start:
+                if today_date.month in [4, 5, 6]:
+                    active_q = 'q1'
+                elif today_date.month in [7, 8, 9]:
+                    active_q = 'q2'
+                elif today_date.month in [10, 11, 12]:
+                    active_q = 'q3'
+                else:
+                    active_q = 'q4'
+
+            sum_cash_flow = data[y][active_q]['cash_flow']
             sum_calibration = sum(data[y][q]['calibration'] for q in ['q1', 'q2', 'q3', 'q4'])
 
             data[y]['total'] = {
@@ -1006,6 +991,56 @@ class FbookReportWizard(models.TransientModel):
                                     q_num = get_q_num(ldate_str, y2_cy_start)
                                     if q_num:
                                         investor_data_map[partner_key]['y2_q_out'][f'q{q_num}'] += line_conv
+
+            # Process Cash Journal Entries for "Unsecured Loan" row
+            unsecured_loan_key = 'unsecured_loan'
+            investor_data_map[unsecured_loan_key] = {
+                'name': 'Unsecured Loan',
+                'category': 'Unsecured Loan',
+                'y1_q_in': {f'q{i}': 0.0 for i in range(1, 5)},
+                'y1_q_out': {f'q{i}': 0.0 for i in range(1, 5)},
+                'y2_q_in': {f'q{i}': 0.0 for i in range(1, 5)},
+                'y2_q_out': {f'q{i}': 0.0 for i in range(1, 5)},
+            }
+
+            cash_moves = self.env['account.move'].sudo().search([
+                ('company_id', 'in', company_ids),
+                ('move_type', '=', 'entry'),
+                ('journal_id.type', '=', 'cash'),
+                ('state', '=', 'posted'),
+                ('date', '>=', min(y1_start_str, y2_start_str)),
+                ('date', '<=', max(y1_end_str, y2_end_str)),
+            ])
+
+            for move in cash_moves:
+                ldate = move.date
+                if not ldate:
+                    continue
+                ldate_str = ldate.strftime('%Y-%m-%d')
+
+                for line in move.line_ids:
+                    if line.account_id.account_type != 'asset_cash':
+                        line_conv = line.company_id.currency_id._convert(
+                            abs(line.debit - line.credit), target_currency, get_rate_company(line), line.date or fields.Date.today()
+                        )
+                        if line.credit > 0:
+                            if y1_start_str <= ldate_str <= y1_end_str:
+                                q_num = get_q_num(ldate_str, y1_fy_start)
+                                if q_num:
+                                    investor_data_map[unsecured_loan_key]['y1_q_in'][f'q{q_num}'] += line_conv
+                            if y2_start_str <= ldate_str <= y2_end_str:
+                                q_num = get_q_num(ldate_str, y2_cy_start)
+                                if q_num:
+                                    investor_data_map[unsecured_loan_key]['y2_q_in'][f'q{q_num}'] += line_conv
+                        elif line.debit > 0:
+                            if y1_start_str <= ldate_str <= y1_end_str:
+                                q_num = get_q_num(ldate_str, y1_fy_start)
+                                if q_num:
+                                    investor_data_map[unsecured_loan_key]['y1_q_out'][f'q{q_num}'] += line_conv
+                            if y2_start_str <= ldate_str <= y2_end_str:
+                                q_num = get_q_num(ldate_str, y2_cy_start)
+                                if q_num:
+                                    investor_data_map[unsecured_loan_key]['y2_q_out'][f'q{q_num}'] += line_conv
 
         investor_rows = []
         for inv_key in sorted(investor_data_map.keys(), key=lambda k: investor_data_map[k]['name']):
