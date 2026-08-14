@@ -58,6 +58,10 @@ class HrExpense(models.Model):
 
         return records
 
+    def action_hr_approve(self):
+        for rec in self:
+            rec.state = 'finance_approval'
+
     def action_finance_approved(self):
         for rec in self:
             if rec.state != 'finance_approval':
