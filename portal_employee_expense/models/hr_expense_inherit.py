@@ -34,7 +34,6 @@ class HrExpense(models.Model):
     state = fields.Selection(
         selection=[
             ('draft', 'Draft'),
-            ('hr_approval', 'Hr Approval'),
             ('finance_approval', 'Finance Approval'),
             ('approved', 'Approved'),
             ('posted', 'Posted'),
@@ -55,15 +54,9 @@ class HrExpense(models.Model):
         records = super().create(vals_list)
 
         for rec in records:
-            rec.state = 'hr_approval'
+            rec.state = 'finance_approval'
 
         return records
-
-    def action_hr_approve(self):
-        for rec in self:
-            if rec.state != 'hr_approval':
-                raise UserError("Expense must be in HR Approval state.")
-            rec.state = 'finance_approval'
 
     def action_finance_approved(self):
         for rec in self:
@@ -86,11 +79,8 @@ class HrExpense(models.Model):
         self.ensure_one()
         template = False
         email_to = False
-        if self.state == 'hr_approval':
-            template = self.env.ref('portal_employee_expense.email_template_hr')
-            email_to = 'shekhawatritika2001@gmail.com'
-        elif self.state == 'finance_approval':
-            template = self.env.ref('portal_employee_expense.email_template_finance')
+        if self.state == 'finance_approval':
+            template = self.env.ref('portal_employee_expense.email_template_finance', raise_if_not_found=False)
             email_to = 'shekhawatritika2001@gmail.com'
         if not template or not email_to:
             return
