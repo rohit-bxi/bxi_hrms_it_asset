@@ -37,4 +37,11 @@
               parent="menu_contract_config"
               action="action_contract_industry"
               sequence="20"/>
+
+    <!-- SERVICE LINE MENU -->
+    <menuitem id="menu_contract_service_line"
+              name="Service Lines"
+              parent="menu_contract_config"
+              action="action_contract_service_line"
+              sequence="30"/>
 </odoo>

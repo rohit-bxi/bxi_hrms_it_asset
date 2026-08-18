@@ -15,6 +15,7 @@
                 <field name="lead_id" string="Opportunity"/>
                 <field name="client_ids" widget="many2many_tags"/>
                 <field name="industry_id"/>
+                <field name="service_line_id" options="{'no_create': True, 'no_open': True, 'no_edit': True, 'no_delete': True}"/>
                 <field name="contract_type"/>
                 <field name="billing_cycle"/>
                 <field name="contract_start_date"/>
@@ -46,73 +47,71 @@
                 <field name="currency_id"/>
                 <field name="contract_start_date"/>
                 <field name="contract_end_date"/>
-                <field name="progress_percent"/>
-                <field name="progress_color"/>
                 <field name="probability"/>
+                <field name="contract_type"/>
+                <field name="billing_cycle"/>
 
                 <templates>
                     <t t-name="card">
 
-                        <div class="oe_kanban_card oe_kanban_global_click contract_card">
+                        <div class="oe_kanban_global_click contract_card">
 
-                            <!-- LEFT COLOR STRIP -->
-                            <div class="stage_strip"
-                                 t-attf-class="stage_strip o_kanban_color_#{record.stage_id.raw_value}">
-                            </div>
+                            <!-- TOP GRADIENT ACCENT BAR -->
+                            <div class="contract_top_bar"/>
 
-                            <div class="card_content">
+                            <!-- MAIN BODY -->
+                            <div class="contract_body">
 
-                                <!-- HEADER -->
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-
-                                    <div class="fw-bold text-dark">
+                                <!-- HEADER: Name + Probability Badge -->
+                                <div class="d-flex justify-content-between align-items-start mb-1">
+                                    <div class="contract_title" t-att-title="record.name.value">
                                         <field name="name"/>
                                     </div>
-
-                                    <span class="badge rounded-pill bg-primary">
+                                    <span class="contract_prob_badge ms-2 flex-shrink-0">
+                                        <i class="fa fa-bolt" style="font-size:9px;"/>
                                         <field name="probability"/>%
                                     </span>
-
                                 </div>
 
+                                <!-- DIVIDER -->
+                                <div class="contract_divider"/>
+
                                 <!-- CLIENTS -->
-                                <div class="mb-2 small text-muted">
-                                    <i class="fa fa-users me-1" title="Clients"/>
+                                <div class="contract_clients">
+                                    <i class="fa fa-users contract_client_icon"/>
                                     <field name="client_ids" widget="many2many_tags"/>
                                 </div>
 
                                 <!-- AMOUNT -->
-                                <div class="mb-2 fw-semibold text-success">
-                                    <field name="contract_amount"
-                                           widget="monetary"
-                                           options="{'currency_field': 'currency_id'}"/>
+                                <div class="contract_amount_row">
+                                    <div class="contract_amount_icon">
+                                        <i class="fa fa-inr"/>
+                                    </div>
+                                    <span class="contract_amount_value">
+                                        <field name="contract_amount"
+                                               widget="monetary"
+                                               options="{'currency_field': 'currency_id'}"/>
+                                    </span>
                                 </div>
 
                                 <!-- DATES -->
-                                <div class="small text-muted mb-3">
-                                    <i class="fa fa-calendar me-1" title="Dates"/>
+                                <div class="contract_dates_row">
+                                    <i class="fa fa-calendar-o"/>
                                     <field name="contract_start_date"/>
-                                    →
+                                    <span class="date_sep">→</span>
                                     <field name="contract_end_date"/>
                                 </div>
 
-                                <!-- PROGRESS -->
-                                <div>
+                            </div>
 
-                                    <div class="d-flex justify-content-between small mb-1">
-                                        <span>Progress</span>
-                                        <span><field name="progress_percent"/>%</span>
-                                    </div>
-
-                                    <div class="progress contract_progress">
-                                        <div t-att-class="'progress-bar ' + record.progress_color.raw_value"
-                                             role="progressbar"
-                                             t-att-style="'width: %s%%' % record.progress_percent.raw_value">
-                                        </div>
-                                    </div>
-
+                            <!-- FOOTER STRIP -->
+                            <div class="contract_footer">
+                                <span class="contract_type_badge">
+                                    <field name="contract_type"/>
+                                </span>
+                                <div class="contract_open_btn">
+                                    <i class="fa fa-angle-right"/>
                                 </div>
-
                             </div>
 
                         </div>
@@ -133,11 +132,11 @@
                 <header>
                     <field name="stage_id" widget="statusbar" options="{'clickable': True}"/>
 
-                    <button name="action_generate_monthly_breakdown"
+                    <button name="action_create_project"
                             type="object"
-                            string="Generate Breakdown"
+                            string="Create Project"
                             class="btn-primary"
-                            icon="fa-calculator"/>
+                            icon="fa-plus"/>
 
                 </header>
 
@@ -183,6 +182,7 @@
                         <group string="Basic Classification">
                             <field name="lead_id"/>
                             <field name="industry_id" required="1"/>
+                            <field name="service_line_id" options="{'no_create': True, 'no_open': True, 'no_edit': True, 'no_delete': True}"/>
                             <field name="client_ids" widget="many2many_tags" required="1"/>
                             <field name="project_ids" widget="many2many_tags"/>
                             <field name="sale_order_ids" widget="many2many_tags"/>
@@ -235,39 +235,6 @@
                         </page>
 
 
-                        <page string="Contract Amount Breakdown">
-
-                            <div class="alert alert-info" role="alert">
-                                Click the "Generate Breakdown" button to auto-create invoice breakdown.
-                            </div>
-
-
-                            <div class="mb-2">
-                                <button name="action_auto_split_remaining"
-                                        type="object"
-                                        string="Auto Balance"
-                                        class="btn btn-secondary"
-                                        icon="fa-balance-scale"/>
-                            </div>
-
-                            <field name="contract_quarter_ids">
-                                <list editable="bottom">
-                                    <field name="invoice_date"/>
-                                    <field name="amount"/>
-                                    <field name="billed"/>
-                                </list>
-                            </field>
-
-
-                            <group>
-                                <field name="total_quarter_amount" readonly="1"/>
-
-                                <div class="text-danger" invisible="not exceed_warning">
-                                    ⚠ Total exceeds Contract Amount!
-                                </div>
-                            </group>
-
-                        </page>
 
                     </notebook>
 

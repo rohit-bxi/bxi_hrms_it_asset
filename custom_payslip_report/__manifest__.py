@@ -9,6 +9,7 @@
     'description': 'Employee View Modification',
     'depends': ['hr_payroll'],
     'data': [
+        'data/ir_cron.xml',
         'report/payslip_report.xml',
         'views/hr_payslip_view.xml',
         'views/payslip_template.xml',

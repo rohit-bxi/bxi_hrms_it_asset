@@ -69,7 +69,7 @@ class EmployeePortalExpense(http.Controller):
             })  
             
             if expense:
-                expense.state = 'hr_approval'
+                expense.state = 'finance_approval'
                 
             expense._send_state_email()  
 

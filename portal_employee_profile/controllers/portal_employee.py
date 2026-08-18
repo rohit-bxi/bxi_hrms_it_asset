@@ -1,4 +1,4 @@
-from odoo import http
+from odoo import http, fields
 from odoo.http import request
 import base64
 
@@ -6,9 +6,69 @@ import base64
 class EmployeePortal(http.Controller):
 
     def _get_employee(self):
-        return request.env.user.employee_id
+        user = request.env.user
+        if user.employee_id:
+            return user.employee_id
+        # Fallback search by user_id or email
+        return request.env['hr.employee'].sudo().search([
+            '|', ('user_id', '=', user.id),
+            '|', ('work_email', '=', user.email), ('private_email', '=', user.email)
+        ], limit=1)
 
-    @http.route(['/my/employee-profile'],type='http',auth='user',website=True)
+    @http.route(['/my/payslips', '/my/payslip'], type='http', auth='user', website=True, sitemap=False)
+    def my_payslips(self, month=None, year=None, **kw):
+        employee = self._get_employee()
+        today = fields.Date.today()
+
+        # Selected or default month/year
+        selected_month = int(month) if month and str(month).isdigit() else today.month
+        selected_year = int(year) if year and str(year).isdigit() else today.year
+
+        payslip = False
+        if employee:
+            # Search for payslips of this employee
+            all_slips = request.env['hr.payslip'].sudo().search([
+                ('employee_id', '=', employee.id),
+                ('state', 'in', ['done', 'paid', 'verify']),
+            ], order='date_to desc')
+
+            # Find slip matching selected month and year
+            for slip in all_slips:
+                if slip.date_to and slip.date_to.month == selected_month and slip.date_to.year == selected_year:
+                    payslip = slip
+                    break
+                elif slip.date_from and slip.date_from.month == selected_month and slip.date_from.year == selected_year:
+                    payslip = slip
+                    break
+
+        months_list = [
+            (1, 'January'), (2, 'February'), (3, 'March'), (4, 'April'),
+            (5, 'May'), (6, 'June'), (7, 'July'), (8, 'August'),
+            (9, 'September'), (10, 'October'), (11, 'November'), (12, 'December')
+        ]
+
+        years_list = list(range(today.year - 5, today.year + 2))
+
+        return request.render(
+            'portal_employee_profile.portal_my_payslips',
+            {
+                'employee': employee,
+                'payslip': payslip,
+                'docs': payslip,
+                'selected_month': selected_month,
+                'selected_year': selected_year,
+                'months_list': months_list,
+                'years_list': years_list,
+            }
+        )
+
+    @http.route([
+        '/my/employee-profile',
+        '/my/employee_profile',
+        '/my/employee/profile',
+        '/employee/profile',
+        '/employee-profile'
+    ], type='http', auth='user', website=True, sitemap=False)
     def employee_profile(self, **kw):
         employee = self._get_employee()
         countries = request.env['res.country'].sudo().search([])
@@ -17,14 +77,17 @@ class EmployeePortal(http.Controller):
             'portal_employee_profile.portal_employee_profile',
             {
                 'employee': employee,
-                'countries':countries,
+                'countries': countries,
             }
         )
 
-    @http.route(['/my/employee-profile/update'], type='http', auth='user', methods=['POST'], website=True, csrf=True)
+    @http.route([
+        '/my/employee-profile/update',
+        '/my/employee_profile/update'
+    ], type='http', auth='user', methods=['POST'], website=True, csrf=True)
     def employee_profile_update(self, **post):
 
-        employee = request.env.user.employee_id
+        employee = self._get_employee()
         if not employee:
             return request.redirect('/my/employee-profile')
 
