@@ -24,6 +24,7 @@
                             <th name="reimbursement_date">Reimbursement Date</th>
                             <th name="product_category">Category</th>
                             <th name="toltal_amount">Total</th>
+                            <th name="receipt">Receipt</th>
                             <th name="status">Status</th>
                         </tr>
                     </thead>
@@ -49,6 +50,17 @@
                                     </td>
                                     <td>
                                         <t t-esc="exp.total_amount" />
+                                    </td>
+                                    <td>
+                                        <t t-set="attachments" t-value="request.env['ir.attachment'].sudo().search([('res_model','=','hr.expense'),('res_id','=',exp.id)])"/>
+                                        <t t-if="attachments">
+                                            <t t-foreach="attachments" t-as="att">
+                                                <a t-att-href="'/web/content/%s?download=true' % (att.id,)" class="me-2"> <t t-esc="att.name"/> </a>
+                                            </t>
+                                        </t>
+                                        <t t-else="">
+                                            -
+                                        </t>
                                     </td>
                                     <td>
                                         <span t-if="exp.state == 'draft'" class="badge bg-secondary">Draft</span>
