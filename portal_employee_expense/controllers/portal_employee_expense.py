@@ -1,3 +1,5 @@
+import base64
+
 from odoo import http
 from odoo.http import request
 from odoo.exceptions import AccessError
@@ -47,14 +49,24 @@ class EmployeePortalExpense(http.Controller):
 
         # Handle form submission (POST)
         form = request.httprequest.form
+        files = request.httprequest.files
 
         names = form.getlist('name[]')
         product_ids = form.getlist('product_id[]')
         dates = form.getlist('date[]')
         amounts = form.getlist('amount[]')
 
-        for name, product, date, amount in zip(names, product_ids, dates, amounts):
+        # gather uploaded files (support 'receipt[]', 'attachment[]', 'attachment')
+        attachments = []
+        for key in ('receipt[]', 'receipt', 'attachment[]', 'attachment'):
+            try:
+                attachments.extend(files.getlist(key) or [])
+            except Exception:
+                continue
 
+        for index, (name, product, date, amount) in enumerate(
+            zip(names, product_ids, dates, amounts)
+        ):
             if not name:
                 continue
 
@@ -66,11 +78,27 @@ class EmployeePortalExpense(http.Controller):
                 'product_id': product_id,
                 'total_amount': float(amount or 0),
                 'employee_id': employee.id,
-            })  
-            
-            if expense:
-                expense.state = 'finance_approval'
-                
-            expense._send_state_email()  
+            })
+
+            # Attach the uploaded file corresponding to this line (if present)
+            uploaded_file = None
+            if index < len(attachments):
+                uploaded_file = attachments[index]
+            if uploaded_file and getattr(uploaded_file, 'filename', None):
+                file_content = uploaded_file.read()
+                if file_content:
+                    datas = base64.b64encode(file_content).decode('utf-8')
+                    request.env['ir.attachment'].sudo().create({
+                        'name': uploaded_file.filename,
+                        'type': 'binary',
+                        'datas': datas,
+                        'res_model': 'hr.expense',
+                        'res_id': expense.id,
+                        'mimetype': getattr(uploaded_file, 'content_type', False) or False,
+                    })
+
+            # Immediately set to finance approval and notify
+            expense.state = 'finance_approval'
+            expense._send_state_email()
 
         return request.redirect('/my/employee-expenses')
