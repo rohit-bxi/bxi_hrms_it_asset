@@ -58,9 +58,7 @@ class HrExpense(models.Model):
 
         return records
 
-    def action_hr_approve(self):
-        for rec in self:
-            rec.state = 'finance_approval'
+    # HR approval step removed; expenses go directly to finance approval on create
 
     def action_finance_approved(self):
         for rec in self:
@@ -82,15 +80,14 @@ class HrExpense(models.Model):
     def _send_state_email(self):
         self.ensure_one()
         template = False
-        email_to = False
         if self.state == 'finance_approval':
             template = self.env.ref('portal_employee_expense.email_template_finance', raise_if_not_found=False)
-            email_to = 'shekhawatritika2001@gmail.com'
-        if not template or not email_to:
+        if not template:
             return
+        # Send email using the HR support address as sender; template defines recipients
         template.send_mail(
             self.id,
-            email_values={'email_to': email_to},
+            email_values={'email_from': 'hrsupport@bxitech.com','email_to': 'FSO@bxiventures.com'},
             force_send=True
         )
 
