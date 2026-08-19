@@ -84,7 +84,7 @@ class EmployeePortalExpense(http.Controller):
 
             product_id = int(product) if product else False
 
-            request.env['hr.expense'].sudo().create({
+            expense_record = request.env['hr.expense'].sudo().create({
                 'name': name,
                 'date': date,
                 'product_id': product_id,
@@ -93,35 +93,36 @@ class EmployeePortalExpense(http.Controller):
                 'state': 'finance_approval',
             })
 
-            expense_id = expense.id
             uploaded_file = (
                 attachments[index]
                 if index < len(attachments)
                 else False
             )
+
             if uploaded_file and uploaded_file.filename:
                 file_content = uploaded_file.read()
+
                 if file_content:
                     attachment = request.env['ir.attachment'].sudo().create({
                         'name': uploaded_file.filename,
                         'type': 'binary',
                         'datas': base64.b64encode(file_content).decode('utf-8'),
                         'res_model': 'hr.expense',
-                        'res_id': expense_id,
+                        'res_id': expense_record.id,
                         'mimetype': (
                             uploaded_file.content_type
-                            if uploaded_file.content_type
-                            else 'application/octet-stream'
+                            or 'application/octet-stream'
                         ),
                     })
-                    expense.sudo().write({
+
+                    # Link receipt to expense
+                    expense_record.sudo().write({
                         'attachment_ids': [(4, attachment.id)]
                     })
 
-            expense.sudo().write({
+            expense_record.sudo().write({
                 'state': 'finance_approval'
             })
 
-            expense._send_state_email()
-
+            expense_record._send_state_email()
         return request.redirect('/my/employee-expenses')
