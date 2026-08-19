@@ -39,7 +39,9 @@ class EmployeePortalExpense(http.Controller):
             ('user_id', '=', user.id)
         ], limit=1)
 
-        # Render form (GET request)
+        if not employee:
+            raise AccessError("No employee is linked to your user account.")
+
         if not post:
             products = request.env['product.product'].sudo().search([])
             return request.render(
@@ -47,7 +49,6 @@ class EmployeePortalExpense(http.Controller):
                 {'products': products}
             )
 
-        # Handle form submission (POST)
         form = request.httprequest.form
         files = request.httprequest.files
 
@@ -56,16 +57,23 @@ class EmployeePortalExpense(http.Controller):
         dates = form.getlist('date[]')
         amounts = form.getlist('amount[]')
 
-        # gather uploaded files (support 'receipt[]', 'attachment[]', 'attachment')
         attachments = []
+
         for key in ('receipt[]', 'receipt', 'attachment[]', 'attachment'):
             try:
                 attachments.extend(files.getlist(key) or [])
             except Exception:
-                continue
+                pass
 
-        row_count = max(len(names), len(product_ids), len(dates), len(amounts))
+        row_count = max(
+            len(names),
+            len(product_ids),
+            len(dates),
+            len(amounts),
+        )
+
         for index in range(row_count):
+
             name = names[index] if index < len(names) else False
             product = product_ids[index] if index < len(product_ids) else False
             date = dates[index] if index < len(dates) else False
@@ -84,24 +92,35 @@ class EmployeePortalExpense(http.Controller):
                 'employee_id': employee.id,
             })
 
-            uploaded_file = attachments[index] if index < len(attachments) else False
-            if uploaded_file and getattr(uploaded_file, 'filename', None):
+            expense_id = expense.id
+            uploaded_file = (
+                attachments[index]
+                if index < len(attachments)
+                else False
+            )
+            if uploaded_file and uploaded_file.filename:
                 file_content = uploaded_file.read()
                 if file_content:
-                    datas = base64.b64encode(file_content).decode('utf-8')
                     attachment = request.env['ir.attachment'].sudo().create({
                         'name': uploaded_file.filename,
-                        'datas': datas,
-                        'res_model': 'hr.expense',
-                        'res_id': expense.id,
-                        'res_name': name,
                         'type': 'binary',
-                        'mimetype': getattr(uploaded_file, 'content_type', False) or False,
+                        'datas': base64.b64encode(file_content).decode('utf-8'),
+                        'res_model': 'hr.expense',
+                        'res_id': expense_id,
+                        'mimetype': (
+                            uploaded_file.content_type
+                            if uploaded_file.content_type
+                            else 'application/octet-stream'
+                        ),
                     })
-                    if attachment:
-                        expense.attachment_ids = [(4, attachment.id)]
+                    expense.sudo().write({
+                        'attachment_ids': [(4, attachment.id)]
+                    })
 
-            expense.state = 'finance_approval'
+            expense.sudo().write({
+                'state': 'finance_approval'
+            })
+
             expense._send_state_email()
 
         return request.redirect('/my/employee-expenses')
