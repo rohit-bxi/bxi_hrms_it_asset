@@ -28,6 +28,7 @@ publicWidget.registry.PortalExpense = publicWidget.Widget.extend({
         // Clear inputs
         newRow.querySelectorAll('input').forEach(input => {
             input.value = '';
+            input.removeAttribute('required');
         });
 
         // Show remove button
