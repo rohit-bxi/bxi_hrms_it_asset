@@ -49,12 +49,17 @@ class HrExpense(models.Model):
         tracking=True,
     )  
 
-    @api.model
+    @api.model_create_multi
     def create(self, vals_list):
+        for vals in vals_list:
+            if not vals.get('state') or vals.get('state') == 'draft':
+                vals['state'] = 'finance_approval'
+
         records = super().create(vals_list)
 
         for rec in records:
-            rec.state = 'finance_approval'
+            if rec.state == 'finance_approval':
+                rec._send_state_email()
 
         return records
 
@@ -71,10 +76,12 @@ class HrExpense(models.Model):
             rec.state = 'refused'
 
     def write(self, vals):
+        old_states = {rec.id: rec.state for rec in self}
         res = super().write(vals)
         if 'state' in vals:
             for record in self:
-                record._send_state_email()
+                if old_states.get(record.id) != record.state:
+                    record._send_state_email()
         return res
     
     def _send_state_email(self):
