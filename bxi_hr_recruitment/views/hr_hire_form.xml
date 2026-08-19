@@ -197,15 +197,15 @@
 
                                     <group string="Documents" col="2">
                                         <field name="joining_letter"
-                                               filename="joining_letter_filename"/>
+                                               filename="joining_letter_filename" widget="many2many_binary"/>
                                         <field name="experience_certificate"
-                                               filename="experience_certificate_filename"/>
+                                               filename="experience_certificate_filename" widget="many2many_binary"/>
 
                                         <field name="relieving_letter"
-                                               filename="relieving_letter_filename"/>
+                                               filename="relieving_letter_filename" widget="many2many_binary"/>
 
                                         <field name="other_certificate"
-                                               filename="apprsail_letter_filename"/>
+                                               filename="apprsail_letter_filename" widget="many2many_binary"/>
                                         <field name="bank_statement_id" widget="many2many_binary"/>
                                         <field name="salary_slip_id" widget="many2many_binary"/>
                                     </group>

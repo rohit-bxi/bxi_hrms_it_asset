@@ -35,6 +35,6 @@ class HrPayslipInput(models.Model):
                                "expression like result = "
                                "inputs.SALEURO.amount * contract.wage*0.01.")
     contract_id = fields.Many2one('hr.version', string='Contract',
-                                  required=True,
+                                  required=False,
                                   help="The contract for which applied"
                                        " this input")

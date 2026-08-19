@@ -1,3 +1,5 @@
+import base64
+
 from odoo import http
 from odoo.http import request
 from odoo.exceptions import AccessError
@@ -47,14 +49,24 @@ class EmployeePortalExpense(http.Controller):
 
         # Handle form submission (POST)
         form = request.httprequest.form
+        files = request.httprequest.files
 
         names = form.getlist('name[]')
         product_ids = form.getlist('product_id[]')
         dates = form.getlist('date[]')
         amounts = form.getlist('amount[]')
 
-        for name, product, date, amount in zip(names, product_ids, dates, amounts):
+        # gather uploaded files (support 'receipt[]', 'attachment[]', 'attachment')
+        attachments = []
+        for key in ('receipt[]', 'receipt', 'attachment[]', 'attachment'):
+            try:
+                attachments.extend(files.getlist(key) or [])
+            except Exception:
+                continue
 
+        for index, (name, product, date, amount) in enumerate(
+            zip(names, product_ids, dates, amounts)
+        ):
             if not name:
                 continue
 
