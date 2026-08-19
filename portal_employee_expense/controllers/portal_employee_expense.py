@@ -84,7 +84,7 @@ class EmployeePortalExpense(http.Controller):
 
             product_id = int(product) if product else False
 
-            expense_record = request.env['hr.expense'].sudo().create({
+            request.env['hr.expense'].sudo().create({
                 'name': name,
                 'date': date,
                 'product_id': product_id,
