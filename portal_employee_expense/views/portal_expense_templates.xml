@@ -52,9 +52,8 @@
                                         <t t-esc="exp.total_amount" />
                                     </td>
                                     <td>
-                                        <t t-set="attachments" t-value="request.env['ir.attachment'].sudo().search([('res_model','=','hr.expense'),('res_id','=',exp.id)])"/>
-                                        <t t-if="attachments">
-                                            <t t-foreach="attachments" t-as="att">
+                                        <t t-if="exp.attachment_ids">
+                                            <t t-foreach="exp.attachment_ids" t-as="att">
                                                 <a t-att-href="'/web/content/%s?download=true' % (att.id,)" class="me-2"> <t t-esc="att.name"/> </a>
                                             </t>
                                         </t>
