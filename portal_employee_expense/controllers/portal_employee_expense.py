@@ -60,17 +60,13 @@ class EmployeePortalExpense(http.Controller):
 
             product_id = int(product) if product else False
 
-            expense = request.env['hr.expense'].sudo().create({
+            request.env['hr.expense'].sudo().create({
                 'name': name,
                 'date': date,
                 'product_id': product_id,
                 'total_amount': float(amount or 0),
-                'employee_id': employee.id,
-            })  
-            
-            if expense:
-                expense.state = 'finance_approval'
-                
-            expense._send_state_email()  
+                'employee_id': employee.id if employee else False,
+                'state': 'finance_approval',
+            })
 
         return request.redirect('/my/employee-expenses')
