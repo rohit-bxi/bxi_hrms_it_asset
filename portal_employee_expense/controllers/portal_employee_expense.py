@@ -64,9 +64,13 @@ class EmployeePortalExpense(http.Controller):
             except Exception:
                 continue
 
-        for index, (name, product, date, amount) in enumerate(
-            zip(names, product_ids, dates, amounts)
-        ):
+        row_count = max(len(names), len(product_ids), len(dates), len(amounts))
+        for index in range(row_count):
+            name = names[index] if index < len(names) else False
+            product = product_ids[index] if index < len(product_ids) else False
+            date = dates[index] if index < len(dates) else False
+            amount = amounts[index] if index < len(amounts) else False
+
             if not name:
                 continue
 
@@ -81,17 +85,13 @@ class EmployeePortalExpense(http.Controller):
                 'state': 'finance_approval',
             })
 
-            uploaded_file = None
-            if index < len(attachments):
-                uploaded_file = attachments[index]
-
+            uploaded_file = attachments[index] if index < len(attachments) else False
             if uploaded_file and getattr(uploaded_file, 'filename', None):
                 file_content = uploaded_file.read()
                 if file_content:
                     datas = base64.b64encode(file_content).decode('utf-8')
                     attachment = request.env['ir.attachment'].sudo().create({
                         'name': uploaded_file.filename,
-                        'type': 'binary',
                         'datas': datas,
                         'res_model': 'hr.expense',
                         'res_id': expense.id,
