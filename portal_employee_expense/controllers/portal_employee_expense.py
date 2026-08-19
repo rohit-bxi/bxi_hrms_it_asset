@@ -72,33 +72,13 @@ class EmployeePortalExpense(http.Controller):
 
             product_id = int(product) if product else False
 
-            expense = request.env['hr.expense'].sudo().create({
+            request.env['hr.expense'].sudo().create({
                 'name': name,
                 'date': date,
                 'product_id': product_id,
                 'total_amount': float(amount or 0),
-                'employee_id': employee.id,
+                'employee_id': employee.id if employee else False,
+                'state': 'finance_approval',
             })
-
-            # Attach the uploaded file corresponding to this line (if present)
-            uploaded_file = None
-            if index < len(attachments):
-                uploaded_file = attachments[index]
-            if uploaded_file and getattr(uploaded_file, 'filename', None):
-                file_content = uploaded_file.read()
-                if file_content:
-                    datas = base64.b64encode(file_content).decode('utf-8')
-                    request.env['ir.attachment'].sudo().create({
-                        'name': uploaded_file.filename,
-                        'type': 'binary',
-                        'datas': datas,
-                        'res_model': 'hr.expense',
-                        'res_id': expense.id,
-                        'mimetype': getattr(uploaded_file, 'content_type', False) or False,
-                    })
-
-            # Immediately set to finance approval and notify
-            expense.state = 'finance_approval'
-            expense._send_state_email()
 
         return request.redirect('/my/employee-expenses')

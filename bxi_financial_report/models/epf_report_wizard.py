@@ -49,7 +49,8 @@ class EpfReportWizard(models.TransientModel):
         'res.company',
         string='Company',
         required=True,
-        default=lambda self: self.env.company
+        default=lambda self: self.env.company,
+        domain="[('id', 'in', allowed_company_ids)]"
     )
 
     def action_generate_excel(self):
@@ -67,25 +68,16 @@ class EpfReportWizard(models.TransientModel):
         start_dt_str = start_date.strftime('%Y-%m-%d')
         end_dt_str = end_date.strftime('%Y-%m-%d')
 
-        # Search payslips matching the selected pay period (date_from <= end_date and date_to >= start_date)
+        # Search payslips matching the selected pay period and selected company
         payslip_domain = [
             ('state', '!=', 'cancel'),
             ('date_from', '<=', end_dt_str),
             ('date_to', '>=', start_dt_str),
         ]
         if self.company_id:
-            payslip_domain.append(('company_id', 'in', (self.company_id.id, False)))
+            payslip_domain.append(('company_id', '=', self.company_id.id))
 
         payslips = self.env['hr.payslip'].sudo().search(payslip_domain)
-
-        # Fallback if no payslips found for specific company: search across all active payslips in date range
-        if not payslips:
-            fallback_domain = [
-                ('state', '!=', 'cancel'),
-                ('date_from', '<=', end_dt_str),
-                ('date_to', '>=', start_dt_str),
-            ]
-            payslips = self.env['hr.payslip'].sudo().search(fallback_domain)
 
         month_name = dict(self._get_month_selection()).get(self.month, '')
         if not payslips:

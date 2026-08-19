@@ -68,9 +68,13 @@ class FbookReportWizard(models.TransientModel):
     @api.model
     def get_report_data(self, company_ids, start_financial_year, currency_id):
         if not company_ids:
-            company_ids = self.env.companies.ids
+            company_ids = self.env.companies.ids or [self.env.company.id]
         elif isinstance(company_ids, int):
             company_ids = [company_ids]
+        elif isinstance(company_ids, (list, tuple)):
+            company_ids = [int(cid) for cid in company_ids if cid]
+        if not company_ids:
+            company_ids = self.env.companies.ids or [self.env.company.id]
 
         companies = self.env['res.company'].browse(company_ids)
         # Resolve display company: prefer the root/parent company (no parent_id) among
@@ -103,14 +107,52 @@ class FbookReportWizard(models.TransientModel):
 
         target_currency = self.env['res.currency'].browse(currency_id)
 
+        y2_start = int(start_financial_year)
+        y1_start = y2_start - 1
+
         def get_rate_company(record):
             """Return the record's own company for exchange rate lookup, or fallback."""
             rec_company = getattr(record, 'company_id', False)
             return rec_company if rec_company else company
 
+        def custom_convert(amount, from_curr, to_curr=target_currency, date_val=None, year_key=None, record=None):
+            """Convert amount between currencies using fixed rates:
+               AED - INR (FY: 24.5, CY: 25.6)
+               USD - INR (FY: 90, CY: 93)
+            """
+            if not from_curr or not to_curr or not amount:
+                return 0.0
+            if from_curr.id == to_curr.id or from_curr.name == to_curr.name:
+                return float(amount)
 
-        y2_start = int(start_financial_year)
-        y1_start = y2_start - 1
+            # Determine whether this transaction belongs to Year 1 (y1) or Year 2 (y2)
+            if not year_key:
+                if date_val:
+                    d_str = date_val if isinstance(date_val, str) else date_val.strftime('%Y-%m-%d')
+                    if d_str <= f"{y1_start+1:04d}-03-31":
+                        year_key = 'y1'
+                    else:
+                        year_key = 'y2'
+                else:
+                    year_key = 'y2'
+
+            fixed_rates = {
+                'y1': {'INR': 1.0, 'AED': 24.5, 'USD': 90.0},
+                'y2': {'INR': 1.0, 'AED': 25.6, 'USD': 93.0},
+            }
+
+            rates_for_year = fixed_rates.get(year_key, fixed_rates['y2'])
+            from_code = (from_curr.name or '').upper().strip()
+            to_code = (to_curr.name or '').upper().strip()
+
+            if from_code in rates_for_year and to_code in rates_for_year:
+                inr_amount = float(amount) * rates_for_year[from_code]
+                return inr_amount / rates_for_year[to_code]
+
+            # Fallback to standard Odoo conversion if currency not in fixed table
+            comp = get_rate_company(record) if record else company
+            d = date_val if date_val and not isinstance(date_val, str) else (fields.Date.from_string(date_val) if date_val else fields.Date.today())
+            return from_curr._convert(amount, to_curr, comp, d)
 
         from datetime import date
         today_date = date.today()
@@ -211,9 +253,9 @@ class FbookReportWizard(models.TransientModel):
             for inv in prior_invoices:
                 if 'project.contract.management' in self.env and not is_linked_to_contract(inv):
                     continue
-                residual = inv.currency_id._convert(
-                    inv.amount_residual, target_currency,
-                    get_rate_company(inv), inv.invoice_date or fields.Date.today()
+                residual = custom_convert(
+                    inv.amount_residual, inv.currency_id, target_currency,
+                    date_val=inv.invoice_date, year_key='y1', record=inv
                 )
                 if residual > 0:
                     initial_ar += residual
@@ -243,8 +285,9 @@ class FbookReportWizard(models.TransientModel):
                 q_end_dt = fields.Date.from_string(qdef['end'])
                 for contract in contracts:
                     if contract.contract_start_date and q_start_dt <= contract.contract_start_date <= q_end_dt:
-                        booking_val += contract.currency_id._convert(
-                            contract.contract_amount, target_currency, get_rate_company(contract), contract.contract_start_date or fields.Date.today()
+                        booking_val += custom_convert(
+                            contract.contract_amount, contract.currency_id, target_currency,
+                            date_val=contract.contract_start_date, year_key=year_key, record=contract
                         )
 
             # 2. Billed = invoiced amount (amount_total on posted customer invoices)
@@ -262,16 +305,16 @@ class FbookReportWizard(models.TransientModel):
             for inv in invoices:
                 if 'project.contract.management' in self.env and not is_linked_to_contract(inv):
                     continue
-                inv_amount = inv.currency_id._convert(
-                    inv.amount_total, target_currency,
-                    get_rate_company(inv), inv.invoice_date or fields.Date.today()
+                inv_amount = custom_convert(
+                    inv.amount_total, inv.currency_id, target_currency,
+                    date_val=inv.invoice_date, year_key=year_key, record=inv
                 )
                 # Billed = invoiced amount for contract-linked invoices
                 billed_val += inv_amount
                 # Actual = amount received = amount_total - amount_residual
-                residual = inv.currency_id._convert(
-                    inv.amount_residual, target_currency,
-                    get_rate_company(inv), inv.invoice_date or fields.Date.today()
+                residual = custom_convert(
+                    inv.amount_residual, inv.currency_id, target_currency,
+                    date_val=inv.invoice_date, year_key=year_key, record=inv
                 )
                 received = inv_amount - residual
                 if received > 0:
@@ -330,8 +373,9 @@ class FbookReportWizard(models.TransientModel):
                     ('date', '<=', qdef['end'])
                 ])
                 for exp in expenses:
-                    expenses_val += exp.currency_id._convert(
-                        exp.total_amount_currency, target_currency, get_rate_company(exp), exp.date or fields.Date.today()
+                    expenses_val += custom_convert(
+                        exp.total_amount_currency, exp.currency_id, target_currency,
+                        date_val=exp.date, year_key=year_key, record=exp
                     )
 
             # B. Vendor Bills
@@ -345,8 +389,9 @@ class FbookReportWizard(models.TransientModel):
                 ])
                 for bill in bills:
                     sign = -1.0 if bill.move_type == 'in_refund' else 1.0
-                    expenses_val += sign * bill.currency_id._convert(
-                        bill.amount_total, target_currency, get_rate_company(bill), bill.invoice_date or fields.Date.today()
+                    expenses_val += sign * custom_convert(
+                        bill.amount_total, bill.currency_id, target_currency,
+                        date_val=bill.invoice_date, year_key=year_key, record=bill
                     )
 
             # C. Payroll / Payslips (Salary)
@@ -365,13 +410,10 @@ class FbookReportWizard(models.TransientModel):
                         if line:
                             net_amt = line[0].total
                     
-                    expenses_val += slip.company_id.currency_id._convert(
-                        net_amt, target_currency, get_rate_company(slip), slip.date_to or fields.Date.today()
+                    expenses_val += custom_convert(
+                        net_amt, slip.company_id.currency_id, target_currency,
+                        date_val=slip.date_to, year_key=year_key, record=slip
                     )
-
-
-
-
 
             # 6. Profit
             profit_val = billed_val - expenses_val
@@ -398,8 +440,9 @@ class FbookReportWizard(models.TransientModel):
                     bank_balance = 0.0
                     for cl in cash_lines:
                         line_amt = cl.debit - cl.credit
-                        bank_balance += cl.company_id.currency_id._convert(
-                            line_amt, target_currency, get_rate_company(cl), cl.date or fields.Date.today()
+                        bank_balance += custom_convert(
+                            line_amt, cl.company_id.currency_id, target_currency,
+                            date_val=cl.date, year_key=year_key, record=cl
                         )
                     cash_flow_val = bank_balance
 
@@ -419,12 +462,14 @@ class FbookReportWizard(models.TransientModel):
                 q_inv_out = 0.0
                 for line in inv_lines:
                     if line.credit > 0:
-                        q_inv_in += line.company_id.currency_id._convert(
-                            line.credit, target_currency, get_rate_company(line), line.date or fields.Date.today()
+                        q_inv_in += custom_convert(
+                            line.credit, line.company_id.currency_id, target_currency,
+                            date_val=line.date, year_key=year_key, record=line
                         )
                     elif line.debit > 0:
-                        q_inv_out += line.company_id.currency_id._convert(
-                            line.debit, target_currency, get_rate_company(line), line.date or fields.Date.today()
+                        q_inv_out += custom_convert(
+                            line.debit, line.company_id.currency_id, target_currency,
+                            date_val=line.date, year_key=year_key, record=line
                         )
 
                 cash_lines = self.env['account.move.line'].sudo().search([
@@ -439,12 +484,14 @@ class FbookReportWizard(models.TransientModel):
                 ])
                 for line in cash_lines:
                     if line.credit > 0:
-                        q_inv_in += line.company_id.currency_id._convert(
-                            line.credit, target_currency, get_rate_company(line), line.date or fields.Date.today()
+                        q_inv_in += custom_convert(
+                            line.credit, line.company_id.currency_id, target_currency,
+                            date_val=line.date, year_key=year_key, record=line
                         )
                     elif line.debit > 0:
-                        q_inv_out += line.company_id.currency_id._convert(
-                            line.debit, target_currency, get_rate_company(line), line.date or fields.Date.today()
+                        q_inv_out += custom_convert(
+                            line.debit, line.company_id.currency_id, target_currency,
+                            date_val=line.date, year_key=year_key, record=line
                         )
                 calibration_val = q_inv_in - q_inv_out
 
@@ -552,13 +599,16 @@ class FbookReportWizard(models.TransientModel):
                 y2_booking = 0.0
 
                 if contract.contract_start_date:
-                    val_converted = contract.currency_id._convert(
-                        contract.contract_amount, target_currency, get_rate_company(contract), contract.contract_start_date or fields.Date.today()
-                    )
                     if y1_start_date <= contract.contract_start_date <= y1_end_date:
-                        y1_booking += val_converted
+                        y1_booking += custom_convert(
+                            contract.contract_amount, contract.currency_id, target_currency,
+                            date_val=contract.contract_start_date, year_key='y1', record=contract
+                        )
                     elif y2_start_date <= contract.contract_start_date <= y2_end_date:
-                        y2_booking += val_converted
+                        y2_booking += custom_convert(
+                            contract.contract_amount, contract.currency_id, target_currency,
+                            date_val=contract.contract_start_date, year_key='y2', record=contract
+                        )
 
                 # Billed Y1 & Y2 and Actual Y1 & Y2
                 y1_billed = 0.0
@@ -592,25 +642,30 @@ class FbookReportWizard(models.TransientModel):
                     if is_linked:
                         inv_date = inv.invoice_date
                         if inv_date:
-                            inv_val = inv.currency_id._convert(
-                                inv.amount_total, target_currency, get_rate_company(inv), inv_date
-                            )
-                            # Actual = amount already received (amount_total - amount_residual)
-                            residual_val = inv.currency_id._convert(
-                                inv.amount_residual, target_currency, get_rate_company(inv), inv_date
-                            )
-                            received_val = max(0.0, inv_val - residual_val)
+                            inv_y_key = 'y1' if y1_start_date <= inv_date <= y1_end_date else ('y2' if y2_start_date <= inv_date <= y2_end_date else None)
+                            if inv_y_key:
+                                inv_val = custom_convert(
+                                    inv.amount_total, inv.currency_id, target_currency,
+                                    date_val=inv_date, year_key=inv_y_key, record=inv
+                                )
+                                # Actual = amount already received (amount_total - amount_residual)
+                                residual_val = custom_convert(
+                                    inv.amount_residual, inv.currency_id, target_currency,
+                                    date_val=inv_date, year_key=inv_y_key, record=inv
+                                )
+                                received_val = max(0.0, inv_val - residual_val)
 
-                            if y1_start_date <= inv_date <= y1_end_date:
-                                y1_billed += inv_val
-                                y1_actual += received_val
-                            elif y2_start_date <= inv_date <= y2_end_date:
-                                y2_billed += inv_val
-                                y2_actual += received_val
+                                if inv_y_key == 'y1':
+                                    y1_billed += inv_val
+                                    y1_actual += received_val
+                                elif inv_y_key == 'y2':
+                                    y2_billed += inv_val
+                                    y2_actual += received_val
 
                 # Convert contract amount to target currency
-                val_converted = contract.currency_id._convert(
-                    contract.contract_amount, target_currency, get_rate_company(contract), fields.Date.today()
+                val_converted = custom_convert(
+                    contract.contract_amount, contract.currency_id, target_currency,
+                    date_val=fields.Date.today(), year_key='y2', record=contract
                 )
 
                 clients = contract.client_ids or [self.env['res.partner']]
@@ -713,9 +768,9 @@ class FbookReportWizard(models.TransientModel):
                 y_key = _get_y_key(exp.date)
                 if not y_key:
                     continue
-                conv = exp.currency_id._convert(
-                    exp.total_amount_currency, target_currency,
-                    get_rate_company(exp), exp.date or fields.Date.today()
+                conv = custom_convert(
+                    exp.total_amount_currency, exp.currency_id, target_currency,
+                    date_val=exp.date, year_key=y_key, record=exp
                 )
                 is_paid = getattr(exp, 'state', '') in ('paid', 'posted', 'in_payment', 'done')
                 actual_exp = conv if is_paid else 0.0
@@ -748,13 +803,13 @@ class FbookReportWizard(models.TransientModel):
                 cat_label = category_labels.get(vendor_cat, 'Miscellaneous')
 
                 sign = -1.0 if bill.move_type == 'in_refund' else 1.0
-                conv = sign * bill.currency_id._convert(
-                    bill.amount_total, target_currency,
-                    get_rate_company(bill), bill.invoice_date or fields.Date.today()
+                conv = sign * custom_convert(
+                    bill.amount_total, bill.currency_id, target_currency,
+                    date_val=bill.invoice_date, year_key=y_key, record=bill
                 )
-                residual = sign * bill.currency_id._convert(
-                    bill.amount_residual, target_currency,
-                    get_rate_company(bill), bill.invoice_date or fields.Date.today()
+                residual = sign * custom_convert(
+                    bill.amount_residual, bill.currency_id, target_currency,
+                    date_val=bill.invoice_date, year_key=y_key, record=bill
                 )
                 paid_amt = max(0.0, conv - residual)
                 _add_expense_val(cat_label, y_key, conv, paid_amt)
@@ -779,8 +834,9 @@ class FbookReportWizard(models.TransientModel):
                     line = slip.line_ids.filtered(lambda l: l.code == 'NET')
                     if line:
                         net_amt = line[0].total
-                conv = slip.company_id.currency_id._convert(
-                    net_amt, target_currency, get_rate_company(slip), slip.date_to or fields.Date.today()
+                conv = custom_convert(
+                    net_amt, slip.company_id.currency_id, target_currency,
+                    date_val=slip.date_to, year_key=y_key, record=slip
                 )
                 if y_key == 'y1':
                     y1_salaries.append((slip.date_to, conv))
@@ -899,8 +955,9 @@ class FbookReportWizard(models.TransientModel):
                         for stl in st_lines:
                             amt = stl.amount
                             curr = getattr(stl, 'foreign_currency_id', False) or stl.currency_id or stl.company_id.currency_id
-                            converted = curr._convert(
-                                abs(amt), target_currency, get_rate_company(stl), stl.date or fields.Date.today()
+                            converted = custom_convert(
+                                abs(amt), curr, target_currency,
+                                date_val=stl.date, year_key=y_key, record=stl
                             )
                             if amt > 0:
                                 in_val += converted
@@ -913,12 +970,14 @@ class FbookReportWizard(models.TransientModel):
                         m_lines = self.env['account.move.line'].sudo().search(domain_month)
                         for ml in m_lines:
                             if ml.debit > 0:
-                                in_val += ml.company_id.currency_id._convert(
-                                    ml.debit, target_currency, get_rate_company(ml), ml.date or fields.Date.today()
+                                in_val += custom_convert(
+                                    ml.debit, ml.company_id.currency_id, target_currency,
+                                    date_val=ml.date, year_key=y_key, record=ml
                                 )
                             elif ml.credit > 0:
-                                out_val += ml.company_id.currency_id._convert(
-                                    ml.credit, target_currency, get_rate_company(ml), ml.date or fields.Date.today()
+                                out_val += custom_convert(
+                                    ml.credit, ml.company_id.currency_id, target_currency,
+                                    date_val=ml.date, year_key=y_key, record=ml
                                 )
 
                 row_data[f'{y_key}_in'] = target_currency.round(in_val)
@@ -971,10 +1030,10 @@ class FbookReportWizard(models.TransientModel):
                     investor_data_map[partner_key] = {
                         'name': partner_name,
                         'category': category,
-                        'y1_q_in': {f'q{i}': 0.0 for i in range(1, 5)},
-                        'y1_q_out': {f'q{i}': 0.0 for i in range(1, 5)},
-                        'y2_q_in': {f'q{i}': 0.0 for i in range(1, 5)},
-                        'y2_q_out': {f'q{i}': 0.0 for i in range(1, 5)},
+                        'y1_credit': 0.0,
+                        'y1_debit': 0.0,
+                        'y2_credit': 0.0,
+                        'y2_debit': 0.0,
                     }
 
                 partner_lines = self.env['account.move.line'].sudo().search([
@@ -993,39 +1052,37 @@ class FbookReportWizard(models.TransientModel):
                     ldate_str = ldate.strftime('%Y-%m-%d')
 
                     if line.credit > 0:
-                        line_conv = line.company_id.currency_id._convert(
-                            line.credit, target_currency, get_rate_company(line), line.date or fields.Date.today()
-                        )
                         if y1_start_str <= ldate_str <= y1_end_str:
-                            q_num = get_q_num(ldate_str, y1_fy_start)
-                            if q_num:
-                                investor_data_map[partner_key]['y1_q_in'][f'q{q_num}'] += line_conv
+                            investor_data_map[partner_key]['y1_credit'] += custom_convert(
+                                line.credit, line.company_id.currency_id, target_currency,
+                                date_val=ldate, year_key='y1', record=line
+                            )
                         if y2_start_str <= ldate_str <= y2_end_str:
-                            q_num = get_q_num(ldate_str, y2_cy_start)
-                            if q_num:
-                                investor_data_map[partner_key]['y2_q_in'][f'q{q_num}'] += line_conv
+                            investor_data_map[partner_key]['y2_credit'] += custom_convert(
+                                line.credit, line.company_id.currency_id, target_currency,
+                                date_val=ldate, year_key='y2', record=line
+                            )
                     elif line.debit > 0:
-                        line_conv = line.company_id.currency_id._convert(
-                            line.debit, target_currency, get_rate_company(line), line.date or fields.Date.today()
-                        )
                         if y1_start_str <= ldate_str <= y1_end_str:
-                            q_num = get_q_num(ldate_str, y1_fy_start)
-                            if q_num:
-                                investor_data_map[partner_key]['y1_q_out'][f'q{q_num}'] += line_conv
+                            investor_data_map[partner_key]['y1_debit'] += custom_convert(
+                                line.debit, line.company_id.currency_id, target_currency,
+                                date_val=ldate, year_key='y1', record=line
+                            )
                         if y2_start_str <= ldate_str <= y2_end_str:
-                            q_num = get_q_num(ldate_str, y2_cy_start)
-                            if q_num:
-                                investor_data_map[partner_key]['y2_q_out'][f'q{q_num}'] += line_conv
+                            investor_data_map[partner_key]['y2_debit'] += custom_convert(
+                                line.debit, line.company_id.currency_id, target_currency,
+                                date_val=ldate, year_key='y2', record=line
+                            )
 
             # Process Cash Journal Entries for "Unsecured Loan" row
             unsecured_loan_key = 'unsecured_loan'
             investor_data_map[unsecured_loan_key] = {
                 'name': 'Unsecured Loan',
                 'category': 'Unsecured Loan',
-                'y1_q_in': {f'q{i}': 0.0 for i in range(1, 5)},
-                'y1_q_out': {f'q{i}': 0.0 for i in range(1, 5)},
-                'y2_q_in': {f'q{i}': 0.0 for i in range(1, 5)},
-                'y2_q_out': {f'q{i}': 0.0 for i in range(1, 5)},
+                'y1_credit': 0.0,
+                'y1_debit': 0.0,
+                'y2_credit': 0.0,
+                'y2_debit': 0.0,
             }
 
             cash_moves = self.env['account.move'].sudo().search([
@@ -1045,109 +1102,363 @@ class FbookReportWizard(models.TransientModel):
 
                 for line in move.line_ids:
                     if line.account_id.account_type != 'asset_cash':
-                        line_conv = line.company_id.currency_id._convert(
-                            abs(line.debit - line.credit), target_currency, get_rate_company(line), line.date or fields.Date.today()
-                        )
                         if line.credit > 0:
                             if y1_start_str <= ldate_str <= y1_end_str:
-                                q_num = get_q_num(ldate_str, y1_fy_start)
-                                if q_num:
-                                    investor_data_map[unsecured_loan_key]['y1_q_in'][f'q{q_num}'] += line_conv
+                                investor_data_map[unsecured_loan_key]['y1_credit'] += custom_convert(
+                                    abs(line.debit - line.credit), line.company_id.currency_id, target_currency,
+                                    date_val=ldate, year_key='y1', record=line
+                                )
                             if y2_start_str <= ldate_str <= y2_end_str:
-                                q_num = get_q_num(ldate_str, y2_cy_start)
-                                if q_num:
-                                    investor_data_map[unsecured_loan_key]['y2_q_in'][f'q{q_num}'] += line_conv
+                                investor_data_map[unsecured_loan_key]['y2_credit'] += custom_convert(
+                                    abs(line.debit - line.credit), line.company_id.currency_id, target_currency,
+                                    date_val=ldate, year_key='y2', record=line
+                                )
                         elif line.debit > 0:
                             if y1_start_str <= ldate_str <= y1_end_str:
-                                q_num = get_q_num(ldate_str, y1_fy_start)
-                                if q_num:
-                                    investor_data_map[unsecured_loan_key]['y1_q_out'][f'q{q_num}'] += line_conv
+                                investor_data_map[unsecured_loan_key]['y1_debit'] += custom_convert(
+                                    abs(line.debit - line.credit), line.company_id.currency_id, target_currency,
+                                    date_val=ldate, year_key='y1', record=line
+                                )
                             if y2_start_str <= ldate_str <= y2_end_str:
-                                q_num = get_q_num(ldate_str, y2_cy_start)
-                                if q_num:
-                                    investor_data_map[unsecured_loan_key]['y2_q_out'][f'q{q_num}'] += line_conv
+                                investor_data_map[unsecured_loan_key]['y2_debit'] += custom_convert(
+                                    abs(line.debit - line.credit), line.company_id.currency_id, target_currency,
+                                    date_val=ldate, year_key='y2', record=line
+                                )
 
         investor_rows = []
         for inv_key in sorted(investor_data_map.keys(), key=lambda k: investor_data_map[k]['name']):
             inv_info = investor_data_map[inv_key]
 
-            y1_q1_in = inv_info['y1_q_in']['q1']
-            y1_q1_out = inv_info['y1_q_out']['q1']
-            y1_q2_in = inv_info['y1_q_in']['q2']
-            y1_q2_out = inv_info['y1_q_out']['q2']
-            y1_q3_in = inv_info['y1_q_in']['q3']
-            y1_q3_out = inv_info['y1_q_out']['q3']
-            y1_q4_in = inv_info['y1_q_in']['q4']
-            y1_q4_out = inv_info['y1_q_out']['q4']
+            y1_credit = inv_info['y1_credit']
+            y1_debit = inv_info['y1_debit']
+            y2_credit = inv_info['y2_credit']
+            y2_debit = inv_info['y2_debit']
 
-            y1_tot_in = y1_q1_in + y1_q2_in + y1_q3_in + y1_q4_in
-            y1_tot_out = y1_q1_out + y1_q2_out + y1_q3_out + y1_q4_out
-
-            y2_q1_in = inv_info['y2_q_in']['q1']
-            y2_q1_out = inv_info['y2_q_out']['q1']
-            y2_q2_in = inv_info['y2_q_in']['q2']
-            y2_q2_out = inv_info['y2_q_out']['q2']
-            y2_q3_in = inv_info['y2_q_in']['q3']
-            y2_q3_out = inv_info['y2_q_out']['q3']
-            y2_q4_in = inv_info['y2_q_in']['q4']
-            y2_q4_out = inv_info['y2_q_out']['q4']
-
-            y2_tot_in = y2_q1_in + y2_q2_in + y2_q3_in + y2_q4_in
-            y2_tot_out = y2_q1_out + y2_q2_out + y2_q3_out + y2_q4_out
-
-            if (y1_tot_in < 0.01 and y1_tot_out < 0.01 and y2_tot_in < 0.01 and y2_tot_out < 0.01):
+            if (y1_credit < 0.01 and y1_debit < 0.01 and y2_credit < 0.01 and y2_debit < 0.01):
                 continue
 
             row = {
                 'investor': inv_info['name'],
                 'category': inv_info['category'],
-
-                'y1_q1_in': target_currency.round(y1_q1_in),
-                'y1_q1_out': target_currency.round(y1_q1_out),
-                'y1_q2_in': target_currency.round(y1_q2_in),
-                'y1_q2_out': target_currency.round(y1_q2_out),
-                'y1_q3_in': target_currency.round(y1_q3_in),
-                'y1_q3_out': target_currency.round(y1_q3_out),
-                'y1_q4_in': target_currency.round(y1_q4_in),
-                'y1_q4_out': target_currency.round(y1_q4_out),
-                'y1_tot_in': target_currency.round(y1_tot_in),
-                'y1_tot_out': target_currency.round(y1_tot_out),
-
-                'y2_q1_in': target_currency.round(y2_q1_in),
-                'y2_q1_out': target_currency.round(y2_q1_out),
-                'y2_q2_in': target_currency.round(y2_q2_in),
-                'y2_q2_out': target_currency.round(y2_q2_out),
-                'y2_q3_in': target_currency.round(y2_q3_in),
-                'y2_q3_out': target_currency.round(y2_q3_out),
-                'y2_q4_in': target_currency.round(y2_q4_in),
-                'y2_q4_out': target_currency.round(y2_q4_out),
-                'y2_tot_in': target_currency.round(y2_tot_in),
-                'y2_tot_out': target_currency.round(y2_tot_out),
+                'y1_credit': target_currency.round(y1_credit),
+                'y1_debit': target_currency.round(y1_debit),
+                'y2_credit': target_currency.round(y2_credit),
+                'y2_debit': target_currency.round(y2_debit),
             }
             investor_rows.append(row)
 
         investor_totals = {
-            'y1_q1_in': target_currency.round(sum(r['y1_q1_in'] for r in investor_rows)),
-            'y1_q1_out': target_currency.round(sum(r['y1_q1_out'] for r in investor_rows)),
-            'y1_q2_in': target_currency.round(sum(r['y1_q2_in'] for r in investor_rows)),
-            'y1_q2_out': target_currency.round(sum(r['y1_q2_out'] for r in investor_rows)),
-            'y1_q3_in': target_currency.round(sum(r['y1_q3_in'] for r in investor_rows)),
-            'y1_q3_out': target_currency.round(sum(r['y1_q3_out'] for r in investor_rows)),
-            'y1_q4_in': target_currency.round(sum(r['y1_q4_in'] for r in investor_rows)),
-            'y1_q4_out': target_currency.round(sum(r['y1_q4_out'] for r in investor_rows)),
-            'y1_tot_in': target_currency.round(sum(r['y1_tot_in'] for r in investor_rows)),
-            'y1_tot_out': target_currency.round(sum(r['y1_tot_out'] for r in investor_rows)),
+            'y1_credit': target_currency.round(sum(r['y1_credit'] for r in investor_rows)),
+            'y1_debit': target_currency.round(sum(r['y1_debit'] for r in investor_rows)),
+            'y2_credit': target_currency.round(sum(r['y2_credit'] for r in investor_rows)),
+            'y2_debit': target_currency.round(sum(r['y2_debit'] for r in investor_rows)),
+        }
 
-            'y2_q1_in': target_currency.round(sum(r['y2_q1_in'] for r in investor_rows)),
-            'y2_q1_out': target_currency.round(sum(r['y2_q1_out'] for r in investor_rows)),
-            'y2_q2_in': target_currency.round(sum(r['y2_q2_in'] for r in investor_rows)),
-            'y2_q2_out': target_currency.round(sum(r['y2_q2_out'] for r in investor_rows)),
-            'y2_q3_in': target_currency.round(sum(r['y2_q3_in'] for r in investor_rows)),
-            'y2_q3_out': target_currency.round(sum(r['y2_q3_out'] for r in investor_rows)),
-            'y2_q4_in': target_currency.round(sum(r['y2_q4_in'] for r in investor_rows)),
-            'y2_q4_out': target_currency.round(sum(r['y2_q4_out'] for r in investor_rows)),
-            'y2_tot_in': target_currency.round(sum(r['y2_tot_in'] for r in investor_rows)),
-            'y2_tot_out': target_currency.round(sum(r['y2_tot_out'] for r in investor_rows)),
+        # Vendor Report Calculation (Quarterly bill amounts for active billed vendors)
+        vendor_data_map = {}
+        if 'account.move' in self.env:
+            vendor_bills = self.env['account.move'].sudo().search([
+                ('company_id', 'in', company_ids),
+                ('move_type', 'in', ('in_invoice', 'in_refund')),
+                ('state', '!=', 'cancel'),
+                ('invoice_date', '>=', min(y1_start_str, y2_start_str)),
+                ('invoice_date', '<=', max(y1_end_str, y2_end_str)),
+            ])
+            for bill in vendor_bills:
+                partner = bill.partner_id
+                if not partner:
+                    continue
+                partner_id = partner.id
+                partner_name = partner.name.strip() if partner.name else 'Unknown Vendor'
+                b_date = bill.invoice_date or bill.date
+                if not b_date:
+                    continue
+                b_date_str = b_date.strftime('%Y-%m-%d')
+
+                if partner_id not in vendor_data_map:
+                    vendor_data_map[partner_id] = {
+                        'name': partner_name,
+                        'y1_q1': 0.0,
+                        'y1_q2': 0.0,
+                        'y1_q3': 0.0,
+                        'y1_q4': 0.0,
+                        'y2_q1': 0.0,
+                        'y2_q2': 0.0,
+                        'y2_q3': 0.0,
+                        'y2_q4': 0.0,
+                    }
+
+                sign = -1.0 if bill.move_type == 'in_refund' else 1.0
+                conv_y1 = sign * custom_convert(
+                    bill.amount_total, bill.currency_id, target_currency,
+                    date_val=b_date, year_key='y1', record=bill
+                )
+                conv_y2 = sign * custom_convert(
+                    bill.amount_total, bill.currency_id, target_currency,
+                    date_val=b_date, year_key='y2', record=bill
+                )
+
+                if y1_start_str <= b_date_str <= y1_end_str:
+                    q = get_q_num(b_date_str, y1_fy_start)
+                    if q == 1:
+                        vendor_data_map[partner_id]['y1_q1'] += conv_y1
+                    elif q == 2:
+                        vendor_data_map[partner_id]['y1_q2'] += conv_y1
+                    elif q == 3:
+                        vendor_data_map[partner_id]['y1_q3'] += conv_y1
+                    elif q == 4:
+                        vendor_data_map[partner_id]['y1_q4'] += conv_y1
+
+                if y2_start_str <= b_date_str <= y2_end_str:
+                    q = get_q_num(b_date_str, y2_cy_start)
+                    if q == 1:
+                        vendor_data_map[partner_id]['y2_q1'] += conv_y2
+                    elif q == 2:
+                        vendor_data_map[partner_id]['y2_q2'] += conv_y2
+                    elif q == 3:
+                        vendor_data_map[partner_id]['y2_q3'] += conv_y2
+                    elif q == 4:
+                        vendor_data_map[partner_id]['y2_q4'] += conv_y2
+
+        vendor_rows = []
+        for v_id in sorted(vendor_data_map.keys(), key=lambda k: vendor_data_map[k]['name'].lower()):
+            v_info = vendor_data_map[v_id]
+            y1_q1 = v_info['y1_q1']
+            y1_q2 = v_info['y1_q2']
+            y1_q3 = v_info['y1_q3']
+            y1_q4 = v_info['y1_q4']
+            y1_total = y1_q1 + y1_q2 + y1_q3 + y1_q4
+
+            y2_q1 = v_info['y2_q1']
+            y2_q2 = v_info['y2_q2']
+            y2_q3 = v_info['y2_q3']
+            y2_q4 = v_info['y2_q4']
+            y2_total = y2_q1 + y2_q2 + y2_q3 + y2_q4
+
+            if abs(y1_total) < 0.01 and abs(y2_total) < 0.01:
+                continue
+
+            vendor_rows.append({
+                'vendor': v_info['name'],
+                'y1_q1': target_currency.round(y1_q1),
+                'y1_q2': target_currency.round(y1_q2),
+                'y1_q3': target_currency.round(y1_q3),
+                'y1_q4': target_currency.round(y1_q4),
+                'y1_total': target_currency.round(y1_total),
+                'y2_q1': target_currency.round(y2_q1),
+                'y2_q2': target_currency.round(y2_q2),
+                'y2_q3': target_currency.round(y2_q3),
+                'y2_q4': target_currency.round(y2_q4),
+                'y2_total': target_currency.round(y2_total),
+            })
+
+        vendor_totals = {
+            'y1_q1': target_currency.round(sum(r['y1_q1'] for r in vendor_rows)),
+            'y1_q2': target_currency.round(sum(r['y1_q2'] for r in vendor_rows)),
+            'y1_q3': target_currency.round(sum(r['y1_q3'] for r in vendor_rows)),
+            'y1_q4': target_currency.round(sum(r['y1_q4'] for r in vendor_rows)),
+            'y1_total': target_currency.round(sum(r['y1_total'] for r in vendor_rows)),
+            'y2_q1': target_currency.round(sum(r['y2_q1'] for r in vendor_rows)),
+            'y2_q2': target_currency.round(sum(r['y2_q2'] for r in vendor_rows)),
+            'y2_q3': target_currency.round(sum(r['y2_q3'] for r in vendor_rows)),
+            'y2_q4': target_currency.round(sum(r['y2_q4'] for r in vendor_rows)),
+            'y2_total': target_currency.round(sum(r['y2_total'] for r in vendor_rows)),
+        }
+
+        # Assets Value Section Calculation (Category, Assets Count, Purchase Value, Depreciation Value)
+        asset_data_map = {}
+        if 'asset.management' in self.env:
+            assets = self.env['asset.management'].sudo().search([
+                ('status', '!=', 'destroyed')
+            ])
+            for asset in assets:
+                asset_comp_id = (
+                    (asset.invoice_id.company_id.id if asset.invoice_id and asset.invoice_id.company_id else False) or
+                    (asset.product_id.company_id.id if asset.product_id and asset.product_id.company_id else False)
+                )
+                if asset_comp_id and asset_comp_id not in company_ids:
+                    continue
+
+                category_name = (
+                    (asset.asset_type_id.name if asset.asset_type_id else False) or
+                    (asset.product_id.categ_id.name if asset.product_id and asset.product_id.categ_id else False) or
+                    'General'
+                ).strip()
+
+                count = (asset.initial_stock or 1) if getattr(asset, 'model_type', '') == 'multiple' else 1
+                curr = getattr(asset.invoice_id, 'currency_id', False) or self.env.company.currency_id
+
+                purchase_val = custom_convert(
+                    asset.amount or 0.0, curr, target_currency,
+                    date_val=asset.invoice_date or fields.Date.today(), year_key='y2', record=asset
+                )
+                depr_amount = asset.total_depreciation_amount or (sum(asset.depreciation_ids.mapped('depreciation_amount')) if asset.depreciation_ids else 0.0)
+                depr_val = custom_convert(
+                    depr_amount, curr, target_currency,
+                    date_val=getattr(asset, 'last_depreciation_date', False) or fields.Date.today(), year_key='y2', record=asset
+                )
+
+                if category_name not in asset_data_map:
+                    asset_data_map[category_name] = {
+                        'category': category_name,
+                        'asset_count': 0,
+                        'purchase_value': 0.0,
+                        'depreciation_value': 0.0,
+                    }
+
+                asset_data_map[category_name]['asset_count'] += count
+                asset_data_map[category_name]['purchase_value'] += purchase_val
+                asset_data_map[category_name]['depreciation_value'] += depr_val
+
+        asset_rows = []
+        for cat_name in sorted(asset_data_map.keys()):
+            a_info = asset_data_map[cat_name]
+            asset_rows.append({
+                'category': a_info['category'],
+                'asset_count': a_info['asset_count'],
+                'purchase_value': target_currency.round(a_info['purchase_value']),
+                'depreciation_value': target_currency.round(a_info['depreciation_value']),
+            })
+
+        asset_totals = {
+            'asset_count': sum(r['asset_count'] for r in asset_rows),
+            'purchase_value': target_currency.round(sum(r['purchase_value'] for r in asset_rows)),
+            'depreciation_value': target_currency.round(sum(r['depreciation_value'] for r in asset_rows)),
+        }
+
+        # CSR Fund Section Calculation (Quarter-wise Fund transfers to BXI Foundation)
+        csr_data_map = {}
+        if 'account.move.line' in self.env:
+            domain_lines = [
+                ('company_id', 'in', company_ids),
+                ('parent_state', '=', 'posted'),
+                ('date', '>=', min(y1_start_str, y2_start_str)),
+                ('date', '<=', max(y1_end_str, y2_end_str)),
+            ]
+            all_lines = self.env['account.move.line'].sudo().search(domain_lines)
+            for line in all_lines:
+                p_name = (line.partner_id.name or '').strip()
+                p_comm = (line.partner_id.commercial_partner_id.name or '').strip()
+                acc_name = (line.account_id.name or '').strip()
+                acc_code = (line.account_id.code or '').strip()
+                l_name = (line.name or '').strip()
+                m_ref = (line.move_id.ref or '').strip()
+                m_name = (line.move_id.name or '').strip()
+
+                combined_text = f"{p_name} {p_comm} {acc_name} {acc_code} {l_name} {m_ref} {m_name}".lower()
+
+                # Check if matches foundation / csr in any format or variation
+                is_csr = False
+                if 'foundation' in combined_text or 'csr' in combined_text:
+                    is_csr = True
+                elif 'bxi' in combined_text and ('found' in combined_text or 'trust' in combined_text):
+                    is_csr = True
+
+                if not is_csr:
+                    continue
+
+                ldate = line.date
+                if not ldate:
+                    continue
+                ldate_str = ldate.strftime('%Y-%m-%d')
+
+                # Display name: use partner name if present, or account name / BXI Foundation
+                if p_name and ('foundation' in p_name.lower() or 'csr' in p_name.lower() or 'bxi' in p_name.lower()):
+                    display_name = p_name
+                elif acc_name and ('foundation' in acc_name.lower() or 'csr' in acc_name.lower()):
+                    display_name = acc_name
+                else:
+                    display_name = 'BXI Foundation'
+
+                if display_name not in csr_data_map:
+                    csr_data_map[display_name] = {
+                        'particulars': display_name,
+                        'y1_q1': 0.0,
+                        'y1_q2': 0.0,
+                        'y1_q3': 0.0,
+                        'y1_q4': 0.0,
+                        'y2_q1': 0.0,
+                        'y2_q2': 0.0,
+                        'y2_q3': 0.0,
+                        'y2_q4': 0.0,
+                    }
+
+                line_amt = line.debit if line.debit > 0 else (abs(line.debit - line.credit) if (line.debit or line.credit) else 0.0)
+
+                conv_y1 = custom_convert(
+                    line_amt, line.company_id.currency_id, target_currency,
+                    date_val=ldate, year_key='y1', record=line
+                )
+                conv_y2 = custom_convert(
+                    line_amt, line.company_id.currency_id, target_currency,
+                    date_val=ldate, year_key='y2', record=line
+                )
+
+                if y1_start_str <= ldate_str <= y1_end_str:
+                    q = get_q_num(ldate_str, y1_fy_start)
+                    if q == 1:
+                        csr_data_map[display_name]['y1_q1'] += conv_y1
+                    elif q == 2:
+                        csr_data_map[display_name]['y1_q2'] += conv_y1
+                    elif q == 3:
+                        csr_data_map[display_name]['y1_q3'] += conv_y1
+                    elif q == 4:
+                        csr_data_map[display_name]['y1_q4'] += conv_y1
+
+                if y2_start_str <= ldate_str <= y2_end_str:
+                    q = get_q_num(ldate_str, y2_cy_start)
+                    if q == 1:
+                        csr_data_map[display_name]['y2_q1'] += conv_y2
+                    elif q == 2:
+                        csr_data_map[display_name]['y2_q2'] += conv_y2
+                    elif q == 3:
+                        csr_data_map[display_name]['y2_q3'] += conv_y2
+                    elif q == 4:
+                        csr_data_map[display_name]['y2_q4'] += conv_y2
+
+        csr_rows = []
+        for k in sorted(csr_data_map.keys()):
+            c_info = csr_data_map[k]
+            y1_q1 = c_info['y1_q1']
+            y1_q2 = c_info['y1_q2']
+            y1_q3 = c_info['y1_q3']
+            y1_q4 = c_info['y1_q4']
+            y1_total = y1_q1 + y1_q2 + y1_q3 + y1_q4
+
+            y2_q1 = c_info['y2_q1']
+            y2_q2 = c_info['y2_q2']
+            y2_q3 = c_info['y2_q3']
+            y2_q4 = c_info['y2_q4']
+            y2_total = y2_q1 + y2_q2 + y2_q3 + y2_q4
+
+            if abs(y1_total) < 0.01 and abs(y2_total) < 0.01:
+                continue
+
+            csr_rows.append({
+                'particulars': c_info['particulars'],
+                'y1_q1': target_currency.round(y1_q1),
+                'y1_q2': target_currency.round(y1_q2),
+                'y1_q3': target_currency.round(y1_q3),
+                'y1_q4': target_currency.round(y1_q4),
+                'y1_total': target_currency.round(y1_total),
+                'y2_q1': target_currency.round(y2_q1),
+                'y2_q2': target_currency.round(y2_q2),
+                'y2_q3': target_currency.round(y2_q3),
+                'y2_q4': target_currency.round(y2_q4),
+                'y2_total': target_currency.round(y2_total),
+            })
+
+        csr_totals = {
+            'y1_q1': target_currency.round(sum(r['y1_q1'] for r in csr_rows)),
+            'y1_q2': target_currency.round(sum(r['y1_q2'] for r in csr_rows)),
+            'y1_q3': target_currency.round(sum(r['y1_q3'] for r in csr_rows)),
+            'y1_q4': target_currency.round(sum(r['y1_q4'] for r in csr_rows)),
+            'y1_total': target_currency.round(sum(r['y1_total'] for r in csr_rows)),
+            'y2_q1': target_currency.round(sum(r['y2_q1'] for r in csr_rows)),
+            'y2_q2': target_currency.round(sum(r['y2_q2'] for r in csr_rows)),
+            'y2_q3': target_currency.round(sum(r['y2_q3'] for r in csr_rows)),
+            'y2_q4': target_currency.round(sum(r['y2_q4'] for r in csr_rows)),
+            'y2_total': target_currency.round(sum(r['y2_total'] for r in csr_rows)),
         }
 
         y1_prefix = 'CY' if y1_start == current_fy_start else 'FY'
@@ -1196,5 +1507,11 @@ class FbookReportWizard(models.TransientModel):
             'total_cf_y2_remaining': total_cf_y2_remaining,
             'investor_rows': investor_rows,
             'investor_totals': investor_totals,
+            'vendor_rows': vendor_rows,
+            'vendor_totals': vendor_totals,
+            'asset_rows': asset_rows,
+            'asset_totals': asset_totals,
+            'csr_rows': csr_rows,
+            'csr_totals': csr_totals,
         }
 
