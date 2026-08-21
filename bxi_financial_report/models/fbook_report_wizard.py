@@ -1252,6 +1252,13 @@ class FbookReportWizard(models.TransientModel):
                 'y2_total': target_currency.round(y2_total),
             })
 
+        # Sort vendors by highest spend in the respective year (y2_total descending, then y1_total descending) and keep only top 5
+        vendor_rows = sorted(
+            vendor_rows,
+            key=lambda r: (r['y2_total'], r['y1_total']),
+            reverse=True
+        )[:5]
+
         vendor_totals = {
             'y1_q1': target_currency.round(sum(r['y1_q1'] for r in vendor_rows)),
             'y1_q2': target_currency.round(sum(r['y1_q2'] for r in vendor_rows)),
@@ -1265,12 +1272,10 @@ class FbookReportWizard(models.TransientModel):
             'y2_total': target_currency.round(sum(r['y2_total'] for r in vendor_rows)),
         }
 
-        # Assets Value Section Calculation (Category, Assets Count, Purchase Value, Depreciation Value)
+        # Assets Value Section Calculation (Category, Description, In Store, In Use, Customer Loc, Scrapped for Count, Purchase, Depr)
         asset_data_map = {}
         if 'asset.management' in self.env:
-            assets = self.env['asset.management'].sudo().search([
-                ('status', '!=', 'destroyed')
-            ])
+            assets = self.env['asset.management'].sudo().search([])
             for asset in assets:
                 asset_comp_id = (
                     (asset.invoice_id.company_id.id if asset.invoice_id and asset.invoice_id.company_id else False) or
@@ -1285,7 +1290,11 @@ class FbookReportWizard(models.TransientModel):
                     'General'
                 ).strip()
 
-                count = (asset.initial_stock or 1) if getattr(asset, 'model_type', '') == 'multiple' else 1
+                item_name = (
+                    (asset.product_id.display_name or asset.product_id.name if asset.product_id else False) or
+                    (asset.name or '')
+                ).strip()
+
                 curr = getattr(asset.invoice_id, 'currency_id', False) or self.env.company.currency_id
 
                 purchase_val = custom_convert(
@@ -1298,32 +1307,133 @@ class FbookReportWizard(models.TransientModel):
                     date_val=getattr(asset, 'last_depreciation_date', False) or fields.Date.today(), year_key='y2', record=asset
                 )
 
+                c_in_store = 0
+                c_in_use = 0
+                c_customer = 0
+                c_scrapped = 0
+
+                if getattr(asset, 'model_type', '') == 'multiple':
+                    tot_cnt = max(1, asset.initial_stock or 1)
+                    if asset.status == 'destroyed':
+                        c_scrapped = tot_cnt
+                    else:
+                        active_tfs = asset.transfer_ids.filtered(lambda t: t.status == 'assigned') if asset.transfer_ids else False
+                        tf_customer = 0
+                        tf_in_use = 0
+                        if active_tfs:
+                            for tf in active_tfs:
+                                loc = (tf.location or '').strip().lower()
+                                qty = tf.stock_qty or 1
+                                if 'customer' in loc or 'client' in loc:
+                                    tf_customer += qty
+                                else:
+                                    tf_in_use += qty
+                        c_customer = tf_customer
+                        c_in_use = tf_in_use
+                        c_in_store = max(0, tot_cnt - (c_customer + c_in_use))
+                else:
+                    tot_cnt = 1
+                    if asset.status == 'destroyed':
+                        c_scrapped = 1
+                    elif asset.status in ('return', 'in_warehouse'):
+                        c_in_store = 1
+                    elif asset.status == 'assign':
+                        active_tfs = asset.transfer_ids.filtered(lambda t: t.status == 'assigned') if asset.transfer_ids else False
+                        if active_tfs:
+                            loc = (active_tfs[-1].location or '').strip().lower()
+                            if 'customer' in loc or 'client' in loc:
+                                c_customer = 1
+                            else:
+                                c_in_use = 1
+                        else:
+                            c_in_use = 1
+                    else:
+                        c_in_store = 1
+
+                unit_p = purchase_val / tot_cnt if tot_cnt > 0 else 0.0
+                unit_d = depr_val / tot_cnt if tot_cnt > 0 else 0.0
+
                 if category_name not in asset_data_map:
                     asset_data_map[category_name] = {
                         'category': category_name,
-                        'asset_count': 0,
-                        'purchase_value': 0.0,
-                        'depreciation_value': 0.0,
+                        'items': set(),
+                        'count_total': 0,
+                        'count_in_store': 0,
+                        'count_in_use': 0,
+                        'count_customer': 0,
+                        'count_scrapped': 0,
+                        'purchase_total': 0.0,
+                        'purchase_in_store': 0.0,
+                        'purchase_in_use': 0.0,
+                        'purchase_customer': 0.0,
+                        'purchase_scrapped': 0.0,
+                        'depr_total': 0.0,
+                        'depr_in_store': 0.0,
+                        'depr_in_use': 0.0,
+                        'depr_customer': 0.0,
+                        'depr_scrapped': 0.0,
                     }
 
-                asset_data_map[category_name]['asset_count'] += count
-                asset_data_map[category_name]['purchase_value'] += purchase_val
-                asset_data_map[category_name]['depreciation_value'] += depr_val
+                adm = asset_data_map[category_name]
+                if item_name:
+                    adm['items'].add(item_name)
+                adm['count_total'] += tot_cnt
+                adm['count_in_store'] += c_in_store
+                adm['count_in_use'] += c_in_use
+                adm['count_customer'] += c_customer
+                adm['count_scrapped'] += c_scrapped
+
+                adm['purchase_total'] += purchase_val
+                adm['purchase_in_store'] += unit_p * c_in_store
+                adm['purchase_in_use'] += unit_p * c_in_use
+                adm['purchase_customer'] += unit_p * c_customer
+                adm['purchase_scrapped'] += unit_p * c_scrapped
+
+                adm['depr_total'] += depr_val
+                adm['depr_in_store'] += unit_d * c_in_store
+                adm['depr_in_use'] += unit_d * c_in_use
+                adm['depr_customer'] += unit_d * c_customer
+                adm['depr_scrapped'] += unit_d * c_scrapped
 
         asset_rows = []
         for cat_name in sorted(asset_data_map.keys()):
             a_info = asset_data_map[cat_name]
             asset_rows.append({
                 'category': a_info['category'],
-                'asset_count': a_info['asset_count'],
-                'purchase_value': target_currency.round(a_info['purchase_value']),
-                'depreciation_value': target_currency.round(a_info['depreciation_value']),
+                'description': ', '.join(sorted(a_info['items'])) if a_info['items'] else '-',
+                'count_total': a_info['count_total'],
+                'count_in_store': a_info['count_in_store'],
+                'count_in_use': a_info['count_in_use'],
+                'count_customer': a_info['count_customer'],
+                'count_scrapped': a_info['count_scrapped'],
+                'purchase_total': target_currency.round(a_info['purchase_total']),
+                'purchase_in_store': target_currency.round(a_info['purchase_in_store']),
+                'purchase_in_use': target_currency.round(a_info['purchase_in_use']),
+                'purchase_customer': target_currency.round(a_info['purchase_customer']),
+                'purchase_scrapped': target_currency.round(a_info['purchase_scrapped']),
+                'depr_total': target_currency.round(a_info['depr_total']),
+                'depr_in_store': target_currency.round(a_info['depr_in_store']),
+                'depr_in_use': target_currency.round(a_info['depr_in_use']),
+                'depr_customer': target_currency.round(a_info['depr_customer']),
+                'depr_scrapped': target_currency.round(a_info['depr_scrapped']),
             })
 
         asset_totals = {
-            'asset_count': sum(r['asset_count'] for r in asset_rows),
-            'purchase_value': target_currency.round(sum(r['purchase_value'] for r in asset_rows)),
-            'depreciation_value': target_currency.round(sum(r['depreciation_value'] for r in asset_rows)),
+            'count_total': sum(r['count_total'] for r in asset_rows),
+            'count_in_store': sum(r['count_in_store'] for r in asset_rows),
+            'count_in_use': sum(r['count_in_use'] for r in asset_rows),
+            'count_customer': sum(r['count_customer'] for r in asset_rows),
+            'count_scrapped': sum(r['count_scrapped'] for r in asset_rows),
+            'purchase_total': target_currency.round(sum(r['purchase_total'] for r in asset_rows)),
+            'purchase_in_store': target_currency.round(sum(r['purchase_in_store'] for r in asset_rows)),
+            'purchase_in_use': target_currency.round(sum(r['purchase_in_use'] for r in asset_rows)),
+            'purchase_customer': target_currency.round(sum(r['purchase_customer'] for r in asset_rows)),
+            'purchase_scrapped': target_currency.round(sum(r['purchase_scrapped'] for r in asset_rows)),
+            'depr_total': target_currency.round(sum(r['depr_total'] for r in asset_rows)),
+            'depr_in_store': target_currency.round(sum(r['depr_in_store'] for r in asset_rows)),
+            'depr_in_use': target_currency.round(sum(r['depr_in_use'] for r in asset_rows)),
+            'depr_customer': target_currency.round(sum(r['depr_customer'] for r in asset_rows)),
+            'depr_scrapped': target_currency.round(sum(r['depr_scrapped'] for r in asset_rows)),
         }
 
         # CSR Fund Section Calculation (Quarter-wise Fund transfers to BXI Foundation)
