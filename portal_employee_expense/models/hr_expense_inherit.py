@@ -63,9 +63,7 @@ class HrExpense(models.Model):
 
         return records
 
-    def action_hr_approve(self):
-        for rec in self:
-            rec.state = 'finance_approval'
+    # HR approval step removed; expenses go directly to finance approval on create
 
     def action_finance_approved(self):
         for rec in self:
