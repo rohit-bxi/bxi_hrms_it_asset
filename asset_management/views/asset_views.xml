@@ -449,6 +449,7 @@
                         <!-- Fields for defining asset type characteristics -->
                         <field name="name"/>
                         <field name="color" widget="color_picker"/>
+                        <field name="description"/>
                         <field name="depreciation_frequency"/>
                         <field name="depreciation_method"/>
                         <field name="depreciation_rate"/>
@@ -469,6 +470,7 @@
             <list>
                 <!-- Fields displayed in the tree view for asset types -->
                 <field name="name"/>
+                <field name="description"/>
                 <field name="color" widget="color_picker"/>
                 <field name="depreciation_frequency"/>
                 <field name="depreciation_method"/>

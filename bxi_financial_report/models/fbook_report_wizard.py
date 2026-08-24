@@ -719,6 +719,35 @@ class FbookReportWizard(models.TransientModel):
                     'y2_margin': 0.0
                 })
 
+            # Sort descending by Year 2 Billed, Year 2 Booking, Contract Value, Year 1 Billed
+            contracts_data.sort(
+                key=lambda c: (c['y2_billed'], c['y2_booking'], c['contract_value'], c['y1_billed']),
+                reverse=True
+            )
+
+            # Limit to Top 5 and consolidate any remaining into a 6th "Others" row
+            if len(contracts_data) > 5:
+                top_5 = contracts_data[:5]
+                remaining = contracts_data[5:]
+                others_row = {
+                    'industry': 'Others',
+                    'customers': 'Others',
+                    'business': 'Consolidated',
+                    'engagement': 'Various',
+                    'contract_value': target_currency.round(sum(c['contract_value'] for c in remaining)),
+                    'y1_booking': target_currency.round(sum(c['y1_booking'] for c in remaining)),
+                    'y1_billed': target_currency.round(sum(c['y1_billed'] for c in remaining)),
+                    'y1_actual': target_currency.round(sum(c['y1_actual'] for c in remaining)),
+                    'y1_expenses': 0.0,
+                    'y1_margin': 0.0,
+                    'y2_booking': target_currency.round(sum(c['y2_booking'] for c in remaining)),
+                    'y2_billed': target_currency.round(sum(c['y2_billed'] for c in remaining)),
+                    'y2_actual': target_currency.round(sum(c['y2_actual'] for c in remaining)),
+                    'y2_expenses': 0.0,
+                    'y2_margin': 0.0,
+                }
+                contracts_data = top_5 + [others_row]
+
         total_contract_value = sum(c['contract_value'] for c in contracts_data)
         total_y1_booking = sum(c['y1_booking'] for c in contracts_data)
         total_y1_billed = sum(c['y1_billed'] for c in contracts_data)
@@ -751,9 +780,15 @@ class FbookReportWizard(models.TransientModel):
         y2_end_date = _date(y2_start + 1, 3, 31)
 
         def _get_y_key(rec_date):
-            if rec_date and y1_start_date <= rec_date <= y1_end_date:
+            if not rec_date:
+                return None
+            if isinstance(rec_date, str):
+                d_str = rec_date[:10]
+            else:
+                d_str = rec_date.strftime('%Y-%m-%d')
+            if f"{y1_start:04d}-04-01" <= d_str <= f"{y1_start + 1:04d}-03-31":
                 return 'y1'
-            elif rec_date and y2_start_date <= rec_date <= y2_end_date:
+            elif f"{y2_start:04d}-04-01" <= d_str <= f"{y2_start + 1:04d}-03-31":
                 return 'y2'
             return None
 
@@ -772,9 +807,7 @@ class FbookReportWizard(models.TransientModel):
                     exp.total_amount_currency, exp.currency_id, target_currency,
                     date_val=exp.date, year_key=y_key, record=exp
                 )
-                is_paid = getattr(exp, 'state', '') in ('paid', 'posted', 'in_payment', 'done')
-                actual_exp = conv if is_paid else 0.0
-                _add_expense_val('Employee(reimbursement)', y_key, conv, actual_exp)
+                _add_expense_val('Employee(reimbursement)', y_key, conv, conv)
 
         # B. Vendor Bills -> consolidated by vendor_category
         category_labels = {
@@ -807,12 +840,7 @@ class FbookReportWizard(models.TransientModel):
                     bill.amount_total, bill.currency_id, target_currency,
                     date_val=bill.invoice_date, year_key=y_key, record=bill
                 )
-                residual = sign * custom_convert(
-                    bill.amount_residual, bill.currency_id, target_currency,
-                    date_val=bill.invoice_date, year_key=y_key, record=bill
-                )
-                paid_amt = max(0.0, conv - residual)
-                _add_expense_val(cat_label, y_key, conv, paid_amt)
+                _add_expense_val(cat_label, y_key, conv, conv)
 
         # C. Payroll / Payslips -> consolidated under "Employee(salary)"
         if 'hr.payslip' in self.env:
@@ -853,7 +881,7 @@ class FbookReportWizard(models.TransientModel):
 
                 # Ongoing financial year:
                 # Exclude the current ongoing month from the average calculation
-                past_salaries = [val for d, val in salaries if d and d.strftime('%Y-%m') < current_ym]
+                past_salaries = [val for d, val in salaries if d and (d.strftime('%Y-%m') if hasattr(d, 'strftime') else str(d)[:7]) < current_ym]
                 total_past_sal = sum(past_salaries)
                 elapsed_months = (today.year - start_date.year) * 12 + (today.month - start_date.month)
                 plan_val = (total_past_sal / elapsed_months * 12) if elapsed_months > 0 else actual_val
@@ -1137,9 +1165,25 @@ class FbookReportWizard(models.TransientModel):
             if (y1_credit < 0.01 and y1_debit < 0.01 and y2_credit < 0.01 and y2_debit < 0.01):
                 continue
 
+            y1_net = y1_credit - y1_debit
+            y2_net = y2_credit - y2_debit
+            total_net = y1_net + y2_net
+
             row = {
                 'investor': inv_info['name'],
                 'category': inv_info['category'],
+                # Received = Investment Received into company (Credits)
+                'y1_received': target_currency.round(y1_credit),
+                'y2_received': target_currency.round(y2_credit),
+                # Repaid = Amount Repaid / Returned to investor (Debits)
+                'y1_repaid': target_currency.round(y1_debit),
+                'y2_repaid': target_currency.round(y2_debit),
+                # Net Invested = Received - Repaid
+                'y1_net': target_currency.round(y1_net),
+                'y2_net': target_currency.round(y2_net),
+                # Total Cumulative Net Position
+                'total_net': target_currency.round(total_net),
+                # Backward compatibility aliases
                 'y1_credit': target_currency.round(y1_credit),
                 'y1_debit': target_currency.round(y1_debit),
                 'y2_credit': target_currency.round(y2_credit),
@@ -1148,6 +1192,13 @@ class FbookReportWizard(models.TransientModel):
             investor_rows.append(row)
 
         investor_totals = {
+            'y1_received': target_currency.round(sum(r['y1_received'] for r in investor_rows)),
+            'y1_repaid': target_currency.round(sum(r['y1_repaid'] for r in investor_rows)),
+            'y1_net': target_currency.round(sum(r['y1_net'] for r in investor_rows)),
+            'y2_received': target_currency.round(sum(r['y2_received'] for r in investor_rows)),
+            'y2_repaid': target_currency.round(sum(r['y2_repaid'] for r in investor_rows)),
+            'y2_net': target_currency.round(sum(r['y2_net'] for r in investor_rows)),
+            'total_net': target_currency.round(sum(r['total_net'] for r in investor_rows)),
             'y1_credit': target_currency.round(sum(r['y1_credit'] for r in investor_rows)),
             'y1_debit': target_currency.round(sum(r['y1_debit'] for r in investor_rows)),
             'y2_credit': target_currency.round(sum(r['y2_credit'] for r in investor_rows)),
@@ -1353,10 +1404,13 @@ class FbookReportWizard(models.TransientModel):
                 unit_p = purchase_val / tot_cnt if tot_cnt > 0 else 0.0
                 unit_d = depr_val / tot_cnt if tot_cnt > 0 else 0.0
 
+                type_desc = (asset.asset_type_id.description or '').strip() if (asset.asset_type_id and hasattr(asset.asset_type_id, 'description')) else ''
+
                 if category_name not in asset_data_map:
                     asset_data_map[category_name] = {
                         'category': category_name,
                         'items': set(),
+                        'type_descriptions': set(),
                         'count_total': 0,
                         'count_in_store': 0,
                         'count_in_use': 0,
@@ -1377,6 +1431,8 @@ class FbookReportWizard(models.TransientModel):
                 adm = asset_data_map[category_name]
                 if item_name:
                     adm['items'].add(item_name)
+                if type_desc:
+                    adm['type_descriptions'].add(type_desc)
                 adm['count_total'] += tot_cnt
                 adm['count_in_store'] += c_in_store
                 adm['count_in_use'] += c_in_use
@@ -1398,9 +1454,10 @@ class FbookReportWizard(models.TransientModel):
         asset_rows = []
         for cat_name in sorted(asset_data_map.keys()):
             a_info = asset_data_map[cat_name]
+            desc_val = ', '.join(sorted(a_info['type_descriptions'])) if a_info['type_descriptions'] else (', '.join(sorted(a_info['items'])) if a_info['items'] else '-')
             asset_rows.append({
                 'category': a_info['category'],
-                'description': ', '.join(sorted(a_info['items'])) if a_info['items'] else '-',
+                'description': desc_val,
                 'count_total': a_info['count_total'],
                 'count_in_store': a_info['count_in_store'],
                 'count_in_use': a_info['count_in_use'],

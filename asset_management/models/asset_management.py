@@ -613,6 +613,7 @@ class AssetType(models.Model):
     # Fields for defining asset types and their depreciation rules
     name = fields.Char(string='Name', required=True)
     color = fields.Integer(string='Color Index', help="Color index for this asset type")
+    description = fields.Text(string='Description', help="Description of this asset type and associated items")
     depreciation_frequency = fields.Selection([
         ('monthly', 'Monthly'),
         ('yearly', 'Yearly'),
