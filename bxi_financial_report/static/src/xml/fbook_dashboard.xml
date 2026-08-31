@@ -739,7 +739,7 @@
                             <!-- Purchase / Depreciation -->
                             <th class="text-center" style="width: 130px; background: #fef3c7; font-weight: 700;">Purchase Value</th>
                             <th class="text-center" style="width: 140px; background: #e0e7ff; font-weight: 700;">Depreciation Value</th>
-                            <th class="text-center" style="width: 200px; background: #f1f5f9; font-weight: 700;">Last Depreciated Amount Where Depr Stops</th>
+                            <th class="text-center" style="width: 170px; background: #f1f5f9; font-weight: 700;">Last Depreciated Amount</th>
                         </tr>
                     </thead>
                     <tbody>
