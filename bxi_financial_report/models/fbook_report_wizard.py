@@ -1358,6 +1358,34 @@ class FbookReportWizard(models.TransientModel):
                     date_val=getattr(asset, 'last_depreciation_date', False) or fields.Date.today(), year_key='y2', record=asset
                 )
 
+                # Last depreciated amount where depreciation stops
+                if not getattr(asset, 'depreciation_apply', False) or not asset.asset_type_id:
+                    stop_depr_val = purchase_val
+                else:
+                    max_entries = asset.asset_type_id.maximum_depreciation_entries
+                    method = asset.asset_type_id.depreciation_method
+                    rate = asset.asset_type_id.depreciation_rate or 0.0
+                    basis = asset.asset_type_id.depreciation_basis
+
+                    if max_entries and max_entries > 0:
+                        if method == 'fix':
+                            rate_converted = custom_convert(
+                                rate, curr, target_currency,
+                                date_val=asset.invoice_date or fields.Date.today(), year_key='y2', record=asset
+                            )
+                            total_max_depr = min(purchase_val, max_entries * rate_converted)
+                            stop_depr_val = max(0.0, purchase_val - total_max_depr)
+                        elif method == 'percentage':
+                            if basis == 'real_value':
+                                total_max_depr = min(purchase_val, max_entries * (purchase_val * (rate / 100.0)))
+                                stop_depr_val = max(0.0, purchase_val - total_max_depr)
+                            else:  # depreciation_value (reducing balance)
+                                stop_depr_val = max(0.0, purchase_val * ((1.0 - (rate / 100.0)) ** max_entries))
+                        else:
+                            stop_depr_val = 0.0
+                    else:
+                        stop_depr_val = 0.0
+
                 c_in_store = 0
                 c_in_use = 0
                 c_customer = 0
@@ -1426,6 +1454,7 @@ class FbookReportWizard(models.TransientModel):
                         'depr_in_use': 0.0,
                         'depr_customer': 0.0,
                         'depr_scrapped': 0.0,
+                        'stop_depr_total': 0.0,
                     }
 
                 adm = asset_data_map[category_name]
@@ -1450,11 +1479,15 @@ class FbookReportWizard(models.TransientModel):
                 adm['depr_in_use'] += unit_d * c_in_use
                 adm['depr_customer'] += unit_d * c_customer
                 adm['depr_scrapped'] += unit_d * c_scrapped
+                adm['stop_depr_total'] += stop_depr_val
 
         asset_rows = []
         for cat_name in sorted(asset_data_map.keys()):
             a_info = asset_data_map[cat_name]
-            desc_val = ', '.join(sorted(a_info['type_descriptions'])) if a_info['type_descriptions'] else (', '.join(sorted(a_info['items'])) if a_info['items'] else '-')
+            if cat_name.strip().lower() == 'general':
+                desc_val = 'General Items'
+            else:
+                desc_val = ', '.join(sorted(a_info['type_descriptions'])) if a_info['type_descriptions'] else (', '.join(sorted(a_info['items'])) if a_info['items'] else '-')
             asset_rows.append({
                 'category': a_info['category'],
                 'description': desc_val,
@@ -1473,6 +1506,7 @@ class FbookReportWizard(models.TransientModel):
                 'depr_in_use': target_currency.round(a_info['depr_in_use']),
                 'depr_customer': target_currency.round(a_info['depr_customer']),
                 'depr_scrapped': target_currency.round(a_info['depr_scrapped']),
+                'stop_depr_total': target_currency.round(a_info['stop_depr_total']),
             })
 
         asset_totals = {
@@ -1491,6 +1525,7 @@ class FbookReportWizard(models.TransientModel):
             'depr_in_use': target_currency.round(sum(r['depr_in_use'] for r in asset_rows)),
             'depr_customer': target_currency.round(sum(r['depr_customer'] for r in asset_rows)),
             'depr_scrapped': target_currency.round(sum(r['depr_scrapped'] for r in asset_rows)),
+            'stop_depr_total': target_currency.round(sum(r['stop_depr_total'] for r in asset_rows)),
         }
 
         # CSR Fund Section Calculation (Quarter-wise Fund transfers to BXI Foundation)
