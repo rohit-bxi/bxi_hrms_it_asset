@@ -10,24 +10,25 @@ class TravelRequest(http.Controller):
         user = request.env.user
         T_Request = request.env['travel.request'].sudo()
 
-        # Find the current employee record
         current_employee = request.env['hr.employee'].sudo().search([
             ('user_id', '=', user.id)
         ], limit=1)
 
+        self_requests = T_Request.browse()
+        team_requests = T_Request.browse()
+
         if current_employee:
-            # Show own requests + requests of direct subordinates (manager view)
-            t_request = T_Request.search([
-                '|',
-                ('employee_id', '=', current_employee.id),
-                ('employee_id.parent_id', '=', current_employee.id),
+            self_requests = T_Request.search([
+                ('employee_id', '=', current_employee.id)
             ])
-        else:
-            t_request = T_Request.browse()
+            team_requests = T_Request.search([
+                ('employee_id.parent_id', '=', current_employee.id)
+            ])
 
         values = {
-            'requests': t_request,
-            'is_manager': bool(current_employee),
+            'self_requests': self_requests,
+            'team_requests': team_requests,
+            'is_manager': bool(team_requests),
             'current_employee_id': current_employee.id if current_employee else False,
         }
         return request.render('bxi_travel_request.bxi_travel_request_template', values)
