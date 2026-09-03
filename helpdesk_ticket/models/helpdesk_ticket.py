@@ -1,9 +1,35 @@
 from odoo import models, fields, api, _
+from odoo.tools import email_normalize
 import re
 
 
 class HelpdeskTicket(models.Model):
     _inherit = 'helpdesk.ticket'
+
+    def _alias_get_error(self, message, message_dict, alias):
+        """
+        Override: when alias_contact == 'partners', instead of blocking emails
+        from unknown senders (external domains), auto-create a res.partner for
+        them so the ticket can be created.
+        This allows hrsupport@bxitech.com to receive emails from ANY domain.
+        """
+        if alias.alias_contact == 'partners' and not message_dict.get('author_id'):
+            email_from = message_dict.get('email_from', '')
+            normalized = email_normalize(email_from)
+            if normalized:
+                # Find or create partner for this external sender
+                partner = self.env['res.partner'].sudo().search(
+                    [('email_normalized', '=', normalized)], limit=1
+                )
+                if not partner:
+                    partner = self.env['res.partner'].sudo().create({
+                        'name': message_dict.get('email_from', normalized).split('<')[0].strip() or normalized,
+                        'email': email_from,
+                    })
+                message_dict['author_id'] = partner.id
+            # After creating/finding partner, re-check with the parent logic
+        return super()._alias_get_error(message, message_dict, alias)
+
 
     category_id = fields.Many2one(
         'helpdesk.category',
