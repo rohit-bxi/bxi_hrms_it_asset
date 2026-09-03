@@ -1,7 +1,6 @@
-from odoo import http
+from odoo import http, fields as odoo_fields
 from odoo.http import request
 from odoo.exceptions import AccessError
-
 
 
 class TravelRequest(http.Controller):
@@ -10,22 +9,29 @@ class TravelRequest(http.Controller):
     def travel_request(self, **kwargs):
         user = request.env.user
         T_Request = request.env['travel.request'].sudo()
-        if user.has_group('base.group_user'):
-            t_request = T_Request.search([])
+
+        # Find the current employee record
+        current_employee = request.env['hr.employee'].sudo().search([
+            ('user_id', '=', user.id)
+        ], limit=1)
+
+        if current_employee:
+            # Show own requests + requests of direct subordinates (manager view)
+            t_request = T_Request.search([
+                '|',
+                ('employee_id', '=', current_employee.id),
+                ('employee_id.parent_id', '=', current_employee.id),
+            ])
         else:
-            employee = request.env['hr.employee'].sudo().search([
-                ('user_id', '=', user.id)
-            ], limit=1)
-            t_request = []
-            if employee:
-                t_request = T_Request.search([
-                    ('employee_id', '=', employee.id)
-                ])
+            t_request = T_Request.browse()
+
         values = {
             'requests': t_request,
+            'is_manager': bool(current_employee),
+            'current_employee_id': current_employee.id if current_employee else False,
         }
         return request.render('bxi_travel_request.bxi_travel_request_template', values)
-   
+
     @http.route('/my/submit-travel-request', type='http', auth="user", website=True, methods=['GET', 'POST'])
     def submit_request(self, **post):
         user = request.env.user
@@ -81,11 +87,68 @@ class TravelRequest(http.Controller):
             'from_states': from_states,
             'to_states': to_states,
             'mode_options': request.env['travel.request']._fields['mode_of_travel'].selection,
-        })    
-    
+        })
+
     @http.route(['/my/travel-request/<int:rec_id>'], type='http', auth='user', website=True)
     def travel_request_detail(self, rec_id):
         record = request.env['travel.request'].sudo().browse(rec_id)
         return request.render('bxi_travel_request.travel_request_detail_template', {
             'record': record
         })
+
+    @http.route('/my/travel-request/approve', type='http', auth='user', website=True, methods=['POST'])
+    def travel_request_approve(self, **post):
+        rec_id = int(post.get('rec_id', 0))
+        if not rec_id:
+            return request.redirect('/my/travel-request')
+
+        record = request.env['travel.request'].sudo().browse(rec_id)
+        if not record.exists():
+            return request.redirect('/my/travel-request')
+
+        # Verify the logged-in user is the manager of that employee
+        current_employee = request.env['hr.employee'].sudo().search([
+            ('user_id', '=', request.env.user.id)
+        ], limit=1)
+
+        if (current_employee
+                and record.employee_id.parent_id
+                and record.employee_id.parent_id.id == current_employee.id
+                and record.state == 'manager_approval'):
+            # Manager identity already verified above; use sudo() to bypass
+            # portal ACL (portal users don't have the 'Role / User' group).
+            # Write directly so the correct manager employee is stamped,
+            # not the sudo superuser.
+            record.sudo().write({
+                'state': 'hr_approval',
+                'manager_approved_by': current_employee.id,
+                'manager_approved_date': odoo_fields.Datetime.now(),
+            })
+            record.sudo()._send_state_email()
+
+        return request.redirect('/my/travel-request')
+
+    @http.route('/my/travel-request/reject', type='http', auth='user', website=True, methods=['POST'])
+    def travel_request_reject(self, **post):
+        rec_id = int(post.get('rec_id', 0))
+        if not rec_id:
+            return request.redirect('/my/travel-request')
+
+        record = request.env['travel.request'].sudo().browse(rec_id)
+        if not record.exists():
+            return request.redirect('/my/travel-request')
+
+        # Verify the logged-in user is the manager of that employee
+        current_employee = request.env['hr.employee'].sudo().search([
+            ('user_id', '=', request.env.user.id)
+        ], limit=1)
+
+        if (current_employee
+                and record.employee_id.parent_id
+                and record.employee_id.parent_id.id == current_employee.id
+                and record.state == 'manager_approval'):
+            # Manager identity already verified above; use sudo() to bypass
+            # portal ACL.
+            record.sudo().action_cancel()
+
+        return request.redirect('/my/travel-request')
