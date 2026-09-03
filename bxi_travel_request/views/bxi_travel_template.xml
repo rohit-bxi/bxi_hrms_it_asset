@@ -33,6 +33,7 @@
                                         <th>Departure Date</th>
                                         <th>Return Date</th>
                                         <th>Status</th>
+                                        <th t-if="is_manager">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -99,13 +100,37 @@
                                                     class="badge bg-success px-3 py-2">
                                                     Finance Approval
                                                 </span>
-                                                <span t-elif="req.state == 'approved'"
+                                                <span t-elif="req.state == 'approve'"
                                                     class="badge bg-primary px-3 py-2">
                                                     Approved
                                                 </span>
                                                 <span t-else="" class="badge bg-dark px-3 py-2">
                                                     <t t-esc="req.state" />
                                                 </span>
+                                            </td>
+                                            <!-- Action column: Approve/Reject buttons for manager only -->
+                                            <td t-if="is_manager">
+                                                <t t-if="req.state == 'manager_approval' and req.employee_id.parent_id.id == current_employee_id">
+                                                    <!-- Approve button - triggers modal -->
+                                                    <button type="button"
+                                                        class="btn btn-success btn-sm me-1 tr-action-btn"
+                                                        data-type="approve"
+                                                        t-att-data-rec-id="req.id"
+                                                        t-att-data-ref="req.name">
+                                                        <i class="fa fa-check me-1"/>Approve
+                                                    </button>
+                                                    <!-- Reject button - triggers modal -->
+                                                    <button type="button"
+                                                        class="btn btn-danger btn-sm tr-action-btn"
+                                                        data-type="reject"
+                                                        t-att-data-rec-id="req.id"
+                                                        t-att-data-ref="req.name">
+                                                        <i class="fa fa-times me-1"/>Reject
+                                                    </button>
+                                                </t>
+                                                <t t-else="">
+                                                    <span class="text-muted">—</span>
+                                                </t>
                                             </td>
                                         </tr>
                                     </t>
@@ -115,6 +140,42 @@
                     </div>
                 </t>
             </div>
+
+            <!-- ===== Travel Request Confirmation Modal ===== -->
+            <div class="modal fade" id="trActionModal" tabindex="-1" aria-labelledby="trActionModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow-lg" style="border-radius:16px; overflow:hidden;">
+
+                        <!-- Header — colour set by JS -->
+                        <div class="modal-header text-white" id="trModalHeader" style="padding:20px 24px;">
+                            <div class="d-flex align-items-center">
+                                <i id="trModalIcon" class="fa fa-question-circle fa-lg me-2"/>
+                                <h5 class="modal-title fw-bold mb-0" id="trActionModalLabel">Confirm Action</h5>
+                            </div>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"/>
+                        </div>
+
+                        <div class="modal-body" style="padding:24px;">
+                            <p class="mb-1 text-muted" style="font-size:13px;">Travel Request</p>
+                            <p class="fw-bold fs-6 mb-3" id="trModalRef">—</p>
+                            <p class="mb-0" id="trModalMsg" style="font-size:15px;">Are you sure?</p>
+                        </div>
+
+                        <div class="modal-footer border-0" style="padding:16px 24px;">
+                            <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
+                            <form id="trActionForm" method="post" class="d-inline">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <input type="hidden" name="rec_id" id="trActionRecId" value=""/>
+                                <button type="submit" class="btn px-4 fw-semibold text-white" id="trModalConfirmBtn">Confirm</button>
+                            </form>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            <!-- ===== End Modal ===== -->
+
+            <script type="text/javascript" src="/bxi_travel_request/static/src/js/travel.js"></script>
         </t>
     </template>
 
